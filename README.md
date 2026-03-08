@@ -15,9 +15,9 @@
 </div>
 
 > Built with **Kotlin**, **Jetpack Compose**, **Hilt**, and **Media3 / ExoPlayer**.
-> Continues from the original Next Player project with in-app language switching, settings backup & restore, and ASS subtitle effects.
+> Continues from the [original Next Player project](https://github.com/anilbeesetti/nextplayer) with in-app language switching, settings backup & restore, and ASS subtitle effects.
 >
-> Thanks to the original Next Player project and all upstream contributors.
+> Special thanks to the original [Next Player](https://github.com/anilbeesetti/nextplayer) project and all upstream contributors for the solid foundation and long-term maintenance.
 
 ---
 

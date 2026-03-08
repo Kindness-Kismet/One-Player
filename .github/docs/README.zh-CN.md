@@ -15,9 +15,9 @@
 </div>
 
 > 基于 **Kotlin**、**Jetpack Compose**、**Hilt** 和 **Media3 / ExoPlayer** 构建。
-> 延续自原始 Next Player 项目，补强了应用内语言切换、设置备份恢复和 ASS 特效字幕。
+> 延续自 [原始 Next Player 项目](https://github.com/anilbeesetti/nextplayer)，补强了应用内语言切换、设置备份恢复和 ASS 特效字幕。
 >
-> 感谢原始 Next Player 项目以及所有上游贡献者提供的基础能力与长期维护。
+> 感谢 [Next Player](https://github.com/anilbeesetti/nextplayer) 项目及所有上游贡献者提供的基础能力与长期维护。
 
 ---
 
