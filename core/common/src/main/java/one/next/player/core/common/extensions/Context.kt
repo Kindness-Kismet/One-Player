@@ -52,11 +52,9 @@ fun Context.getPath(uri: Uri): String? {
                     .split(":".toRegex())
                     .dropLastWhile { it.isEmpty() }
                     .toTypedArray()
-                val type = split[0]
-                if ("primary".equals(type, ignoreCase = true)) {
+                if ("primary".equals(split[0], ignoreCase = true)) {
                     return Environment.getExternalStorageDirectory().path + "/" + split[1]
                 }
-
                 // TODO handle non-primary volumes
             }
 
@@ -79,32 +77,28 @@ fun Context.getPath(uri: Uri): String? {
                 val docId = DocumentsContract.getDocumentId(uri)
                 val split = docId.split(":".toRegex()).dropLastWhile { it.isEmpty() }
                     .toTypedArray()
-                val type = split[0]
-                var contentUri: Uri? = null
-                when (type) {
-                    "image" -> contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    "video" -> contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                    "audio" -> contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                val contentUri = when (split[0]) {
+                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                    else -> return null
                 }
-                val selection = "_id=?"
-                val selectionArgs = arrayOf(
-                    split[1],
-                )
-                return contentUri?.let { getDataColumn(it, selection, selectionArgs) }
+                return getDataColumn(contentUri, "_id=?", arrayOf(split[1]))
             }
         }
-    } else if (ContentResolver.SCHEME_CONTENT.equals(uri.scheme, ignoreCase = true)) {
+        return null
+    }
+
+    if (ContentResolver.SCHEME_CONTENT.equals(uri.scheme, ignoreCase = true)) {
         if (uri.isLocalPhotoPickerUri) return null
         if (uri.isCloudPhotoPickerUri) return null
+        return if (uri.isGooglePhotosUri) uri.lastPathSegment else getDataColumn(uri, null, null)
+    }
 
-        return if (uri.isGooglePhotosUri) {
-            uri.lastPathSegment
-        } else {
-            getDataColumn(uri, null, null)
-        }
-    } else if (ContentResolver.SCHEME_FILE.equals(uri.scheme, ignoreCase = true)) {
+    if (ContentResolver.SCHEME_FILE.equals(uri.scheme, ignoreCase = true)) {
         return uri.path
     }
+
     return null
 }
 
@@ -218,14 +212,12 @@ suspend fun Context.scanPath(file: File): Boolean = if (file.isDirectory) {
 suspend fun Context.scanStorage(
     storagePath: String? = Environment.getExternalStorageDirectory()?.path,
 ): Boolean = withContext(Dispatchers.IO) {
-    if (storagePath != null) {
-        return@withContext if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            scanPaths(listOf(storagePath))
-        } else {
-            scanPath(File(storagePath))
-        }
+    if (storagePath == null) return@withContext false
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        scanPaths(listOf(storagePath))
     } else {
-        false
+        scanPath(File(storagePath))
     }
 }
 
@@ -315,33 +307,18 @@ private fun Context.convertNetworkUriToUTF8(url: URL, sourceCharset: Charset): U
 
 fun Context.isDeviceTvBox(): Boolean {
     val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
-    if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
-        return true
-    }
-
+    if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) return true
     // Fire tv
-    if (packageManager.hasSystemFeature("amazon.hardware.fire_tv")) {
-        return true
-    }
-
+    if (packageManager.hasSystemFeature("amazon.hardware.fire_tv")) return true
     // Missing Files app (DocumentsUI) means box (some boxes still have non functional app or stub)
-    if (!hasStorageAccessFrameworkChooser()) {
-        return true
-    }
+    if (!hasStorageAccessFrameworkChooser()) return true
 
     if (Build.VERSION.SDK_INT < 30) {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
-            return true
-        }
-
-        if (packageManager.hasSystemFeature("android.hardware.hdmi.cec")) {
-            return true
-        }
-
-        if (Build.MANUFACTURER.equals("zidoo", ignoreCase = true)) {
-            return true
-        }
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) return true
+        if (packageManager.hasSystemFeature("android.hardware.hdmi.cec")) return true
+        if (Build.MANUFACTURER.equals("zidoo", ignoreCase = true)) return true
     }
+
     return false
 }
 

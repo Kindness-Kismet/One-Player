@@ -177,17 +177,14 @@ class PlayerService : MediaSessionService() {
 
         override fun onTracksChanged(tracks: Tracks) {
             super.onTracksChanged(tracks)
-            if (!isMediaItemReady && tracks.groups.isNotEmpty()) {
-                isMediaItemReady = true
+            if (isMediaItemReady || tracks.groups.isEmpty()) return
+            isMediaItemReady = true
 
-                if (!playerPreferences.rememberSelections) return
-                mediaSession?.player?.mediaMetadata?.audioTrackIndex?.let {
-                    mediaSession?.player?.switchTrack(C.TRACK_TYPE_AUDIO, it)
-                }
-                mediaSession?.player?.mediaMetadata?.subtitleTrackIndex?.let {
-                    mediaSession?.player?.switchTrack(C.TRACK_TYPE_TEXT, it)
-                }
-            }
+            if (!playerPreferences.rememberSelections) return
+            val player = mediaSession?.player ?: return
+            val metadata = player.mediaMetadata
+            metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
+            metadata.subtitleTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_TEXT, it) }
         }
 
         override fun onTrackSelectionParametersChanged(parameters: TrackSelectionParameters) {
@@ -247,37 +244,37 @@ class PlayerService : MediaSessionService() {
             super.onPlaybackStateChanged(playbackState)
 
             if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
-                mediaSession?.player?.trackSelectionParameters = TrackSelectionParameters.DEFAULT
-                mediaSession?.player?.setPlaybackSpeed(playerPreferences.defaultPlaybackSpeed)
+                val player = mediaSession?.player ?: return
+                player.trackSelectionParameters = TrackSelectionParameters.DEFAULT
+                player.setPlaybackSpeed(playerPreferences.defaultPlaybackSpeed)
+                return
             }
 
             if (playbackState == Player.STATE_READY) {
-                mediaSession?.player?.let {
-                    serviceScope.launch {
-                        mediaRepository.updateMediumLastPlayedTime(
-                            uri = it.currentMediaItem?.mediaId ?: return@launch,
-                            lastPlayedTime = System.currentTimeMillis(),
-                        )
-                    }
+                val player = mediaSession?.player ?: return
+                val mediaId = player.currentMediaItem?.mediaId ?: return
+                serviceScope.launch {
+                    mediaRepository.updateMediumLastPlayedTime(
+                        uri = mediaId,
+                        lastPlayedTime = System.currentTimeMillis(),
+                    )
                 }
             }
         }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             super.onPlayWhenReadyChanged(playWhenReady, reason)
+            if (reason != Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) return
 
-            if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
-                if (mediaSession?.player?.repeatMode != Player.REPEAT_MODE_OFF) {
-                    mediaSession?.player?.seekTo(0)
-                    mediaSession?.player?.play()
-                    return
-                }
-                mediaSession?.run {
-                    player.clearMediaItems()
-                    player.stop()
-                }
-                stopSelf()
+            val player = mediaSession?.player ?: return
+            if (player.repeatMode != Player.REPEAT_MODE_OFF) {
+                player.seekTo(0)
+                player.play()
+                return
             }
+            player.clearMediaItems()
+            player.stop()
+            stopSelf()
         }
 
         override fun onRenderedFirstFrame() {
@@ -400,31 +397,31 @@ class PlayerService : MediaSessionService() {
                 CustomCommands.ADD_SUBTITLE_TRACK -> {
                     val subtitleUri = args.getString(CustomCommands.SUBTITLE_TRACK_URI_KEY)?.toUri()
                         ?: return@future SessionResult(SessionError.ERROR_BAD_VALUE)
+                    val player = mediaSession?.player
+                        ?: return@future SessionResult(SessionError.ERROR_BAD_VALUE)
+                    val currentMediaItem = player.currentMediaItem
+                        ?: return@future SessionResult(SessionError.ERROR_BAD_VALUE)
 
                     val newSubConfiguration = uriToSubtitleConfiguration(
                         uri = subtitleUri,
                         subtitleEncoding = playerPreferences.subtitleTextEncoding,
                     )
-                    mediaSession?.player?.let { player ->
-                        val currentMediaItem = player.currentMediaItem ?: return@let
-                        val textTracks = player.currentTracks.groups.filter {
-                            it.type == C.TRACK_TYPE_TEXT && it.isSupported
-                        }
-
-                        mediaRepository.updateMediumPosition(
-                            uri = currentMediaItem.mediaId,
-                            position = player.currentPosition,
-                        )
-                        mediaRepository.updateMediumSubtitleTrack(
-                            uri = currentMediaItem.mediaId,
-                            subtitleTrackIndex = textTracks.size,
-                        )
-                        mediaRepository.addExternalSubtitleToMedium(
-                            uri = currentMediaItem.mediaId,
-                            subtitleUri = subtitleUri,
-                        )
-                        player.addAdditionalSubtitleConfiguration(newSubConfiguration)
+                    val textTracks = player.currentTracks.groups.filter {
+                        it.type == C.TRACK_TYPE_TEXT && it.isSupported
                     }
+                    mediaRepository.updateMediumPosition(
+                        uri = currentMediaItem.mediaId,
+                        position = player.currentPosition,
+                    )
+                    mediaRepository.updateMediumSubtitleTrack(
+                        uri = currentMediaItem.mediaId,
+                        subtitleTrackIndex = textTracks.size,
+                    )
+                    mediaRepository.addExternalSubtitleToMedium(
+                        uri = currentMediaItem.mediaId,
+                        subtitleUri = subtitleUri,
+                    )
+                    player.addAdditionalSubtitleConfiguration(newSubConfiguration)
                     return@future SessionResult(SessionResult.RESULT_SUCCESS)
                 }
 
@@ -518,8 +515,6 @@ class PlayerService : MediaSessionService() {
                                 position = player.currentPosition,
                             )
                         }
-                    }
-                    mediaSession?.run {
                         player.clearMediaItems()
                         player.stop()
                     }
@@ -730,20 +725,23 @@ class PlayerService : MediaSessionService() {
         null
     }
 
+    // 在播放列表中按 mediaId 查找对应的 Player、索引和 MediaItem
+    private fun findMediaItemInSession(mediaId: String): Triple<Player, Int, MediaItem>? {
+        val player = mediaSession?.player ?: return null
+        val index = (0 until player.mediaItemCount).firstOrNull {
+            player.getMediaItemAt(it).mediaId == mediaId
+        } ?: return null
+        return Triple(player, index, player.getMediaItemAt(index))
+    }
+
     private fun loadArtworkInBackground(mediaItems: List<MediaItem>) {
         serviceScope.launch(Dispatchers.Default) {
             mediaItems.forEach { mediaItem ->
                 launch {
-                    val uri = mediaItem.mediaId.toUri()
-                    val artworkData = loadArtworkForUri(uri) ?: return@launch
+                    val artworkData = loadArtworkForUri(mediaItem.mediaId.toUri()) ?: return@launch
 
                     withContext(Dispatchers.Main) {
-                        val player = mediaSession?.player ?: return@withContext
-                        val currentIndex = (0 until player.mediaItemCount).firstOrNull {
-                            player.getMediaItemAt(it).mediaId == mediaItem.mediaId
-                        } ?: return@withContext
-
-                        val currentMediaItem = player.getMediaItemAt(currentIndex)
+                        val (player, index, currentMediaItem) = findMediaItemInSession(mediaItem.mediaId) ?: return@withContext
                         val updatedMediaItem = currentMediaItem.buildUpon()
                             .setMediaMetadata(
                                 currentMediaItem.mediaMetadata.buildUpon()
@@ -752,8 +750,7 @@ class PlayerService : MediaSessionService() {
                                     .build(),
                             )
                             .build()
-
-                        player.replaceMediaItem(currentIndex, updatedMediaItem)
+                        player.replaceMediaItem(index, updatedMediaItem)
                     }
                 }
             }
@@ -783,12 +780,7 @@ class PlayerService : MediaSessionService() {
                     }
 
                     withContext(Dispatchers.Main) {
-                        val player = mediaSession?.player ?: return@withContext
-                        val currentIndex = (0 until player.mediaItemCount).firstOrNull {
-                            player.getMediaItemAt(it).mediaId == mediaItem.mediaId
-                        } ?: return@withContext
-
-                        val currentMediaItem = player.getMediaItemAt(currentIndex)
+                        val (player, index, currentMediaItem) = findMediaItemInSession(mediaItem.mediaId) ?: return@withContext
                         val updatedMediaItem = currentMediaItem.buildUpon()
                             .setSubtitleConfigurations(
                                 mergeSubtitleConfigurations(
@@ -797,8 +789,7 @@ class PlayerService : MediaSessionService() {
                                 ),
                             )
                             .build()
-
-                        player.replaceMediaItem(currentIndex, updatedMediaItem)
+                        player.replaceMediaItem(index, updatedMediaItem)
                     }
                 }
             }
