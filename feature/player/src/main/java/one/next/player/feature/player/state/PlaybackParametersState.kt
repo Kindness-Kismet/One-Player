@@ -16,6 +16,7 @@ import androidx.media3.session.MediaController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import one.next.player.feature.player.service.getSkipSilenceEnabled
+import one.next.player.feature.player.service.setPersistentPlaybackSpeed
 import one.next.player.feature.player.service.setSkipSilenceEnabled
 
 @UnstableApi
@@ -39,7 +40,10 @@ class PlaybackParametersState(
         private set
 
     fun setPlaybackSpeed(speed: Float) {
-        player.setPlaybackSpeed(speed)
+        when (player) {
+            is MediaController -> player.setPersistentPlaybackSpeed(speed)
+            else -> player.setPlaybackSpeed(speed)
+        }
     }
 
     fun setIsSkipSilenceEnabled(enabled: Boolean) {

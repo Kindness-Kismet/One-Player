@@ -56,9 +56,11 @@ fun PlayerGestures(
                 .pointerInput(
                     controlsVisibilityState.controlsLocked,
                     pictureInPictureState.isInPictureInPictureMode,
+                    tapGestureState.isLongPressGestureInAction,
                 ) {
                     if (controlsVisibilityState.controlsLocked) return@pointerInput
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
+                    if (tapGestureState.isLongPressGestureInAction) return@pointerInput
 
                     detectCustomHorizontalDragGestures(
                         onDragStart = seekGestureState::onDragStart,
@@ -70,9 +72,11 @@ fun PlayerGestures(
                 .pointerInput(
                     controlsVisibilityState.controlsLocked,
                     pictureInPictureState.isInPictureInPictureMode,
+                    tapGestureState.isLongPressGestureInAction,
                 ) {
                     if (controlsVisibilityState.controlsLocked) return@pointerInput
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
+                    if (tapGestureState.isLongPressGestureInAction) return@pointerInput
 
                     detectCustomVerticalDragGestures(
                         onDragStart = { volumeAndBrightnessGestureState.onDragStart(it, size) },

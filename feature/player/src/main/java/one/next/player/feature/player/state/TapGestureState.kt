@@ -14,12 +14,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaController
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import one.next.player.core.model.DoubleTapGesture
+import one.next.player.feature.player.service.setTransientPlaybackSpeed
 
 @UnstableApi
 @Composable
@@ -118,16 +120,24 @@ class TapGestureState(
     fun handleLongPress(offset: Offset) {
         if (!useLongPressGesture) return
         if (!player.isPlaying) return
+        if (isLongPressGestureInAction) return
 
         isLongPressGestureInAction = true
         currentSpeed = player.playbackParameters.speed
-        player.setPlaybackSpeed(longPressSpeed)
+        player.setPlaybackSpeedWithoutPersistence(longPressSpeed)
     }
 
     fun handleOnLongPressRelease() {
-        if (isLongPressGestureInAction) {
-            isLongPressGestureInAction = false
-            player.setPlaybackSpeed(currentSpeed)
+        if (!isLongPressGestureInAction) return
+
+        isLongPressGestureInAction = false
+        player.setPlaybackSpeedWithoutPersistence(currentSpeed)
+    }
+
+    private fun Player.setPlaybackSpeedWithoutPersistence(speed: Float) {
+        when (this) {
+            is MediaController -> setTransientPlaybackSpeed(speed)
+            else -> setPlaybackSpeed(speed)
         }
     }
 
