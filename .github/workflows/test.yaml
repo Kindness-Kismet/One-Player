@@ -94,12 +94,9 @@ jobs:
           validate-wrappers: true
           cache-cleanup: on-success
 
-      - name: 授予 Gradle Wrapper 执行权限
-        shell: bash
-        run: chmod +x ./gradlew
-
       - name: 执行 Ktlint 格式化
-        run: ./gradlew ktlintFormat ktlintCheck --warning-mode=fail
+        shell: bash
+        run: bash ./gradlew ktlintFormat ktlintCheck --warning-mode=fail
 
       - name: 检查格式化结果
         shell: bash

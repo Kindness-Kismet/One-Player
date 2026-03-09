@@ -202,10 +202,6 @@ jobs:
         with:
           validate-wrappers: true
 
-      - name: 授予 Gradle Wrapper 执行权限
-        shell: bash
-        run: chmod +x ./gradlew
-
       - name: 准备签名文件
         id: signing
         shell: bash
@@ -230,7 +226,7 @@ jobs:
       - name: 构建已签名正式版
         shell: bash
         run: |
-          ./gradlew clean assembleRelease -PabiFilter=${{ matrix.abi }} \
+          bash ./gradlew clean assembleRelease -PabiFilter=${{ matrix.abi }} \
             -Pandroid.injected.signing.store.file="${{ steps.signing.outputs.keystore_path }}" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
