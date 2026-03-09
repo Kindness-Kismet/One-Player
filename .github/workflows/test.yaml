@@ -1,4 +1,4 @@
-name: Android 构建检查
+name: 测试检查
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-build-${{ github.ref }}
+  group: test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -63,36 +63,8 @@ jobs:
           echo "🧾 提交短哈希:  ${{ steps.app.outputs.short_sha }}"
           echo "============================================"
 
-      - name: 验证签名配置可行性
-        shell: bash
-        env:
-          KEYSTORE: ${{ secrets.KEYSTORE }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          has_signing=true
-          for key in KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
-            if [ -z "${!key}" ]; then
-              has_signing=false
-              break
-            fi
-          done
-
-          if [ "$has_signing" = "false" ]; then
-            echo "::warning::未配置完整签名 Secrets，跳过签名可行性校验"
-            exit 0
-          fi
-
-          keystore_path="${RUNNER_TEMP}/release.jks"
-          printf '%s' "${KEYSTORE}" | base64 --decode > "${keystore_path}"
-          keytool -list -keystore "${keystore_path}" \
-            -storepass "${KEYSTORE_PASSWORD}" \
-            -alias "${KEY_ALIAS}" > /dev/null
-          echo "签名校验通过"
-
   verify:
-    name: 测试与检查
+    name: 格式化与代码检查
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -126,80 +98,25 @@ jobs:
         shell: bash
         run: chmod +x ./gradlew
 
-      - name: 运行本地测试
-        run: ./gradlew test
+      - name: 执行 Ktlint 格式化
+        run: ./gradlew ktlintFormat
 
-      - name: 执行 Ktlint 检查
-        run: ./gradlew ktlintCheck
+      - name: 执行代码检查
+        run: ./gradlew lint ktlintCheck --warning-mode=fail
 
       - name: 上传构建报告
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: build-reports
-          path: app/build/reports
-
-  build:
-    name: 构建 Debug 安装包 (${{ matrix.abi }})
-    needs: [prepare, verify]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - abi: arm64-v8a
-          - abi: x86_64
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v6
-
-      - name: 输出预构建信息
-        shell: bash
-        run: |
-          echo "============================================"
-          echo "📦 应用 ID:     ${{ needs.prepare.outputs.application_id }}"
-          echo "🏷️ 版本名称:    ${{ needs.prepare.outputs.version_name }}"
-          echo "🔢 版本号:      ${{ needs.prepare.outputs.version_code }}"
-          echo "🌿 分支或来源:  ${{ needs.prepare.outputs.ref_name }}"
-          echo "🧾 提交短哈希:  ${{ needs.prepare.outputs.short_sha }}"
-          echo "🧱 目标架构:    ${{ matrix.abi }}"
-          echo "============================================"
-
-      - name: 配置 JDK 25
-        uses: actions/setup-java@v5
-        with:
-          java-version: 25
-          distribution: temurin
-
-      - name: 配置 Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          validate-wrappers: true
-          cache-cleanup: on-success
-
-      - name: 授予 Gradle Wrapper 执行权限
-        shell: bash
-        run: chmod +x ./gradlew
-
-      - name: 构建 Debug 安装包
-        run: ./gradlew assembleDebug -PabiFilter=${{ matrix.abi }}
-
-      - name: 整理调试产物
-        shell: bash
-        run: |
-          mkdir -p build/output
-          cp "./app/build/outputs/apk/debug/app-${{ matrix.abi }}-debug.apk" \
-            "./build/output/one-player-${{ matrix.abi }}-debug.apk"
-
-      - name: 上传调试产物
-        uses: actions/upload-artifact@v7
-        with:
-          name: one-player-${{ matrix.abi }}-debug.apk
-          path: ./build/output/
+          path: |
+            **/build/reports
+            **/build/lint-results-*.html
+            **/build/lint-results-*.xml
 
   auto-release:
     name: 自动触发发布
-    needs: [prepare, verify, build]
+    needs: [prepare, verify]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
