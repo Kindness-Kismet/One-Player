@@ -83,7 +83,7 @@ fun SearchRoute(
     SearchScreen(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
-        onFolderClick = onFolderClick,
+        onFolderClick = { folder -> onFolderClick(folder.path) },
         onVideoClick = onPlayVideo,
         onEvent = viewModel::onEvent,
     )
@@ -94,12 +94,16 @@ fun SearchRoute(
 internal fun SearchScreen(
     uiState: SearchUiState,
     onNavigateUp: () -> Unit = {},
-    onFolderClick: (String) -> Unit = {},
+    onFolderClick: (Folder) -> Unit = {},
     onVideoClick: (Uri) -> Unit = {},
     onEvent: (SearchUiEvent) -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val cacheAndOpenFolder: (Folder) -> Unit = { folder ->
+        onEvent(SearchUiEvent.CacheFolderSnapshot(folder))
+        onFolderClick(folder)
+    }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -191,7 +195,7 @@ internal fun SearchScreen(
                         onHistoryItemClick = { onEvent(SearchUiEvent.OnHistoryItemClick(it)) },
                         onRemoveHistoryItem = { onEvent(SearchUiEvent.OnRemoveHistoryItem(it)) },
                         onClearHistory = { onEvent(SearchUiEvent.OnClearHistory) },
-                        onFolderClick = onFolderClick,
+                        onFolderClick = cacheAndOpenFolder,
                     )
                 } else {
                     SearchResultsContent(
@@ -199,7 +203,7 @@ internal fun SearchScreen(
                         preferences = uiState.preferences,
                         isSearching = uiState.isSearching,
                         contentPadding = updatedScaffoldPadding,
-                        onFolderClick = onFolderClick,
+                        onFolderClick = cacheAndOpenFolder,
                         onVideoClick = onVideoClick,
                         onVideoLoaded = { onEvent(SearchUiEvent.AddToSync(it)) },
                     )
@@ -218,7 +222,7 @@ private fun SuggestionsContent(
     onHistoryItemClick: (String) -> Unit,
     onRemoveHistoryItem: (String) -> Unit,
     onClearHistory: () -> Unit,
-    onFolderClick: (String) -> Unit,
+    onFolderClick: (Folder) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -278,7 +282,7 @@ private fun SuggestionsContent(
                     modifier = Modifier.padding(horizontal = 8.dp),
                     isFirstItem = index == 0,
                     isLastItem = index == popularFolders.lastIndex,
-                    onClick = { onFolderClick(folder.path) },
+                    onClick = { onFolderClick(folder) },
                 )
             }
         }
@@ -362,7 +366,7 @@ private fun SearchResultsContent(
     preferences: ApplicationPreferences,
     isSearching: Boolean,
     contentPadding: PaddingValues = PaddingValues(),
-    onFolderClick: (String) -> Unit,
+    onFolderClick: (Folder) -> Unit,
     onVideoClick: (Uri) -> Unit,
     onVideoLoaded: (Uri) -> Unit,
 ) {

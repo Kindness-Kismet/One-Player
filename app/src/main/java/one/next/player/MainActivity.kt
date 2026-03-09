@@ -2,6 +2,7 @@ package one.next.player
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -45,6 +46,11 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private const val AUTO_REFRESH_INTERVAL_MILLIS = 30_000L
+
+        // 进程级时间戳，Activity 重建后不会重置，进程死亡后归零触发全量刷新
+        @Volatile
+        private var lastAutoRefreshAt = 0L
     }
 
     @Inject
@@ -109,9 +115,25 @@ class MainActivity : AppCompatActivity() {
                         storagePermissionState.launchPermissionRequest()
                     }
 
-                    LaunchedEffect(key1 = storagePermissionState.isGranted) {
-                        if (storagePermissionState.isGranted) {
-                            synchronizer.startSync()
+                    LaunchedEffect(storagePermissionState.isGranted) {
+                        if (!storagePermissionState.isGranted) return@LaunchedEffect
+
+                        synchronizer.startSync()
+                        if (lastAutoRefreshAt != 0L) return@LaunchedEffect
+
+                        synchronizer.refresh()
+                        lastAutoRefreshAt = SystemClock.elapsedRealtime()
+                    }
+
+                    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
+                        if (!storagePermissionState.isGranted) return@LifecycleEventEffect
+
+                        val now = SystemClock.elapsedRealtime()
+                        if (now - lastAutoRefreshAt < AUTO_REFRESH_INTERVAL_MILLIS) return@LifecycleEventEffect
+
+                        lifecycleScope.launch {
+                            synchronizer.refresh()
+                            lastAutoRefreshAt = SystemClock.elapsedRealtime()
                         }
                     }
 

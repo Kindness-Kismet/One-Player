@@ -46,7 +46,7 @@ fun MediaView(
     contentPadding: PaddingValues = PaddingValues(),
     selectionManager: SelectionManager = rememberSelectionManager(),
     lazyGridState: LazyGridState = rememberLazyGridState(),
-    onFolderClick: (String) -> Unit,
+    onFolderClick: (Folder) -> Unit,
     onVideoClick: (Uri) -> Unit,
     onVideoLoaded: (Uri) -> Unit,
 ) {
@@ -111,7 +111,7 @@ fun MediaView(
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             selectionManager.toggleFolderSelection(folder)
                         } else {
-                            onFolderClick(folder.path)
+                            onFolderClick(folder)
                         }
                     },
                     onLongClick = {

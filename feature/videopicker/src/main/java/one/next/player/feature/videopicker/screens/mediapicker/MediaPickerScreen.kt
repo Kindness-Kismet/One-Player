@@ -388,7 +388,10 @@ internal fun MediaPickerScreen(
                                     MediaView(
                                         rootFolder = rootFolder,
                                         preferences = uiState.preferences,
-                                        onFolderClick = onFolderClick,
+                                        onFolderClick = {
+                                            onEvent(MediaPickerUiEvent.CacheFolderSnapshot(it))
+                                            onFolderClick(it.path)
+                                        },
                                         onVideoClick = { onPlayVideo(it) },
                                         selectionManager = selectionManager,
                                         lazyGridState = lazyGridState,
@@ -401,12 +404,6 @@ internal fun MediaPickerScreen(
                     }
                 }
             }
-        }
-    }
-
-    LaunchedEffect(permissionState.isGranted) {
-        if (permissionState.isGranted) {
-            onEvent(MediaPickerUiEvent.Refresh)
         }
     }
 

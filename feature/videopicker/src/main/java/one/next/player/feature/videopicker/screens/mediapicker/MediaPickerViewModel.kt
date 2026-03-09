@@ -32,26 +32,34 @@ class MediaPickerViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
     private val mediaInfoSynchronizer: MediaInfoSynchronizer,
     private val mediaSynchronizer: MediaSynchronizer,
+    private val snapshotCache: MediaPickerSnapshotCache,
 ) : ViewModel() {
 
     private val folderArgs = FolderArgs(savedStateHandle)
 
     val folderPath = folderArgs.folderId
 
+    private val initialPreferences = preferencesRepository.applicationPreferences.value
+    private val initialMediaDataState: DataState<Folder?> = snapshotCache.get(folderPath, initialPreferences)
+        ?.let { folder -> DataState.Success(folder) }
+        ?: DataState.Loading
+
     private val uiStateInternal = MutableStateFlow(
         MediaPickerUiState(
             folderName = folderPath?.let { File(folderPath).prettyName },
-            preferences = preferencesRepository.applicationPreferences.value,
+            mediaDataState = initialMediaDataState,
+            preferences = initialPreferences,
         ),
     )
     val uiState = uiStateInternal.asStateFlow()
 
     init {
         viewModelScope.launch {
-            getSortedMediaUseCase.invoke(folderPath).collect {
+            getSortedMediaUseCase.invoke(folderPath).collect { folder ->
+                snapshotCache.put(folderPath, folder, uiStateInternal.value.preferences)
                 uiStateInternal.update { currentState ->
                     currentState.copy(
-                        mediaDataState = DataState.Success(it),
+                        mediaDataState = DataState.Success(folder),
                     )
                 }
             }
@@ -78,6 +86,7 @@ class MediaPickerViewModel @Inject constructor(
             is MediaPickerUiEvent.RenameVideo -> renameVideo(event.uri, event.to)
             is MediaPickerUiEvent.AddToSync -> addToMediaInfoSynchronizer(event.uri)
             is MediaPickerUiEvent.UpdateMenu -> updateMenu(event.preferences)
+            is MediaPickerUiEvent.CacheFolderSnapshot -> cacheFolderSnapshot(event.folder)
         }
     }
 
@@ -135,6 +144,10 @@ class MediaPickerViewModel @Inject constructor(
             }
         }
     }
+
+    private fun cacheFolderSnapshot(folder: Folder) {
+        snapshotCache.put(folder.path, folder, uiStateInternal.value.preferences)
+    }
 }
 
 @Stable
@@ -154,4 +167,5 @@ sealed interface MediaPickerUiEvent {
     data class RenameVideo(val uri: Uri, val to: String) : MediaPickerUiEvent
     data class AddToSync(val uri: Uri) : MediaPickerUiEvent
     data class UpdateMenu(val preferences: ApplicationPreferences) : MediaPickerUiEvent
+    data class CacheFolderSnapshot(val folder: Folder) : MediaPickerUiEvent
 }

@@ -22,6 +22,8 @@ import one.next.player.core.domain.SearchResults
 import one.next.player.core.media.sync.MediaInfoSynchronizer
 import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.Folder
+import one.next.player.core.model.MediaViewMode
+import one.next.player.feature.videopicker.screens.mediapicker.MediaPickerSnapshotCache
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -30,6 +32,7 @@ class SearchViewModel @Inject constructor(
     private val searchHistoryRepository: SearchHistoryRepository,
     private val preferencesRepository: PreferencesRepository,
     private val mediaInfoSynchronizer: MediaInfoSynchronizer,
+    private val snapshotCache: MediaPickerSnapshotCache,
 ) : ViewModel() {
 
     private val uiStateInternal = MutableStateFlow(SearchUiState())
@@ -95,6 +98,7 @@ class SearchViewModel @Inject constructor(
             is SearchUiEvent.OnRemoveHistoryItem -> removeHistoryItem(event.query)
             is SearchUiEvent.OnClearHistory -> clearHistory()
             is SearchUiEvent.AddToSync -> addToMediaInfoSynchronizer(event.uri)
+            is SearchUiEvent.CacheFolderSnapshot -> cacheFolderSnapshot(event.folder)
         }
     }
 
@@ -132,6 +136,13 @@ class SearchViewModel @Inject constructor(
         mediaInfoSynchronizer.sync(uri)
     }
 
+    private fun cacheFolderSnapshot(folder: Folder) {
+        val preferences = uiStateInternal.value.preferences
+        if (preferences.mediaViewMode == MediaViewMode.FOLDER_TREE) return
+
+        snapshotCache.put(folder.path, folder, preferences)
+    }
+
     companion object {
         private const val SEARCH_DEBOUNCE_MS = 300L
     }
@@ -154,4 +165,5 @@ sealed interface SearchUiEvent {
     data class OnRemoveHistoryItem(val query: String) : SearchUiEvent
     data object OnClearHistory : SearchUiEvent
     data class AddToSync(val uri: Uri) : SearchUiEvent
+    data class CacheFolderSnapshot(val folder: Folder) : SearchUiEvent
 }
