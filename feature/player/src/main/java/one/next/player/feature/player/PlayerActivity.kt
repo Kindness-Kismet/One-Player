@@ -118,6 +118,7 @@ class PlayerActivity : AppCompatActivity() {
                                         MimeTypes.TEXT_SSA,
                                         MimeTypes.BASE_TYPE_APPLICATION + "/octet-stream",
                                         MimeTypes.BASE_TYPE_TEXT + "/*",
+                                        MimeTypes.BASE_TYPE_AUDIO + "/aac",
                                     ),
                                 ) ?: return@launch
                                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
