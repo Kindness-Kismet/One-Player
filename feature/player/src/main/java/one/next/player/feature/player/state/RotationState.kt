@@ -118,7 +118,7 @@ class RotationState(
         val width = metadata.videoWidth ?: 0
         val height = metadata.videoHeight ?: 0
         if (width == 0 || height == 0) {
-            Log.d(TAG, "getVideoBasedOrientation: metadata=${width}x${height} -> UNSPECIFIED")
+            Log.d(TAG, "getVideoBasedOrientation: metadata=${width}x$height -> UNSPECIFIED")
             return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
 
@@ -130,7 +130,7 @@ class RotationState(
             height >= width
         }
 
-        Log.d(TAG, "getVideoBasedOrientation: ${width}x${height}, rotation=$rotation, portrait=$visuallyPortrait")
+        Log.d(TAG, "getVideoBasedOrientation: ${width}x$height, rotation=$rotation, portrait=$visuallyPortrait")
         return if (visuallyPortrait) {
             ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         } else {

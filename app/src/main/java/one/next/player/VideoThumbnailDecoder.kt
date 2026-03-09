@@ -81,27 +81,33 @@ class VideoThumbnailDecoder(
                 when (strategy) {
                     is ThumbnailStrategy.FirstFrame -> {
                         retriever.getScaledFrameAtTime(
-                            0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE,
+                            0,
+                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                            MAX_THUMBNAIL_SIZE,
+                            MAX_THUMBNAIL_SIZE,
                         )
                     }
                     is ThumbnailStrategy.FrameAtPercentage -> {
                         retriever.getScaledFrameAtTime(
                             (videoDuration * strategy.percentage * 1000).toLong(),
                             MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE,
+                            MAX_THUMBNAIL_SIZE,
+                            MAX_THUMBNAIL_SIZE,
                         )
                     }
                     is ThumbnailStrategy.Hybrid -> {
                         val firstFrame = retriever.getScaledFrameAtTime(
-                            0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE,
+                            0,
+                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                            MAX_THUMBNAIL_SIZE,
+                            MAX_THUMBNAIL_SIZE,
                         )
                         if (firstFrame != null && isSolidColor(firstFrame)) {
                             retriever.getScaledFrameAtTime(
                                 (videoDuration * strategy.percentage * 1000).toLong(),
                                 MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                                MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE,
+                                MAX_THUMBNAIL_SIZE,
+                                MAX_THUMBNAIL_SIZE,
                             )
                         } else {
                             firstFrame
@@ -162,7 +168,9 @@ class VideoThumbnailDecoder(
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         return BitmapFactory.decodeByteArray(
-            bytes, 0, bytes.size,
+            bytes,
+            0,
+            bytes.size,
             BitmapFactory.Options().apply {
                 inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight)
             },
