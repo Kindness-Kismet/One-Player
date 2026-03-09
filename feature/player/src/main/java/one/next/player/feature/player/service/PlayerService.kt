@@ -815,7 +815,7 @@ class PlayerService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(playerPreferences.pauseOnHeadsetDisconnect)
             .buildWithAssSupport(
                 context = applicationContext,
-                renderType = AssRenderType.EFFECTS_CANVAS,
+                renderType = AssRenderType.CUES,
                 renderersFactory = renderersFactory,
             )
             .also {

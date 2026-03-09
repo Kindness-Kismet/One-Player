@@ -1,10 +1,10 @@
-- 修复正式版本点击“程序库”页面时因 aboutlibraries 元数据被资源压缩移除而闪退的问题
-- 改为显式加载 aboutlibraries 元数据资源，确保程序库列表在 release 构建中正常显示
+- 修复 ASS 字幕走特效渲染链时画面偏暗的问题
+- 改为统一走 cues 字幕输出并复用现有字幕样式，提升 ASS 字幕亮度与可读性
 
 <details>
 <summary>English Version</summary>
 
-- Fixed a crash when opening the Libraries page in release builds after the aboutlibraries metadata was removed by resource shrinking
-- Switched to explicitly loading the aboutlibraries metadata resource so the Libraries list renders correctly in release builds
+- Fixed ASS subtitles appearing too dark when rendered through the effects pipeline
+- Switched ASS subtitles to the cues output path so they reuse the existing subtitle styling and remain easier to read
 
 </details>
