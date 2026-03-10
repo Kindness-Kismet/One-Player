@@ -1,8 +1,8 @@
-- 修复播放 FLV 等无时长信息的视频时崩溃的问题
+- 优化批量删除视频的速度，减少不必要的重复扫描和数据库查询
 
 <details>
 <summary>English Version</summary>
 
-- Fix crash when playing FLV or other videos without duration metadata
+- Improve batch video deletion speed by reducing redundant media rescans and database queries
 
 </details>
