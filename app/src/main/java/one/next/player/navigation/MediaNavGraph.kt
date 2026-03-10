@@ -25,6 +25,9 @@ fun NavGraphBuilder.mediaNavGraph(
     navigation<MediaRootRoute>(startDestination = MediaPickerRoute()) {
         mediaPickerScreen(
             onNavigateUp = navController::navigateUp,
+            onNavigateHome = {
+                navController.popBackStack(MediaPickerRoute(), inclusive = false)
+            },
             onPlayVideo = { uri ->
                 val intent = Intent(context, PlayerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW

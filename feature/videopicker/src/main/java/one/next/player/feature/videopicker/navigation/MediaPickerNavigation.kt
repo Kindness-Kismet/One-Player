@@ -31,6 +31,7 @@ fun NavController.navigateToMediaPickerScreen(
 
 fun NavGraphBuilder.mediaPickerScreen(
     onNavigateUp: () -> Unit,
+    onNavigateHome: () -> Unit,
     onPlayVideo: (uri: Uri) -> Unit,
     onPlayVideos: (uris: List<Uri>) -> Unit,
     onFolderClick: (folderPath: String) -> Unit,
@@ -42,6 +43,7 @@ fun NavGraphBuilder.mediaPickerScreen(
             onPlayVideo = onPlayVideo,
             onPlayVideos = onPlayVideos,
             onNavigateUp = onNavigateUp,
+            onNavigateHome = onNavigateHome,
             onFolderClick = onFolderClick,
             onSettingsClick = onSettingsClick,
             onSearchClick = onSearchClick,

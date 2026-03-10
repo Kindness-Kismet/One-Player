@@ -1,5 +1,7 @@
 package one.next.player.core.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,12 +37,13 @@ fun NextTopAppBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NextTopAppBar(
     modifier: Modifier = Modifier,
     title: String,
     fontWeight: FontWeight? = null,
+    onTitleLongClick: (() -> Unit)? = null,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
@@ -54,6 +57,14 @@ fun NextTopAppBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = fontWeight,
+                modifier = if (onTitleLongClick != null) {
+                    Modifier.combinedClickable(
+                        onLongClick = onTitleLongClick,
+                        onClick = {},
+                    )
+                } else {
+                    Modifier
+                },
             )
         },
         navigationIcon = navigationIcon,

@@ -106,6 +106,7 @@ fun MediaPickerRoute(
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNavigateUp: () -> Unit,
+    onNavigateHome: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -114,6 +115,7 @@ fun MediaPickerRoute(
         onPlayVideo = onPlayVideo,
         onPlayVideos = onPlayVideos,
         onNavigateUp = onNavigateUp,
+        onNavigateHome = onNavigateHome,
         onFolderClick = onFolderClick,
         onSettingsClick = onSettingsClick,
         onSearchClick = onSearchClick,
@@ -126,6 +128,7 @@ fun MediaPickerRoute(
 internal fun MediaPickerScreen(
     uiState: MediaPickerUiState,
     onNavigateUp: () -> Unit = {},
+    onNavigateHome: () -> Unit = {},
     onPlayVideo: (Uri) -> Unit = {},
     onPlayVideos: (List<Uri>) -> Unit = {},
     onFolderClick: (String) -> Unit = {},
@@ -157,6 +160,7 @@ internal fun MediaPickerScreen(
             NextTopAppBar(
                 title = (uiState.folderName ?: stringResource(R.string.app_name)).takeIf { !selectionManager.isInSelectionMode } ?: "",
                 fontWeight = FontWeight.Bold.takeIf { uiState.folderName == null },
+                onTitleLongClick = onNavigateHome.takeIf { uiState.folderName != null && !selectionManager.isInSelectionMode },
                 navigationIcon = {
                     if (selectionManager.isInSelectionMode) {
                         Row(
