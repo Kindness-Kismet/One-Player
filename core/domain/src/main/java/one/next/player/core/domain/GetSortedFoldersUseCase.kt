@@ -22,8 +22,19 @@ class GetSortedFoldersUseCase @Inject constructor(
         mediaRepository.getFoldersFlow(),
         preferencesRepository.applicationPreferences,
     ) { folders, preferences ->
-        val visibleDirectories = folders.filter {
-            it.mediaList.isNotEmpty() && !preferences.isPathExcluded(it.path)
+        val visibleDirectories = folders.mapNotNull { folder ->
+            if (preferences.isPathExcluded(folder.path)) {
+                return@mapNotNull null
+            }
+
+            val visibleMedia = folder.mediaList.filterNot { video ->
+                preferences.recycleBinEnabled && video.isInRecycleBin
+            }
+            if (visibleMedia.isEmpty()) {
+                return@mapNotNull null
+            }
+
+            folder.copy(mediaList = visibleMedia)
         }
 
         val sort = Sort(by = preferences.sortBy, order = preferences.sortOrder)
