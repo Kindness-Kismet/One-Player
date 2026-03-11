@@ -44,6 +44,29 @@ class GetSortedFoldersUseCaseTest {
         assertEquals(listOf("Folder 2", "Folder 10"), folders.map(Folder::name))
     }
 
+    @Test
+    fun getSortedFolders_hidesFoldersContainingOnlyRecycleBinVideosWhenFeatureEnabled() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val useCase = GetSortedFoldersUseCase(mediaRepository, preferencesRepository, dispatcher)
+        val visibleVideo = testVideo("visible.mp4", "/library/visible/visible.mp4")
+        val recycledVideo = testVideo("recycled.mp4", "/library/recycled/recycled.mp4")
+
+        preferencesRepository.updateApplicationPreferences {
+            it.copy(recycleBinEnabled = true)
+        }
+        mediaRepository.directories.addAll(
+            listOf(
+                testFolder(name = "Visible", path = "/library/visible", videos = listOf(visibleVideo)),
+                testFolder(name = "Recycled", path = "/library/recycled", videos = listOf(recycledVideo)),
+            ),
+        )
+        mediaRepository.moveVideosToRecycleBin(listOf(recycledVideo.uriString))
+
+        val folders = useCase().first()
+
+        assertEquals(listOf("Visible"), folders.map(Folder::name))
+    }
+
     private fun testFolder(name: String, path: String, videos: List<Video>): Folder = Folder(
         name = name,
         path = path,
