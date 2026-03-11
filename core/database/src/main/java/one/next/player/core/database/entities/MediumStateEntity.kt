@@ -35,4 +35,10 @@ data class MediumStateEntity(
     val subtitleSpeed: Float = 1f,
     @ColumnInfo(name = "is_in_recycle_bin")
     val isInRecycleBin: Boolean = false,
+    @ColumnInfo(name = "original_path")
+    val originalPath: String? = null,
+    @ColumnInfo(name = "original_parent_path")
+    val originalParentPath: String? = null,
+    @ColumnInfo(name = "original_file_name")
+    val originalFileName: String? = null,
 )
