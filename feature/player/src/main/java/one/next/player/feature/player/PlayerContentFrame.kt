@@ -98,6 +98,10 @@ fun PlayerContentFrame(
     )
 
     SubtitleView(
+        modifier = Modifier.resizeWithContentScale(
+            contentScale = videoZoomAndContentScaleState.videoContentScale.toContentScale(),
+            sourceSizeDp = sourceSizeDp,
+        ),
         player = player,
         isInPictureInPictureMode = pictureInPictureState.isInPictureInPictureMode,
         configuration = subtitleConfiguration,
