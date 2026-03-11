@@ -93,6 +93,7 @@ import one.next.player.feature.videopicker.composables.QuickSettingsDialog
 import one.next.player.feature.videopicker.composables.RenameDialog
 import one.next.player.feature.videopicker.composables.TextIconToggleButton
 import one.next.player.feature.videopicker.composables.VideoInfoDialog
+import one.next.player.feature.videopicker.navigation.MediaPickerScreenMode
 import one.next.player.feature.videopicker.state.SelectedFolder
 import one.next.player.feature.videopicker.state.SelectedVideo
 import one.next.player.feature.videopicker.state.rememberSelectionManager
@@ -102,7 +103,8 @@ fun MediaPickerRoute(
     viewModel: MediaPickerViewModel = hiltViewModel(),
     onPlayVideo: (uri: Uri) -> Unit,
     onPlayVideos: (uris: List<Uri>) -> Unit,
-    onFolderClick: (folderPath: String) -> Unit,
+    onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
+    onRecycleBinClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNavigateUp: () -> Unit,
@@ -117,6 +119,7 @@ fun MediaPickerRoute(
         onNavigateUp = onNavigateUp,
         onNavigateHome = onNavigateHome,
         onFolderClick = onFolderClick,
+        onRecycleBinClick = onRecycleBinClick,
         onSettingsClick = onSettingsClick,
         onSearchClick = onSearchClick,
         onEvent = viewModel::onEvent,
@@ -131,7 +134,8 @@ internal fun MediaPickerScreen(
     onNavigateHome: () -> Unit = {},
     onPlayVideo: (Uri) -> Unit = {},
     onPlayVideos: (List<Uri>) -> Unit = {},
-    onFolderClick: (String) -> Unit = {},
+    onFolderClick: (String, MediaPickerScreenMode) -> Unit = { _, _ -> },
+    onRecycleBinClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onEvent: (MediaPickerUiEvent) -> Unit = {},
@@ -152,15 +156,43 @@ internal fun MediaPickerScreen(
     var showInfoActionFor: Video? by rememberSaveable { mutableStateOf(null) }
     var showDeleteVideosConfirmation by rememberSaveable { mutableStateOf(false) }
 
+    val isLibraryMode = uiState.screenMode == MediaPickerScreenMode.LIBRARY
+    val isRecycleBinMode = uiState.screenMode == MediaPickerScreenMode.RECYCLE_BIN
+    val showRecycleBinIcon = isLibraryMode &&
+        uiState.folderName == null &&
+        uiState.preferences.recycleBinEnabled &&
+        uiState.preferences.showRecycleBinIcon
+    val showRecycleBinLongPressEntry = isLibraryMode &&
+        uiState.folderName == null &&
+        uiState.preferences.recycleBinEnabled &&
+        !uiState.preferences.showRecycleBinIcon
+    val deleteAction = when {
+        isRecycleBinMode -> MediaPickerDeleteAction.PermanentlyDelete
+        uiState.preferences.recycleBinEnabled -> MediaPickerDeleteAction.MoveToRecycleBin
+        else -> MediaPickerDeleteAction.PermanentlyDelete
+    }
     val selectedItemsSize = selectionManager.selectedFolders.size + selectionManager.selectedVideos.size
     val totalItemsSize = (uiState.mediaDataState as? DataState.Success)?.value?.run { folderList.size + mediaList.size } ?: 0
 
     Scaffold(
         topBar = {
             NextTopAppBar(
-                title = (uiState.folderName ?: stringResource(R.string.app_name)).takeIf { !selectionManager.isInSelectionMode } ?: "",
+                title = (
+                    uiState.folderName ?: stringResource(
+                        if (isRecycleBinMode) {
+                            R.string.recycle_bin
+                        } else {
+                            R.string.app_name
+                        },
+                    )
+                    ).takeIf { !selectionManager.isInSelectionMode } ?: "",
                 fontWeight = FontWeight.Bold.takeIf { uiState.folderName == null },
-                onTitleLongClick = onNavigateHome.takeIf { uiState.folderName != null && !selectionManager.isInSelectionMode },
+                onTitleLongClick = when {
+                    selectionManager.isInSelectionMode -> null
+                    uiState.folderName != null -> onNavigateHome
+                    showRecycleBinLongPressEntry -> onRecycleBinClick
+                    else -> null
+                },
                 navigationIcon = {
                     if (selectionManager.isInSelectionMode) {
                         Row(
@@ -182,7 +214,7 @@ internal fun MediaPickerScreen(
                                 style = MaterialTheme.typography.labelLarge,
                             )
                         }
-                    } else if (uiState.folderName != null) {
+                    } else if (uiState.folderName != null || isRecycleBinMode) {
                         FilledTonalIconButton(onClick = onNavigateUp) {
                             Icon(
                                 imageVector = NextIcons.ArrowBack,
@@ -219,23 +251,33 @@ internal fun MediaPickerScreen(
                             )
                         }
                     } else {
-                        IconButton(onClick = onSearchClick) {
-                            Icon(
-                                imageVector = NextIcons.Search,
-                                contentDescription = stringResource(id = R.string.search),
-                            )
-                        }
-                        IconButton(onClick = { showQuickSettingsDialog = true }) {
-                            Icon(
-                                imageVector = NextIcons.DashBoard,
-                                contentDescription = stringResource(id = R.string.menu),
-                            )
-                        }
-                        IconButton(onClick = onSettingsClick) {
-                            Icon(
-                                imageVector = NextIcons.Settings,
-                                contentDescription = stringResource(id = R.string.settings),
-                            )
+                        if (isLibraryMode) {
+                            IconButton(onClick = onSearchClick) {
+                                Icon(
+                                    imageVector = NextIcons.Search,
+                                    contentDescription = stringResource(id = R.string.search),
+                                )
+                            }
+                            if (showRecycleBinIcon) {
+                                IconButton(onClick = onRecycleBinClick) {
+                                    Icon(
+                                        imageVector = NextIcons.DeleteSweep,
+                                        contentDescription = stringResource(id = R.string.recycle_bin),
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { showQuickSettingsDialog = true }) {
+                                Icon(
+                                    imageVector = NextIcons.DashBoard,
+                                    contentDescription = stringResource(id = R.string.menu),
+                                )
+                            }
+                            IconButton(onClick = onSettingsClick) {
+                                Icon(
+                                    imageVector = NextIcons.Settings,
+                                    contentDescription = stringResource(id = R.string.settings),
+                                )
+                            }
                         }
                     }
                 },
@@ -245,9 +287,11 @@ internal fun MediaPickerScreen(
             SelectionActionsSheet(
                 show = selectionManager.isInSelectionMode &&
                     (selectionManager.allSelectedVideos.isNotEmpty() || selectionManager.selectedFolders.isNotEmpty()),
-                showRenameAction = selectionManager.isSingleVideoSelected,
+                deleteAction = deleteAction,
+                showRestoreAction = isRecycleBinMode,
+                showRenameAction = selectionManager.isSingleVideoSelected && isLibraryMode,
                 showInfoAction = selectionManager.isSingleVideoSelected,
-                showExcludeAction = selectionManager.selectedFolders.isNotEmpty(),
+                showExcludeAction = selectionManager.selectedFolders.isNotEmpty() && isLibraryMode,
                 onPlayAction = {
                     val videoUris = selectionManager.allSelectedVideos.map { it.uriString.toUri() }
                     onPlayVideos(videoUris)
@@ -269,9 +313,16 @@ internal fun MediaPickerScreen(
                 onShareAction = {
                     onEvent(MediaPickerUiEvent.ShareVideos(selectionManager.allSelectedVideos.map { it.uriString }))
                 },
+                onRestoreAction = {
+                    onEvent(MediaPickerUiEvent.RestoreVideos(selectionManager.allSelectedVideos.map { it.uriString }))
+                    selectionManager.clearSelection()
+                },
                 onDeleteAction = {
-                    if (MediaService.willSystemAsksForDeleteConfirmation()) {
-                        onEvent(MediaPickerUiEvent.DeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
+                    if (
+                        deleteAction == MediaPickerDeleteAction.PermanentlyDelete &&
+                        MediaService.willSystemAsksForDeleteConfirmation()
+                    ) {
+                        onEvent(MediaPickerUiEvent.PermanentlyDeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
                         selectionManager.clearSelection()
                     } else {
                         showDeleteVideosConfirmation = true
@@ -285,7 +336,7 @@ internal fun MediaPickerScreen(
             )
         },
         floatingActionButton = {
-            if (selectionManager.isInSelectionMode) return@Scaffold
+            if (selectionManager.isInSelectionMode || isRecycleBinMode) return@Scaffold
 
             FloatingActionButtonMenu(
                 expanded = isFabExpanded,
@@ -394,7 +445,7 @@ internal fun MediaPickerScreen(
                                         preferences = uiState.preferences,
                                         onFolderClick = {
                                             onEvent(MediaPickerUiEvent.CacheFolderSnapshot(it))
-                                            onFolderClick(it.path)
+                                            onFolderClick(it.path, uiState.screenMode)
                                         },
                                         onVideoClick = { onPlayVideo(it) },
                                         selectionManager = selectionManager,
@@ -469,8 +520,17 @@ internal fun MediaPickerScreen(
         DeleteConfirmationDialog(
             selectedVideos = selectionManager.selectedVideos,
             selectedFolders = selectionManager.selectedFolders,
+            deleteAction = deleteAction,
             onConfirm = {
-                onEvent(MediaPickerUiEvent.DeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
+                when (deleteAction) {
+                    MediaPickerDeleteAction.MoveToRecycleBin -> {
+                        onEvent(MediaPickerUiEvent.MoveVideosToRecycleBin(selectionManager.allSelectedVideos.map { it.uriString }))
+                    }
+
+                    MediaPickerDeleteAction.PermanentlyDelete -> {
+                        onEvent(MediaPickerUiEvent.PermanentlyDeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
+                    }
+                }
                 selectionManager.clearSelection()
                 showDeleteVideosConfirmation = false
             },
@@ -484,6 +544,7 @@ private fun DeleteConfirmationDialog(
     modifier: Modifier = Modifier,
     selectedVideos: Set<SelectedVideo>,
     selectedFolders: Set<SelectedFolder>,
+    deleteAction: MediaPickerDeleteAction,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -491,18 +552,22 @@ private fun DeleteConfirmationDialog(
         onDismissRequest = onCancel,
         title = {
             Text(
-                text = when {
-                    selectedVideos.isEmpty() -> when (selectedFolders.size) {
-                        1 -> stringResource(R.string.delete_one_folder)
-                        else -> stringResource(R.string.delete_folders, selectedFolders.size)
-                    }
+                text = if (deleteAction == MediaPickerDeleteAction.MoveToRecycleBin) {
+                    stringResource(R.string.move_to_recycle_bin)
+                } else {
+                    when {
+                        selectedVideos.isEmpty() -> when (selectedFolders.size) {
+                            1 -> stringResource(R.string.delete_one_folder)
+                            else -> stringResource(R.string.delete_folders, selectedFolders.size)
+                        }
 
-                    selectedFolders.isEmpty() -> when (selectedVideos.size) {
-                        1 -> stringResource(R.string.delete_one_video)
-                        else -> stringResource(R.string.delete_videos, selectedVideos.size)
-                    }
+                        selectedFolders.isEmpty() -> when (selectedVideos.size) {
+                            1 -> stringResource(R.string.delete_one_video)
+                            else -> stringResource(R.string.delete_videos, selectedVideos.size)
+                        }
 
-                    else -> stringResource(R.string.delete_items, selectedFolders.size + selectedVideos.size)
+                        else -> stringResource(R.string.delete_items, selectedFolders.size + selectedVideos.size)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -512,14 +577,24 @@ private fun DeleteConfirmationDialog(
                 onClick = onConfirm,
                 modifier = modifier,
             ) {
-                Text(text = stringResource(R.string.delete))
+                Text(
+                    text = stringResource(
+                        if (deleteAction == MediaPickerDeleteAction.MoveToRecycleBin) {
+                            R.string.move_to_recycle_bin
+                        } else {
+                            R.string.delete_permanently
+                        },
+                    ),
+                )
             }
         },
         dismissButton = { CancelButton(onClick = onCancel) },
         modifier = modifier,
         content = {
             Text(
-                text = if ((selectedFolders.size + selectedVideos.size) == 1) {
+                text = if (deleteAction == MediaPickerDeleteAction.MoveToRecycleBin) {
+                    stringResource(R.string.move_to_recycle_bin_info)
+                } else if ((selectedFolders.size + selectedVideos.size) == 1) {
                     stringResource(R.string.delete_item_info)
                 } else {
                     stringResource(R.string.delete_items_info)
@@ -530,13 +605,21 @@ private fun DeleteConfirmationDialog(
     )
 }
 
+private enum class MediaPickerDeleteAction {
+    MoveToRecycleBin,
+    PermanentlyDelete,
+}
+
 @Composable
 private fun SelectionActionsSheet(
     show: Boolean,
+    deleteAction: MediaPickerDeleteAction,
+    showRestoreAction: Boolean,
     showRenameAction: Boolean,
     showInfoAction: Boolean,
     showExcludeAction: Boolean,
     onPlayAction: () -> Unit,
+    onRestoreAction: () -> Unit,
     onRenameAction: () -> Unit,
     onInfoAction: () -> Unit,
     onShareAction: () -> Unit,
@@ -561,6 +644,13 @@ private fun SelectionActionsSheet(
                 text = stringResource(id = R.string.play),
                 onClick = onPlayAction,
             )
+            if (showRestoreAction) {
+                SelectionActionItem(
+                    imageVector = NextIcons.ArrowUpward,
+                    text = stringResource(id = R.string.restore),
+                    onClick = onRestoreAction,
+                )
+            }
             if (showRenameAction) {
                 SelectionActionItem(
                     imageVector = NextIcons.Edit,
@@ -589,7 +679,18 @@ private fun SelectionActionsSheet(
             }
             SelectionActionItem(
                 imageVector = NextIcons.Delete,
-                text = stringResource(id = R.string.delete),
+                text = stringResource(
+                    id = when (deleteAction) {
+                        MediaPickerDeleteAction.MoveToRecycleBin -> R.string.move_to_recycle_bin
+                        MediaPickerDeleteAction.PermanentlyDelete -> {
+                            if (showRestoreAction) {
+                                R.string.delete_permanently
+                            } else {
+                                R.string.delete
+                            }
+                        }
+                    },
+                ),
                 onClick = onDeleteAction,
             )
         }

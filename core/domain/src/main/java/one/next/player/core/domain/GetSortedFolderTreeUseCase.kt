@@ -27,8 +27,12 @@ class GetSortedFolderTreeUseCase @Inject constructor(
         } ?: Folder.rootFolder
 
         val sort = Sort(by = preferences.sortBy, order = preferences.sortOrder)
+        val visibleMedia = currentFolder.mediaList.filterNot { video ->
+            preferences.recycleBinEnabled && video.isInRecycleBin
+        }
 
         currentFolder.copy(
+            mediaList = visibleMedia,
             folderList = folders.getFoldersFor(path = currentFolder.path, preferences = preferences),
         ).let { folder ->
             if (folderPath == null) folder.getInitialFolderWithContent() else folder
@@ -48,15 +52,25 @@ class GetSortedFolderTreeUseCase @Inject constructor(
     private fun List<Folder>.getFoldersFor(
         path: String,
         preferences: ApplicationPreferences,
-    ): List<Folder> = filter {
-        it.parentPath == path && !preferences.isPathExcluded(it.path)
-    }.map { directory ->
+    ): List<Folder> = mapNotNull { directory ->
+        if (directory.parentPath != path || preferences.isPathExcluded(directory.path)) {
+            return@mapNotNull null
+        }
+
+        val childFolders = getFoldersFor(path = directory.path, preferences = preferences)
+        val visibleMedia = directory.mediaList.filterNot { video ->
+            preferences.recycleBinEnabled && video.isInRecycleBin
+        }
+        if (visibleMedia.isEmpty() && childFolders.isEmpty()) {
+            return@mapNotNull null
+        }
+
         Folder(
             name = directory.name,
             path = directory.path,
             dateModified = directory.dateModified,
-            mediaList = directory.mediaList,
-            folderList = getFoldersFor(path = directory.path, preferences = preferences),
+            mediaList = visibleMedia,
+            folderList = childFolders,
         )
     }
 }

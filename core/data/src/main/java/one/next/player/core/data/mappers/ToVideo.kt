@@ -17,6 +17,7 @@ fun MediumWithInfo.toVideo() = Video(
     width = mediumEntity.width,
     height = mediumEntity.height,
     size = mediumEntity.size,
+    isInRecycleBin = mediumStateEntity?.isInRecycleBin == true,
     dateModified = mediumEntity.modified,
     format = mediumEntity.format,
     playbackPosition = mediumStateEntity?.playbackPosition ?: 0L,

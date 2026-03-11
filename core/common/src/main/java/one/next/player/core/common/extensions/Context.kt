@@ -188,6 +188,30 @@ fun Context.getMediaContentUri(uri: Uri): Uri? {
     return null
 }
 
+fun Context.getMediaFileContentUri(path: String): Uri? {
+    val filesUri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+    val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+
+    return try {
+        contentResolver.query(
+            filesUri,
+            projection,
+            "${MediaStore.Files.FileColumns.DATA} = ?",
+            arrayOf(path),
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                ContentUris.withAppendedId(filesUri, cursor.getLong(index))
+            } else {
+                null
+            }
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
 suspend fun Context.scanPaths(paths: List<String>): Boolean = suspendCoroutine { continuation ->
     try {
         MediaScannerConnection.scanFile(

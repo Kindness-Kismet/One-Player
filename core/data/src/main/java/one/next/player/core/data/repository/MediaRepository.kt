@@ -9,6 +9,7 @@ import one.next.player.core.model.Video
 interface MediaRepository {
     fun getVideosFlow(): Flow<List<Video>>
     fun getVideosFlowFromFolderPath(folderPath: String): Flow<List<Video>>
+    fun getRecycleBinVideosFlow(): Flow<List<Video>>
     fun getFoldersFlow(): Flow<List<Folder>>
 
     suspend fun getVideoByUri(uri: String): Video?
@@ -24,4 +25,6 @@ interface MediaRepository {
     suspend fun updateExternalSubs(uri: String, externalSubs: List<Uri>)
     suspend fun updateSubtitleDelay(uri: String, delay: Long)
     suspend fun updateSubtitleSpeed(uri: String, speed: Float)
+    suspend fun moveVideosToRecycleBin(uris: List<String>)
+    suspend fun restoreVideosFromRecycleBin(uris: List<String>)
 }

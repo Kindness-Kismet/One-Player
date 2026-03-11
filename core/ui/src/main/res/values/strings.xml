@@ -194,6 +194,10 @@
     <string name="rename_to">Rename to</string>
     <string name="mark_last_played_media">Mark last played media</string>
     <string name="mark_last_played_media_desc">Mark last played media in home and in each folder</string>
+    <string name="recycle_bin">Recycle bin</string>
+    <string name="recycle_bin_desc">Keep deleted items available until you remove them permanently</string>
+    <string name="show_recycle_bin_icon">Show recycle bin icon</string>
+    <string name="show_recycle_bin_icon_desc">Show a shortcut in the home top bar when recycle bin is enabled</string>
     <string name="open_local_video">Open local video</string>
     <string name="open_network_stream">Open network stream</string>
     <string name="exit">Exit</string>
@@ -316,6 +320,10 @@
     <string name="backup_settings_failed">Failed to back up settings</string>
     <string name="restore_settings_success">Settings restored</string>
     <string name="restore_settings_failed">Failed to restore settings</string>
+    <string name="move_to_recycle_bin">Move to recycle bin</string>
+    <string name="move_to_recycle_bin_info">The selected items will be moved to recycle bin</string>
+    <string name="restore">Restore</string>
+    <string name="delete_permanently">Delete permanently</string>
     <string name="settings_backup_file_name">nextplayer-settings.json</string>
     <string name="exclude">Exclude</string>
     <string name="update_check">Update</string>

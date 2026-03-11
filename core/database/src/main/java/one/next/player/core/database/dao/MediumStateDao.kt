@@ -21,6 +21,9 @@ interface MediumStateDao {
     @Query("SELECT * FROM media_state WHERE uri = :uri")
     fun getAsFlow(uri: String): Flow<MediumStateEntity?>
 
+    @Query("SELECT * FROM media_state WHERE uri in (:uris)")
+    suspend fun getAll(uris: List<String>): List<MediumStateEntity>
+
     @Query("SELECT * FROM media_state")
     fun getAll(): Flow<List<MediumStateEntity>>
 

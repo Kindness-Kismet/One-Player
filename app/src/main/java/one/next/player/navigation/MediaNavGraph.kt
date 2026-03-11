@@ -9,8 +9,10 @@ import kotlinx.serialization.Serializable
 import one.next.player.feature.player.PlayerActivity
 import one.next.player.feature.player.utils.PlayerApi
 import one.next.player.feature.videopicker.navigation.MediaPickerRoute
+import one.next.player.feature.videopicker.navigation.MediaPickerScreenMode
 import one.next.player.feature.videopicker.navigation.mediaPickerScreen
 import one.next.player.feature.videopicker.navigation.navigateToMediaPickerScreen
+import one.next.player.feature.videopicker.navigation.navigateToRecycleBinScreen
 import one.next.player.feature.videopicker.navigation.navigateToSearch
 import one.next.player.feature.videopicker.navigation.searchScreen
 import one.next.player.settings.navigation.navigateToSettings
@@ -43,7 +45,13 @@ fun NavGraphBuilder.mediaNavGraph(
                 }
                 context.startActivity(intent)
             },
-            onFolderClick = navController::navigateToMediaPickerScreen,
+            onFolderClick = { folderPath, screenMode ->
+                navController.navigateToMediaPickerScreen(
+                    folderId = folderPath,
+                    screenMode = screenMode,
+                )
+            },
+            onRecycleBinClick = navController::navigateToRecycleBinScreen,
             onSettingsClick = navController::navigateToSettings,
             onSearchClick = navController::navigateToSearch,
         )
@@ -57,7 +65,12 @@ fun NavGraphBuilder.mediaNavGraph(
                 }
                 context.startActivity(intent)
             },
-            onFolderClick = navController::navigateToMediaPickerScreen,
+            onFolderClick = { folderPath ->
+                navController.navigateToMediaPickerScreen(
+                    folderId = folderPath,
+                    screenMode = MediaPickerScreenMode.LIBRARY,
+                )
+            },
         )
     }
 }

@@ -34,6 +34,8 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
         when (event) {
             is MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles -> setIgnoreNoMediaFiles(event.enabled)
             MediaLibraryPreferencesUiEvent.ToggleMarkLastPlayedMedia -> toggleMarkLastPlayedMedia()
+            MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled -> toggleRecycleBinEnabled()
+            MediaLibraryPreferencesUiEvent.ToggleShowRecycleBinIcon -> toggleShowRecycleBinIcon()
         }
     }
 
@@ -56,6 +58,22 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
             }
         }
     }
+
+    private fun toggleRecycleBinEnabled() {
+        viewModelScope.launch {
+            preferencesRepository.updateApplicationPreferences {
+                it.copy(recycleBinEnabled = !it.recycleBinEnabled)
+            }
+        }
+    }
+
+    private fun toggleShowRecycleBinIcon() {
+        viewModelScope.launch {
+            preferencesRepository.updateApplicationPreferences {
+                it.copy(showRecycleBinIcon = !it.showRecycleBinIcon)
+            }
+        }
+    }
 }
 
 data class MediaLibraryPreferencesUiState(
@@ -65,4 +83,6 @@ data class MediaLibraryPreferencesUiState(
 sealed interface MediaLibraryPreferencesUiEvent {
     data class SetIgnoreNoMediaFiles(val enabled: Boolean) : MediaLibraryPreferencesUiEvent
     data object ToggleMarkLastPlayedMedia : MediaLibraryPreferencesUiEvent
+    data object ToggleRecycleBinEnabled : MediaLibraryPreferencesUiEvent
+    data object ToggleShowRecycleBinIcon : MediaLibraryPreferencesUiEvent
 }

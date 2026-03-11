@@ -157,6 +157,64 @@ class GetSortedVideosUseCaseTest {
 
         assertEquals(listOf("/storage/emulated/0/Movies/Public/Visible.mp4"), sortedVideos.map(Video::path))
     }
+
+    @Test
+    fun testGetSortedVideosUseCase_hidesRecycleBinVideosFromLibraryList() = runTest {
+        preferencesRepository.updateApplicationPreferences {
+            it.copy(recycleBinEnabled = true)
+        }
+        mediaRepository.videos.addAll(testVideoItems)
+        mediaRepository.moveVideosToRecycleBin(listOf(testVideoItems[0].uriString, testVideoItems[1].uriString))
+
+        val sortedVideos = getSortedVideosUseCase().first()
+
+        assertEquals(testVideoItems.drop(2).map(Video::uriString), sortedVideos.map(Video::uriString))
+    }
+
+    @Test
+    fun testGetSortedVideosUseCase_showsRecycleBinVideosWhenFeatureDisabled() = runTest {
+        preferencesRepository.updateApplicationPreferences {
+            it.copy(recycleBinEnabled = false)
+        }
+        mediaRepository.videos.addAll(testVideoItems)
+        mediaRepository.moveVideosToRecycleBin(listOf(testVideoItems[0].uriString, testVideoItems[1].uriString))
+
+        val sortedVideos = getSortedVideosUseCase().first()
+
+        assertEquals(testVideoItems.map(Video::uriString), sortedVideos.map(Video::uriString))
+    }
+
+    @Test
+    fun testGetSortedVideosUseCase_returnsRecycleBinVideosAndSupportsRestore() = runTest {
+        mediaRepository.videos.addAll(testVideoItems)
+        val recycleBinUris = listOf(testVideoItems[0].uriString, testVideoItems[1].uriString)
+        mediaRepository.moveVideosToRecycleBin(recycleBinUris)
+
+        val recycleBinVideos = getSortedVideosUseCase(recycleBinOnly = true).first()
+
+        assertEquals(recycleBinUris, recycleBinVideos.map(Video::uriString))
+
+        mediaRepository.restoreVideosFromRecycleBin(recycleBinUris)
+
+        val restoredVideos = getSortedVideosUseCase().first()
+
+        assertEquals(testVideoItems.map(Video::uriString), restoredVideos.map(Video::uriString))
+    }
+
+    @Test
+    fun testGetSortedVideosUseCase_recycleBinUsesSameUrisAfterMoveSemantics() = runTest {
+        preferencesRepository.updateApplicationPreferences {
+            it.copy(recycleBinEnabled = true)
+        }
+        mediaRepository.videos.addAll(testVideoItems)
+
+        val movedUri = testVideoItems.first().uriString
+        mediaRepository.moveVideosToRecycleBin(listOf(movedUri))
+
+        val recycleBinVideos = getSortedVideosUseCase(recycleBinOnly = true).first()
+
+        assertEquals(listOf(movedUri), recycleBinVideos.map(Video::uriString))
+    }
 }
 
 /**
