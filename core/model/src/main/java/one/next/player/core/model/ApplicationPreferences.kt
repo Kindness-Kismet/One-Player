@@ -42,6 +42,6 @@ data class ApplicationPreferences(
     }
 
     companion object {
-        const val DEFAULT_THUMBNAIL_FRAME_POSITION = 0.33f
+        const val DEFAULT_THUMBNAIL_FRAME_POSITION = 0.5f
     }
 }

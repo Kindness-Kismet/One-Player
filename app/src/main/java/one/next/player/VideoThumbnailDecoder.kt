@@ -2,8 +2,6 @@ package one.next.player
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
-import android.os.Build.VERSION.SDK_INT
 import android.util.Size
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.get
@@ -48,10 +46,10 @@ class VideoThumbnailDecoder(
                 Size(MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE),
                 null,
             ).also {
-                Logger.logDebug(TAG, "systemThumbnail ok ${System.currentTimeMillis() - start}ms uri=$uri")
+                Logger.logInfo(TAG, "systemThumbnail ok ${System.currentTimeMillis() - start}ms uri=$uri")
             }
         } catch (e: Exception) {
-            Logger.logDebug(TAG, "systemThumbnail fail ${System.currentTimeMillis() - start}ms uri=$uri err=${e.message}")
+            Logger.logInfo(TAG, "systemThumbnail fail ${System.currentTimeMillis() - start}ms uri=$uri err=${e.message}")
             null
         }
     }
@@ -68,6 +66,7 @@ class VideoThumbnailDecoder(
 
     @OptIn(ExperimentalCoilApi::class)
     override suspend fun decode(): DecodeResult {
+        Logger.logInfo(TAG, "decode start key=$diskCacheKey")
         readFromDiskCache()?.use { snapshot ->
             val file = snapshot.data.toFile()
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -97,119 +96,63 @@ class VideoThumbnailDecoder(
             )
         }
 
-        val retrieverStart = System.currentTimeMillis()
-        return MediaMetadataRetriever().use { retriever ->
-            retriever.setDataSource(source)
-            Logger.logDebug(TAG, "retriever setDataSource ${System.currentTimeMillis() - retrieverStart}ms key=$diskCacheKey")
-
-            val embeddedPicture = retriever.embeddedPicture?.let { pictureBytes ->
-                decodeSampledBitmap(pictureBytes)
-            }
-
-            val rawBitmap = if (embeddedPicture != null) {
-                embeddedPicture
-            } else {
-                val videoDuration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                    ?.toLongOrNull() ?: 0L
-
-                when (strategy) {
-                    is ThumbnailStrategy.FirstFrame -> {
-                        retriever.getScaledFrameAtTime(
-                            0,
-                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE,
-                            MAX_THUMBNAIL_SIZE,
-                        )
-                    }
-                    is ThumbnailStrategy.FrameAtPercentage -> {
-                        retriever.getScaledFrameAtTime(
-                            (videoDuration * strategy.percentage * 1000).toLong(),
-                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE,
-                            MAX_THUMBNAIL_SIZE,
-                        )
-                    }
-                    is ThumbnailStrategy.Hybrid -> {
-                        val firstFrame = retriever.getScaledFrameAtTime(
-                            0,
-                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                            MAX_THUMBNAIL_SIZE,
-                            MAX_THUMBNAIL_SIZE,
-                        )
-                        if (firstFrame != null && isSolidColor(firstFrame)) {
-                            retriever.getScaledFrameAtTime(
-                                (videoDuration * strategy.percentage * 1000).toLong(),
-                                MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                                MAX_THUMBNAIL_SIZE,
-                                MAX_THUMBNAIL_SIZE,
-                            )
-                        } else {
-                            firstFrame
-                        }
-                    }
-                }
-            } ?: getThumbnailFromMediaInfo()?.scaleToFit()
-                ?: throw IllegalStateException("Failed to get video thumbnail.")
-
-            Logger.logDebug(TAG, "retriever done ${System.currentTimeMillis() - retrieverStart}ms key=$diskCacheKey")
+        // FFmpeg 提取帧（全格式通用，不阻塞）
+        val ffmpegStart = System.currentTimeMillis()
+        getThumbnailFromMediaInfo()?.scaleToFit()?.let { rawBitmap ->
+            Logger.logInfo(TAG, "mediaInfo ok ${System.currentTimeMillis() - ffmpegStart}ms key=$diskCacheKey")
             val bitmap = writeToDiskCache(rawBitmap)
-
-            DecodeResult(
+            return DecodeResult(
                 image = bitmap.toDrawable(options.context.resources).asImage(),
                 isSampled = true,
             )
         }
+
+        throw IllegalStateException("Failed to get video thumbnail for key=$diskCacheKey")
     }
 
-    private fun MediaMetadataRetriever.setDataSource(source: ImageSource) {
+    private fun getThumbnailFromMediaInfo(): Bitmap? {
         val metadata = source.metadata
-        when {
-            metadata is ContentMetadata -> {
-                setDataSource(options.context, metadata.uri.toAndroidUri())
+        val mediaInfo = try {
+            when {
+                metadata is ContentMetadata -> {
+                    MediaInfoBuilder().from(
+                        context = options.context,
+                        uri = metadata.uri.toAndroidUri(),
+                    ).build()
+                }
+                source.fileSystem === FileSystem.SYSTEM -> {
+                    MediaInfoBuilder().from(
+                        filePath = source.file().toFile().path,
+                    ).build()
+                }
+                else -> null
             }
+        } catch (e: Exception) {
+            null
+        } ?: return null
 
-            source.fileSystem === FileSystem.SYSTEM -> {
-                setDataSource(source.file().toFile().path)
+        return try {
+            when (strategy) {
+                is ThumbnailStrategy.FirstFrame -> mediaInfo.getFrame()
+                is ThumbnailStrategy.FrameAtPercentage -> {
+                    val timeMs = (mediaInfo.duration * strategy.percentage).toLong()
+                    mediaInfo.getFrameAt(timeMs)
+                }
+                is ThumbnailStrategy.Hybrid -> {
+                    val firstFrame = mediaInfo.getFrame()
+                    if (firstFrame != null && isSolidColor(firstFrame)) {
+                        val timeMs = (mediaInfo.duration * strategy.percentage).toLong()
+                        mediaInfo.getFrameAt(timeMs) ?: firstFrame
+                    } else {
+                        firstFrame
+                    }
+                }
             }
-
-            else -> error("Not supported")
+        } catch (e: Exception) {
+            null
+        } finally {
+            mediaInfo.release()
         }
-    }
-
-    private fun getThumbnailFromMediaInfo(): Bitmap? = try {
-        // Create a new MediaInfoBuilder instance properly
-        val source = this.source
-        val metadata = source.metadata
-        val mediaInfo = when {
-            metadata is ContentMetadata -> {
-                MediaInfoBuilder().from(
-                    context = options.context,
-                    uri = metadata.uri.toAndroidUri(),
-                ).build()
-            }
-            source.fileSystem === FileSystem.SYSTEM -> {
-                MediaInfoBuilder().from(
-                    filePath = source.file().toFile().path,
-                ).build()
-            }
-            else -> null
-        }
-        mediaInfo?.getFrame()?.also { mediaInfo.release() }
-    } catch (e: Exception) {
-        null
-    }
-
-    private fun decodeSampledBitmap(bytes: ByteArray): Bitmap? {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        return BitmapFactory.decodeByteArray(
-            bytes,
-            0,
-            bytes.size,
-            BitmapFactory.Options().apply {
-                inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight)
-            },
-        )
     }
 
     private fun calculateInSampleSize(width: Int, height: Int): Int {
@@ -269,6 +212,7 @@ class VideoThumbnailDecoder(
             options: Options,
             imageLoader: ImageLoader,
         ): Decoder? {
+            Logger.logInfo(TAG, "Factory.create mimeType=${result.mimeType}")
             if (!isApplicable(result.mimeType)) return null
             return VideoThumbnailDecoder(
                 source = result.source,
@@ -282,26 +226,10 @@ class VideoThumbnailDecoder(
     }
 }
 
-private inline fun <T> MediaMetadataRetriever.use(block: (MediaMetadataRetriever) -> T): T {
-    try {
-        return block(this)
-    } finally {
-        // We must call 'close' on API 29+ to avoid a strict mode warning.
-        if (SDK_INT >= 29) {
-            close()
-        } else {
-            release()
-        }
-    }
-}
-
-/**
- * Sealed class representing different thumbnail generation strategies
- */
 sealed class ThumbnailStrategy {
     data object FirstFrame : ThumbnailStrategy()
-    data class FrameAtPercentage(val percentage: Float = 0.33f) : ThumbnailStrategy()
-    data class Hybrid(val percentage: Float = 0.33f) : ThumbnailStrategy()
+    data class FrameAtPercentage(val percentage: Float = 0.5f) : ThumbnailStrategy()
+    data class Hybrid(val percentage: Float = 0.5f) : ThumbnailStrategy()
 }
 
 /**
