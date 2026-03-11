@@ -13,6 +13,7 @@ class FakeMediaRepository : MediaRepository {
     val videos = mutableListOf<Video>()
     val directories = mutableListOf<Folder>()
     private val recycleBinUris = mutableSetOf<String>()
+    private val originalPaths = mutableMapOf<String, String>()
 
     override fun getVideosFlow(): Flow<List<Video>> = flowOf(
         videos.map { video ->
@@ -75,10 +76,15 @@ class FakeMediaRepository : MediaRepository {
     }
 
     override suspend fun moveVideosToRecycleBin(uris: List<String>) {
+        uris.forEach { uri ->
+            val video = videos.find { it.uriString == uri } ?: return@forEach
+            originalPaths.putIfAbsent(uri, video.path)
+        }
         recycleBinUris.addAll(uris)
     }
 
     override suspend fun restoreVideosFromRecycleBin(uris: List<String>) {
         recycleBinUris.removeAll(uris.toSet())
+        uris.forEach(originalPaths::remove)
     }
 }

@@ -33,6 +33,7 @@ import one.next.player.core.common.Logger
 import one.next.player.core.common.NextDispatchers
 import one.next.player.core.common.di.ApplicationScope
 import one.next.player.core.common.extensions.VIDEO_COLLECTION_URI
+import one.next.player.core.common.extensions.getMediaFileContentUri
 import one.next.player.core.common.extensions.getStorageVolumes
 import one.next.player.core.common.extensions.prettyName
 import one.next.player.core.common.extensions.scanPaths
@@ -44,6 +45,7 @@ import one.next.player.core.database.dao.MediumDao
 import one.next.player.core.database.dao.MediumStateDao
 import one.next.player.core.database.entities.DirectoryEntity
 import one.next.player.core.database.entities.MediumEntity
+import one.next.player.core.database.entities.MediumStateEntity
 import one.next.player.core.datastore.datasource.AppPreferencesDataSource
 import one.next.player.core.media.model.MediaVideo
 
@@ -198,11 +200,19 @@ class LocalMediaSynchronizer @Inject constructor(
         if (unwantedMedia.isEmpty()) return@withContext
 
         val unwantedMediaUris = unwantedMedia.map { it.mediumEntity.uriString }
+        val recycleBinUnwantedMediaUris = unwantedMedia.mapNotNull { mediumWithInfo ->
+            mediumWithInfo.mediumStateEntity
+                ?.takeIf(MediumStateEntity::isInRecycleBin)
+                ?.uriString
+        }
+        val removableMediaUris = unwantedMediaUris - recycleBinUnwantedMediaUris.toSet()
 
-        mediumDao.delete(unwantedMediaUris)
-        mediumStateDao.delete(unwantedMediaUris)
+        if (removableMediaUris.isEmpty()) return@withContext
 
-        unwantedMedia.forEach { mediumWithInfo ->
+        mediumDao.delete(removableMediaUris)
+        mediumStateDao.delete(removableMediaUris)
+
+        unwantedMedia.filter { it.mediumEntity.uriString in removableMediaUris }.forEach { mediumWithInfo ->
             runCatching {
                 imageLoader.diskCache?.remove(mediumWithInfo.mediumEntity.uriString)
             }.onFailure { throwable ->
@@ -216,7 +226,7 @@ class LocalMediaSynchronizer @Inject constructor(
                 UriListConverter.fromStringToList(mediaState.externalSubs)
             }.toSet()
 
-            unwantedMedia.onEach { mediumWithInfo ->
+            unwantedMedia.filter { it.mediumEntity.uriString in removableMediaUris }.onEach { mediumWithInfo ->
                 val mediumState = mediumWithInfo.mediumStateEntity ?: return@onEach
                 for (sub in UriListConverter.fromStringToList(mediumState.externalSubs)) {
                     if (sub in currentMediaExternalSubs) continue
@@ -311,6 +321,8 @@ class LocalMediaSynchronizer @Inject constructor(
     private fun File.isVisibleVideoFile(): Boolean {
         if (!isFile) return false
 
+        if (extension.equals(RECYCLE_BIN_EXTENSION, ignoreCase = true)) return true
+
         val extensionName = extension.lowercase()
         if (extensionName.isBlank()) return false
 
@@ -324,7 +336,11 @@ class LocalMediaSynchronizer @Inject constructor(
             retriever.setDataSource(path)
             MediaVideo(
                 id = -path.hashCode().toLong().absoluteValue,
-                uri = toUri(),
+                uri = if (extension.equals(RECYCLE_BIN_EXTENSION, ignoreCase = true)) {
+                    context.getMediaFileContentUri(path) ?: toUri()
+                } else {
+                    toUri()
+                },
                 size = length(),
                 width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0,
                 height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0,
@@ -342,6 +358,7 @@ class LocalMediaSynchronizer @Inject constructor(
     companion object {
         private const val TAG = "LocalMediaSynchronizer"
         private const val NO_MEDIA_FILE_NAME = ".nomedia"
+        private const val RECYCLE_BIN_EXTENSION = "optrash"
 
         val VIDEO_PROJECTION = arrayOf(
             MediaStore.Video.Media._ID,
