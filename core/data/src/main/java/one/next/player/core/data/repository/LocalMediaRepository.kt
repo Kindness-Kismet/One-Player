@@ -1,6 +1,7 @@
 package one.next.player.core.data.repository
 
 import android.net.Uri
+import androidx.core.net.toUri
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,6 +16,8 @@ import one.next.player.core.database.dao.MediumStateDao
 import one.next.player.core.database.entities.MediumStateEntity
 import one.next.player.core.database.relations.DirectoryWithMedia
 import one.next.player.core.database.relations.MediumWithInfo
+import one.next.player.core.media.services.MediaService
+import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.Folder
 import one.next.player.core.model.Video
 
@@ -22,6 +25,8 @@ class LocalMediaRepository @Inject constructor(
     private val mediumDao: MediumDao,
     private val mediumStateDao: MediumStateDao,
     private val directoryDao: DirectoryDao,
+    private val mediaService: MediaService,
+    private val mediaSynchronizer: MediaSynchronizer,
 ) : MediaRepository {
 
     override fun getVideosFlow(): Flow<List<Video>> = mediumDao.getAllWithInfo().map { media ->
@@ -156,28 +161,81 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun moveVideosToRecycleBin(uris: List<String>) {
-        updateRecycleBinState(uris = uris, isInRecycleBin = true)
+        if (uris.isEmpty()) return
+
+        uris.distinct().forEach { uriString ->
+            val medium = mediumDao.get(uriString) ?: return@forEach
+            val currentState = mediumStateDao.get(uriString) ?: MediumStateEntity(uriString = uriString)
+            val moved = mediaService.moveMediaToRecycleBin(uriString.toUri()) ?: return@forEach
+            val movedUriString = moved.uri.toString()
+
+            if (movedUriString != uriString) {
+                mediumDao.delete(listOf(uriString))
+                mediumStateDao.delete(listOf(uriString))
+            }
+
+            mediumDao.upsert(
+                medium.copy(
+                    uriString = movedUriString,
+                    path = moved.path,
+                    parentPath = moved.parentPath,
+                    name = moved.fileName,
+                ),
+            )
+
+            mediumStateDao.upsert(
+                currentState.copy(
+                    uriString = movedUriString,
+                    isInRecycleBin = true,
+                    originalPath = currentState.originalPath ?: medium.path,
+                    originalParentPath = currentState.originalParentPath ?: medium.parentPath,
+                    originalFileName = currentState.originalFileName ?: medium.name,
+                ),
+            )
+            mediaSynchronizer.refresh(moved.path)
+        }
     }
 
     override suspend fun restoreVideosFromRecycleBin(uris: List<String>) {
-        updateRecycleBinState(uris = uris, isInRecycleBin = false)
-    }
-
-    private suspend fun updateRecycleBinState(
-        uris: List<String>,
-        isInRecycleBin: Boolean,
-    ) {
         if (uris.isEmpty()) return
 
-        val distinctUris = uris.distinct()
-        val existingStates = mediumStateDao.getAll(distinctUris).associateBy(MediumStateEntity::uriString)
-        val updatedStates = distinctUris.map { uri ->
-            (existingStates[uri] ?: MediumStateEntity(uriString = uri)).copy(
-                isInRecycleBin = isInRecycleBin,
-            )
-        }
+        uris.distinct().forEach { uriString ->
+            val currentState = mediumStateDao.get(uriString) ?: return@forEach
+            val medium = mediumDao.get(uriString) ?: return@forEach
+            val originalPath = currentState.originalPath ?: return@forEach
+            val originalFileName = currentState.originalFileName ?: return@forEach
+            val restored = mediaService.restoreMediaFromRecycleBin(
+                uri = uriString.toUri(),
+                originalPath = originalPath,
+                originalFileName = originalFileName,
+            ) ?: return@forEach
+            val restoredUriString = restored.uri.toString()
 
-        mediumStateDao.upsertAll(updatedStates)
+            if (restoredUriString != uriString) {
+                mediumDao.delete(listOf(uriString))
+                mediumStateDao.delete(listOf(uriString))
+            }
+
+            mediumDao.upsert(
+                medium.copy(
+                    uriString = restoredUriString,
+                    path = restored.path,
+                    parentPath = restored.parentPath,
+                    name = restored.fileName,
+                ),
+            )
+
+            mediumStateDao.upsert(
+                currentState.copy(
+                    uriString = restoredUriString,
+                    isInRecycleBin = false,
+                    originalPath = null,
+                    originalParentPath = null,
+                    originalFileName = null,
+                ),
+            )
+            mediaSynchronizer.refresh(restored.path)
+        }
     }
 
     private fun MediumWithInfo.isMarkedInRecycleBin(): Boolean = mediumStateEntity?.isInRecycleBin == true
