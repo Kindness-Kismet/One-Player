@@ -10,23 +10,49 @@ import kotlinx.serialization.Serializable
 import one.next.player.feature.videopicker.screens.mediapicker.MediaPickerRoute
 
 internal const val folderIdArg = "folderId"
+internal const val screenModeArg = "screenMode"
 
-internal class FolderArgs(val folderId: String?) {
+internal class FolderArgs(
+    val folderId: String?,
+    val screenMode: MediaPickerScreenMode,
+) {
     constructor(savedStateHandle: SavedStateHandle) :
-        this(savedStateHandle.get<String>(folderIdArg)?.let { Uri.decode(it) })
+        this(
+            folderId = when (val rawFolderId = savedStateHandle.get<Any?>(folderIdArg)) {
+                is String -> Uri.decode(rawFolderId)
+                else -> null
+            },
+            screenMode = when (val rawScreenMode = savedStateHandle.get<Any?>(screenModeArg)) {
+                is MediaPickerScreenMode -> rawScreenMode
+                is String -> rawScreenMode.let(MediaPickerScreenMode::valueOf)
+                else -> MediaPickerScreenMode.LIBRARY
+            },
+        )
+}
+
+@Serializable
+enum class MediaPickerScreenMode {
+    LIBRARY,
+    RECYCLE_BIN,
 }
 
 @Serializable
 data class MediaPickerRoute(
     val folderId: String? = null,
+    val screenMode: MediaPickerScreenMode = MediaPickerScreenMode.LIBRARY,
 )
 
 fun NavController.navigateToMediaPickerScreen(
     folderId: String,
+    screenMode: MediaPickerScreenMode = MediaPickerScreenMode.LIBRARY,
     navOptions: NavOptions? = null,
 ) {
     val encodedFolderId = Uri.encode(folderId)
-    this.navigate(MediaPickerRoute(encodedFolderId), navOptions)
+    this.navigate(MediaPickerRoute(folderId = encodedFolderId, screenMode = screenMode), navOptions)
+}
+
+fun NavController.navigateToRecycleBinScreen(navOptions: NavOptions? = null) {
+    this.navigate(MediaPickerRoute(screenMode = MediaPickerScreenMode.RECYCLE_BIN), navOptions)
 }
 
 fun NavGraphBuilder.mediaPickerScreen(
@@ -34,7 +60,8 @@ fun NavGraphBuilder.mediaPickerScreen(
     onNavigateHome: () -> Unit,
     onPlayVideo: (uri: Uri) -> Unit,
     onPlayVideos: (uris: List<Uri>) -> Unit,
-    onFolderClick: (folderPath: String) -> Unit,
+    onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
+    onRecycleBinClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
 ) {
@@ -45,6 +72,7 @@ fun NavGraphBuilder.mediaPickerScreen(
             onNavigateUp = onNavigateUp,
             onNavigateHome = onNavigateHome,
             onFolderClick = onFolderClick,
+            onRecycleBinClick = onRecycleBinClick,
             onSettingsClick = onSettingsClick,
             onSearchClick = onSearchClick,
         )

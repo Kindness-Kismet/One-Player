@@ -13,6 +13,7 @@ data class Video(
     val width: Int,
     val height: Int,
     val size: Long,
+    val isInRecycleBin: Boolean = false,
     val playbackPosition: Long = 200,
     val dateModified: Long = 0,
     val formattedDuration: String = "",

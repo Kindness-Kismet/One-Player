@@ -24,38 +24,53 @@ class GetSortedMediaUseCase @Inject constructor(
 ) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    operator fun invoke(folderPath: String? = null): Flow<Folder?> = preferencesRepository.applicationPreferences
-        .map { preferences -> preferences.mediaViewMode }
-        .distinctUntilChanged()
-        .flatMapLatest { mediaViewMode ->
-            when (mediaViewMode) {
-                MediaViewMode.FOLDER_TREE -> getSortedFolderTreeUseCase(folderPath)
-                MediaViewMode.FOLDERS -> if (folderPath == null) {
-                    getSortedFoldersUseCase().map { folders ->
-                        Folder.rootFolder.copy(
-                            mediaList = emptyList(),
-                            folderList = folders,
-                        )
+    operator fun invoke(
+        folderPath: String? = null,
+        recycleBinOnly: Boolean = false,
+    ): Flow<Folder?> {
+        if (recycleBinOnly) {
+            return getSortedVideosUseCase(recycleBinOnly = true).map { videos ->
+                Folder.rootFolder.copy(
+                    mediaList = videos,
+                    folderList = emptyList(),
+                )
+            }.flowOn(defaultDispatcher)
+        }
+
+        return preferencesRepository.applicationPreferences
+            .map { preferences -> preferences.mediaViewMode }
+            .distinctUntilChanged()
+            .flatMapLatest { mediaViewMode ->
+                when (mediaViewMode) {
+                    MediaViewMode.FOLDER_TREE -> getSortedFolderTreeUseCase(folderPath)
+                    MediaViewMode.FOLDERS -> if (folderPath == null) {
+                        getSortedFoldersUseCase().map { folders ->
+                            Folder.rootFolder.copy(
+                                mediaList = emptyList(),
+                                folderList = folders,
+                            )
+                        }
+                    } else {
+                        getSortedVideosUseCase(folderPath).map { videos ->
+                            val file = File(folderPath)
+                            Folder(
+                                name = file.name,
+                                path = file.path,
+                                dateModified = file.lastModified(),
+                                mediaList = videos,
+                                folderList = emptyList(),
+                            )
+                        }
                     }
-                } else {
-                    getSortedVideosUseCase(folderPath).map { videos ->
-                        val file = File(folderPath)
-                        Folder(
-                            name = file.name,
-                            path = file.path,
-                            dateModified = file.lastModified(),
+
+                    MediaViewMode.VIDEOS -> getSortedVideosUseCase(folderPath).map { videos ->
+                        Folder.rootFolder.copy(
                             mediaList = videos,
                             folderList = emptyList(),
                         )
                     }
                 }
-                MediaViewMode.VIDEOS -> getSortedVideosUseCase(folderPath).map { videos ->
-                    Folder.rootFolder.copy(
-                        mediaList = videos,
-                        folderList = emptyList(),
-                    )
-                }
             }
-        }
-        .flowOn(defaultDispatcher)
+            .flowOn(defaultDispatcher)
+    }
 }

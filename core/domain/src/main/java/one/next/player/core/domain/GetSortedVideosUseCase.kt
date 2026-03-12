@@ -19,8 +19,13 @@ class GetSortedVideosUseCase @Inject constructor(
     @Dispatcher(NextDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
 
-    operator fun invoke(folderPath: String? = null): Flow<List<Video>> {
-        val videosFlow = if (folderPath != null) {
+    operator fun invoke(
+        folderPath: String? = null,
+        recycleBinOnly: Boolean = false,
+    ): Flow<List<Video>> {
+        val videosFlow = if (recycleBinOnly) {
+            mediaRepository.getRecycleBinVideosFlow()
+        } else if (folderPath != null) {
             mediaRepository.getVideosFlowFromFolderPath(folderPath)
         } else {
             mediaRepository.getVideosFlow()
@@ -30,8 +35,9 @@ class GetSortedVideosUseCase @Inject constructor(
             videosFlow,
             preferencesRepository.applicationPreferences,
         ) { videoItems, preferences ->
-            val visibleVideos = videoItems.filterNot {
-                preferences.isPathExcluded(it.parentPath)
+            val visibleVideos = videoItems.filterNot { video ->
+                (!recycleBinOnly && preferences.isPathExcluded(video.parentPath)) ||
+                    (!recycleBinOnly && preferences.recycleBinEnabled && video.isInRecycleBin)
             }
 
             val sort = Sort(by = preferences.sortBy, order = preferences.sortOrder)

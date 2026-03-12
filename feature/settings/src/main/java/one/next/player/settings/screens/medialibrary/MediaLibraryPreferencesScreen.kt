@@ -131,6 +131,25 @@ private fun MediaLibraryPreferencesContent(
                     isChecked = preferences.markLastPlayedMedia,
                     onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleMarkLastPlayedMedia) },
                     isFirstItem = true,
+                    isLastItem = false,
+                )
+                PreferenceSwitch(
+                    title = stringResource(id = R.string.recycle_bin),
+                    description = stringResource(id = R.string.recycle_bin_desc),
+                    icon = NextIcons.DeleteSweep,
+                    isChecked = preferences.recycleBinEnabled,
+                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled) },
+                    isFirstItem = false,
+                    isLastItem = false,
+                )
+                PreferenceSwitch(
+                    title = stringResource(id = R.string.show_recycle_bin_icon),
+                    description = stringResource(id = R.string.show_recycle_bin_icon_desc),
+                    icon = NextIcons.DeleteSweep,
+                    enabled = preferences.recycleBinEnabled,
+                    isChecked = preferences.showRecycleBinIcon,
+                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleShowRecycleBinIcon) },
+                    isFirstItem = false,
                     isLastItem = true,
                 )
             }

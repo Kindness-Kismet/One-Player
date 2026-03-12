@@ -29,6 +29,7 @@ import one.next.player.core.ui.theme.NextPlayerTheme
 @Composable
 fun PermissionDetailView(
     text: String,
+    onOpenSettings: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     Column(
@@ -53,9 +54,13 @@ fun PermissionDetailView(
         Spacer(modifier = Modifier.height(10.dp))
         Button(
             onClick = {
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.parse("package:" + context.packageName)
-                    context.startActivity(this)
+                if (onOpenSettings != null) {
+                    onOpenSettings()
+                } else {
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:" + context.packageName)
+                        context.startActivity(this)
+                    }
                 }
             },
         ) {
