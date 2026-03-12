@@ -91,9 +91,9 @@ fun Player.addAdditionalSubtitleConfiguration(subtitle: MediaItem.SubtitleConfig
 }
 
 @OptIn(UnstableApi::class)
-fun Player.setIsScrubbingModeEnabled(enabled: Boolean) {
+fun Player.setIsScrubbingModeEnabled(isEnabled: Boolean) {
     when (this) {
-        is MediaController -> this.setMediaControllerIsScrubbingModeEnabled(enabled)
-        is ExoPlayer -> this.isScrubbingModeEnabled = enabled
+        is MediaController -> this.setMediaControllerIsScrubbingModeEnabled(isEnabled)
+        is ExoPlayer -> this.isScrubbingModeEnabled = isEnabled
     }
 }

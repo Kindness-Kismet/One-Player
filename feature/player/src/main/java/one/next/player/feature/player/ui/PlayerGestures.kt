@@ -40,7 +40,7 @@ fun PlayerGestures(
                             controlsVisibilityState.toggleControlsVisibility()
                         },
                         onDoubleTap = {
-                            if (controlsVisibilityState.controlsLocked) return@detectTapGestures
+                            if (controlsVisibilityState.isControlsLocked) return@detectTapGestures
                             tapGestureState.handleDoubleTap(offset = it, size = size)
                         },
                         onPress = {
@@ -48,17 +48,17 @@ fun PlayerGestures(
                             tapGestureState.handleOnLongPressRelease()
                         },
                         onLongPress = {
-                            if (controlsVisibilityState.controlsLocked) return@detectTapGestures
+                            if (controlsVisibilityState.isControlsLocked) return@detectTapGestures
                             tapGestureState.handleLongPress(offset = it)
                         },
                     )
                 }
                 .pointerInput(
-                    controlsVisibilityState.controlsLocked,
+                    controlsVisibilityState.isControlsLocked,
                     pictureInPictureState.isInPictureInPictureMode,
                     tapGestureState.isLongPressGestureInAction,
                 ) {
-                    if (controlsVisibilityState.controlsLocked) return@pointerInput
+                    if (controlsVisibilityState.isControlsLocked) return@pointerInput
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
                     if (tapGestureState.isLongPressGestureInAction) return@pointerInput
 
@@ -70,11 +70,11 @@ fun PlayerGestures(
                     )
                 }
                 .pointerInput(
-                    controlsVisibilityState.controlsLocked,
+                    controlsVisibilityState.isControlsLocked,
                     pictureInPictureState.isInPictureInPictureMode,
                     tapGestureState.isLongPressGestureInAction,
                 ) {
-                    if (controlsVisibilityState.controlsLocked) return@pointerInput
+                    if (controlsVisibilityState.isControlsLocked) return@pointerInput
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
                     if (tapGestureState.isLongPressGestureInAction) return@pointerInput
 
@@ -86,10 +86,10 @@ fun PlayerGestures(
                     )
                 }
                 .pointerInput(
-                    controlsVisibilityState.controlsLocked,
+                    controlsVisibilityState.isControlsLocked,
                     pictureInPictureState.isInPictureInPictureMode,
                 ) {
-                    if (controlsVisibilityState.controlsLocked) return@pointerInput
+                    if (controlsVisibilityState.isControlsLocked) return@pointerInput
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
 
                     detectCustomTransformGestures(

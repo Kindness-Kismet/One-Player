@@ -24,15 +24,15 @@ fun rememberControlsVisibilityState(player: Player, hideAfter: Duration): Contro
     val coroutineScope = rememberCoroutineScope()
     val controlsVisibilityState = remember { ControlsVisibilityState(player, hideAfter, coroutineScope) }
     LaunchedEffect(player) { controlsVisibilityState.observe() }
-    LaunchedEffect(controlsVisibilityState.controlsVisible, controlsVisibilityState.controlsLocked) {
-        if (controlsVisibilityState.controlsLocked) {
-            activity?.toggleSystemBars(showBars = false)
+    LaunchedEffect(controlsVisibilityState.isControlsVisible, controlsVisibilityState.isControlsLocked) {
+        if (controlsVisibilityState.isControlsLocked) {
+            activity?.toggleSystemBars(shouldShowBars = false)
             return@LaunchedEffect
         }
-        if (controlsVisibilityState.controlsVisible) {
-            activity?.toggleSystemBars(showBars = true)
+        if (controlsVisibilityState.isControlsVisible) {
+            activity?.toggleSystemBars(shouldShowBars = true)
         } else {
-            activity?.toggleSystemBars(showBars = false)
+            activity?.toggleSystemBars(shouldShowBars = false)
         }
     }
     return controlsVisibilityState
@@ -46,24 +46,24 @@ class ControlsVisibilityState(
 ) {
     private var autoHideControlsJob: Job? = null
 
-    var controlsVisible: Boolean by mutableStateOf(true)
+    var isControlsVisible: Boolean by mutableStateOf(true)
         private set
 
-    var controlsLocked: Boolean by mutableStateOf(false)
+    var isControlsLocked: Boolean by mutableStateOf(false)
         private set
 
     fun showControls(duration: Duration = hideAfter) {
-        controlsVisible = true
+        isControlsVisible = true
         autoHideControls(duration)
     }
 
     fun hideControls() {
         autoHideControlsJob?.cancel()
-        controlsVisible = false
+        isControlsVisible = false
     }
 
     fun toggleControlsVisibility() {
-        if (controlsVisible) {
+        if (isControlsVisible) {
             hideControls()
         } else {
             showControls()
@@ -71,11 +71,11 @@ class ControlsVisibilityState(
     }
 
     fun lockControls() {
-        controlsLocked = true
+        isControlsLocked = true
     }
 
     fun unlockControls() {
-        controlsLocked = false
+        isControlsLocked = false
         showControls()
     }
 
@@ -94,7 +94,7 @@ class ControlsVisibilityState(
         autoHideControlsJob = scope.launch {
             delay(duration)
             if (player.isPlaying) {
-                controlsVisible = false
+                isControlsVisible = false
             }
         }
     }

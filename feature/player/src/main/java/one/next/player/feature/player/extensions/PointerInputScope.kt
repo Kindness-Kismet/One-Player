@@ -26,7 +26,7 @@ import kotlin.math.abs
  *
  * https://stackoverflow.com/questions/76370595/how-to-handle-horizontal-scroll-gesture-combined-with-transform-gestures-in-jetp/76374985#76374985
  *
- * @param panZoomLock If true, locks gestures to pan and zoom, ignoring rotation if the touch-slope threshold for rotation is not exceeded.
+ * @param isPanZoomLocked If true, locks gestures to pan and zoom, ignoring rotation if the touch-slope threshold for rotation is not exceeded.
  * @param pass Specifies the type of pointer events to process (e.g., Main, Initial).
  * @param onGestureStart Function invoked when a gesture is initiated with the first down event. The function receives the initial pointer change.
  * @param onGesture Function invoked during each gesture update with details on the gesture including the centroid position, pan offset, zoom factor, rotation angle, the current primary
@@ -34,7 +34,7 @@ import kotlin.math.abs
  * @param onGestureEnd Function invoked when the gesture ends. The function receives the final pointer change.
  */
 suspend fun PointerInputScope.detectCustomTransformGestures(
-    panZoomLock: Boolean = false,
+    isPanZoomLocked: Boolean = false,
     pass: PointerEventPass = PointerEventPass.Main,
     pointCount: Int = 2,
     onGestureStart: (PointerInputChange) -> Unit = {},
@@ -50,10 +50,10 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
         var rotation = 0f
         var zoom = 1f
         var pan = Offset.Zero
-        var pastTouchSlop = false
+        var hasPassedTouchSlop = false
         val touchSlop = viewConfiguration.touchSlop
-        var lockedToPanZoom = false
-        var gestureStarted = false
+        var isLockedToPanZoom = false
+        var hasGestureStarted = false
 
         // Wait for at least one pointer to press down and set the first contact position
         val down: PointerInputChange = awaitFirstDown(
@@ -73,12 +73,12 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
 
             // If any position change is consumed from another PointerInputChange
             // or pointer count requirement is not fulfilled
-            val canceled = event.changes.any { it.isConsumed } || currentPointerCount != pointCount
+            val isCanceled = event.changes.any { it.isConsumed } || currentPointerCount != pointCount
 
-            if (!canceled) {
+            if (!isCanceled) {
                 // Trigger onGestureStart only once when pointer count requirement is met
-                if (!gestureStarted) {
-                    gestureStarted = true
+                if (!hasGestureStarted) {
+                    hasGestureStarted = true
                     onGestureStart(pointer)
                 }
 
@@ -96,7 +96,7 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
                 val rotationChange = event.calculateRotation()
                 val panChange = event.calculatePan()
 
-                if (!pastTouchSlop) {
+                if (!hasPassedTouchSlop) {
                     zoom *= zoomChange
                     rotation += rotationChange
                     pan += panChange
@@ -112,14 +112,14 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
                         rotationMotion > touchSlop ||
                         panMotion > touchSlop
                     ) {
-                        pastTouchSlop = true
-                        lockedToPanZoom = panZoomLock && rotationMotion < touchSlop
+                        hasPassedTouchSlop = true
+                        isLockedToPanZoom = isPanZoomLocked && rotationMotion < touchSlop
                     }
                 }
 
-                if (pastTouchSlop) {
+                if (hasPassedTouchSlop) {
                     val centroid = event.calculateCentroid(useCurrent = false)
-                    val effectiveRotation = if (lockedToPanZoom) 0f else rotationChange
+                    val effectiveRotation = if (isLockedToPanZoom) 0f else rotationChange
                     if (effectiveRotation != 0f ||
                         zoomChange != 1f ||
                         panChange != Offset.Zero
@@ -139,10 +139,10 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
                     }
                 }
             }
-        } while (!canceled && event.changes.any { it.pressed })
+        } while (!isCanceled && event.changes.any { it.pressed })
 
         // Only trigger onGestureEnd if gesture was actually started
-        if (gestureStarted) {
+        if (hasGestureStarted) {
             onGestureEnd(pointer)
         }
     }

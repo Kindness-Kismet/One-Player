@@ -17,13 +17,13 @@ fun Activity.swipeToShowStatusBars() {
 
 /**
  * Toggles system bars visibility
- * @param showBars true to show system bars, false to hide
+ * @param shouldShowBars true to show system bars, false to hide
  * @param types [Type.InsetsType] system bars to toggle default is all system bars
  */
-fun Activity.toggleSystemBars(showBars: Boolean, @Type.InsetsType types: Int = Type.systemBars()) {
+fun Activity.toggleSystemBars(shouldShowBars: Boolean, @Type.InsetsType types: Int = Type.systemBars()) {
     WindowCompat.getInsetsController(window, window.decorView).apply {
         systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        if (showBars) show(types) else hide(types)
+        if (shouldShowBars) show(types) else hide(types)
     }
 }
 

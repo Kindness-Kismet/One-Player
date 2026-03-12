@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun RadioButtonRow(
     modifier: Modifier = Modifier,
-    selected: Boolean,
+    isSelected: Boolean,
     text: String,
     onClick: () -> Unit,
 ) {
@@ -28,7 +28,7 @@ fun RadioButtonRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(4.dp))
             .selectable(
-                selected = selected,
+                selected = isSelected,
                 onClick = onClick,
             )
             .padding(
@@ -39,7 +39,7 @@ fun RadioButtonRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         RadioButton(
-            selected = selected,
+            selected = isSelected,
             onClick = null,
         )
         Text(

@@ -100,16 +100,16 @@ fun ControlsBottomView(
             modifier = Modifier.padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            var showPendingPosition by rememberSaveable { mutableStateOf(false) }
+            var shouldShowPendingPosition by rememberSaveable { mutableStateOf(false) }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.noRippleClickable {
-                    showPendingPosition = !showPendingPosition
+                    shouldShowPendingPosition = !shouldShowPendingPosition
                 },
             ) {
                 Text(
-                    text = when (showPendingPosition) {
+                    text = when (shouldShowPendingPosition) {
                         true -> "-${displayedPendingPosition.milliseconds.formatted()}"
                         false -> displayedPosition.milliseconds.formatted()
                     },

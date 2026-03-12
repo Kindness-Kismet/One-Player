@@ -48,16 +48,16 @@ fun MediaController.addSubtitleTrack(uri: Uri) {
     sendCustomCommand(CustomCommands.ADD_SUBTITLE_TRACK.sessionCommand, args)
 }
 
-suspend fun MediaController.setSkipSilenceEnabled(enabled: Boolean) {
+suspend fun MediaController.setSkipSilenceEnabled(isEnabled: Boolean) {
     val args = Bundle().apply {
-        putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, enabled)
+        putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, isEnabled)
     }
     sendCustomCommand(CustomCommands.SET_SKIP_SILENCE_ENABLED.sessionCommand, args).await()
 }
 
-fun MediaController.setMediaControllerIsScrubbingModeEnabled(enabled: Boolean) {
+fun MediaController.setMediaControllerIsScrubbingModeEnabled(isEnabled: Boolean) {
     val args = Bundle().apply {
-        putBoolean(CustomCommands.IS_SCRUBBING_MODE_ENABLED_KEY, enabled)
+        putBoolean(CustomCommands.IS_SCRUBBING_MODE_ENABLED_KEY, isEnabled)
     }
     sendCustomCommand(CustomCommands.SET_IS_SCRUBBING_MODE_ENABLED.sessionCommand, args)
 }
@@ -76,7 +76,7 @@ fun MediaController.setTransientPlaybackSpeed(speed: Float) {
     sendCustomCommand(CustomCommands.SET_TRANSIENT_PLAYBACK_SPEED.sessionCommand, args)
 }
 
-suspend fun MediaController.getSkipSilenceEnabled(): Boolean {
+suspend fun MediaController.isSkipSilenceEnabled(): Boolean {
     val result = sendCustomCommand(CustomCommands.GET_SKIP_SILENCE_ENABLED.sessionCommand, Bundle.EMPTY)
     return result.await().extras.getBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, false)
 }
@@ -121,7 +121,7 @@ suspend fun MediaController.getLoudnessGain(): Int {
     return result.await().extras.getInt(CustomCommands.LOUDNESS_GAIN_KEY, 0)
 }
 
-suspend fun MediaController.getIsLoudnessGainSupported(): Boolean {
+suspend fun MediaController.isLoudnessGainSupported(): Boolean {
     val result = sendCustomCommand(CustomCommands.IS_LOUDNESS_GAIN_SUPPORTED.sessionCommand, Bundle.EMPTY)
     return result.await().extras.getBoolean(CustomCommands.IS_LOUDNESS_GAIN_SUPPORTED_KEY, false)
 }

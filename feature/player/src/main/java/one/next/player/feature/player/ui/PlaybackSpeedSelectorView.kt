@@ -45,7 +45,7 @@ import one.next.player.feature.player.state.rememberPlaybackParametersState
 @Composable
 fun BoxScope.PlaybackSpeedSelectorView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     player: Player,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -53,7 +53,7 @@ fun BoxScope.PlaybackSpeedSelectorView(
 
     OverlayView(
         modifier = modifier,
-        show = show,
+        shouldShow = shouldShow,
         title = stringResource(R.string.select_playback_speed),
     ) {
         Column(
@@ -159,7 +159,7 @@ fun BoxScope.PlaybackSpeedSelectorView(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .toggleable(
-                        value = playbackParametersState.skipSilenceEnabled,
+                        value = playbackParametersState.isSkipSilenceEnabled,
                         onValueChange = { playbackParametersState.setIsSkipSilenceEnabled(it) },
                     )
                     .fillMaxWidth()
@@ -174,7 +174,7 @@ fun BoxScope.PlaybackSpeedSelectorView(
                     modifier = Modifier.weight(1f),
                 )
                 NextSwitch(
-                    checked = playbackParametersState.skipSilenceEnabled,
+                    isChecked = playbackParametersState.isSkipSilenceEnabled,
                     onCheckedChange = null,
                 )
             }

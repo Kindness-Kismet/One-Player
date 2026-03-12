@@ -40,14 +40,14 @@ import one.next.player.core.ui.R as coreUiR
 @Composable
 fun rememberPictureInPictureState(
     player: Player,
-    autoEnter: Boolean = true,
+    shouldAutoEnter: Boolean = true,
 ): PictureInPictureState {
     val activity = LocalActivity.current
     val pictureInPictureState = remember {
         PictureInPictureState(
             player = player,
             activity = activity as ComponentActivity,
-            autoEnter = autoEnter,
+            shouldAutoEnter = shouldAutoEnter,
         )
     }
     DisposableEffect(activity) { pictureInPictureState.handleListeners(this) }
@@ -59,7 +59,7 @@ fun rememberPictureInPictureState(
 class PictureInPictureState(
     private val player: Player,
     private val activity: ComponentActivity,
-    private val autoEnter: Boolean = true,
+    private val shouldAutoEnter: Boolean = true,
 ) {
     companion object {
         private const val PIP_INTENT_ACTION = "pip_action"
@@ -178,7 +178,7 @@ class PictureInPictureState(
         if (pictureInPictureParamsBuilder == null) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
 
-        pictureInPictureParamsBuilder.setAutoEnterEnabled(autoEnter && player.isPlaying)
+        pictureInPictureParamsBuilder.setAutoEnterEnabled(shouldAutoEnter && player.isPlaying)
         activity.setPictureInPictureParams(pictureInPictureParamsBuilder.build())
     }
 

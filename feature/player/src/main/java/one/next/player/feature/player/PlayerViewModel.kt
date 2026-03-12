@@ -27,7 +27,7 @@ class PlayerViewModel @Inject constructor(
     private val getSortedPlaylistUseCase: GetSortedPlaylistUseCase,
 ) : ViewModel() {
 
-    var playWhenReady: Boolean = true
+    var shouldPlayWhenReady: Boolean = true
 
     private val internalUiState = MutableStateFlow(
         PlayerUiState(

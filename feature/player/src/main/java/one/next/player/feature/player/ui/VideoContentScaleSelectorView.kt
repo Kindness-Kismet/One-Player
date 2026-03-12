@@ -17,14 +17,14 @@ import one.next.player.feature.player.extensions.nameRes
 @Composable
 fun BoxScope.VideoContentScaleSelectorView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     videoContentScale: VideoContentScale,
     onVideoContentScaleChanged: (VideoContentScale) -> Unit,
     onDismiss: () -> Unit,
 ) {
     OverlayView(
         modifier = modifier,
-        show = show,
+        shouldShow = shouldShow,
         title = stringResource(R.string.video_zoom),
     ) {
         Column(
@@ -36,7 +36,7 @@ fun BoxScope.VideoContentScaleSelectorView(
         ) {
             VideoContentScale.entries.forEach { contentScale ->
                 RadioButtonRow(
-                    selected = contentScale == videoContentScale,
+                    isSelected = contentScale == videoContentScale,
                     text = stringResource(contentScale.nameRes()),
                     onClick = {
                         onVideoContentScaleChanged(contentScale)

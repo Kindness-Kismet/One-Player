@@ -29,7 +29,7 @@ fun rememberTapGestureState(
     player: Player,
     doubleTapGesture: DoubleTapGesture,
     seekIncrementMillis: Long,
-    useLongPressGesture: Boolean,
+    shouldUseLongPressGesture: Boolean,
     longPressSpeed: Float,
 ): TapGestureState {
     val coroutineScope = rememberCoroutineScope()
@@ -38,7 +38,7 @@ fun rememberTapGestureState(
             player = player,
             doubleTapGesture = doubleTapGesture,
             seekIncrementMillis = seekIncrementMillis,
-            useLongPressGesture = useLongPressGesture,
+            shouldUseLongPressGesture = shouldUseLongPressGesture,
             longPressSpeed = longPressSpeed,
             coroutineScope = coroutineScope,
         )
@@ -50,7 +50,7 @@ fun rememberTapGestureState(
 class TapGestureState(
     private val player: Player,
     private val seekIncrementMillis: Long,
-    private val useLongPressGesture: Boolean = true,
+    private val shouldUseLongPressGesture: Boolean = true,
     private val coroutineScope: CoroutineScope,
     val longPressSpeed: Float = 2.0f,
     val doubleTapGesture: DoubleTapGesture,
@@ -118,7 +118,7 @@ class TapGestureState(
     }
 
     fun handleLongPress(offset: Offset) {
-        if (!useLongPressGesture) return
+        if (!shouldUseLongPressGesture) return
         if (!player.isPlaying) return
         if (isLongPressGestureInAction) return
 

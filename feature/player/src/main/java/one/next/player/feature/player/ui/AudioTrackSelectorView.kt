@@ -22,7 +22,7 @@ import one.next.player.feature.player.state.rememberTracksState
 @Composable
 fun BoxScope.AudioTrackSelectorView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     player: Player,
     onDismiss: () -> Unit,
 ) {
@@ -30,7 +30,7 @@ fun BoxScope.AudioTrackSelectorView(
 
     OverlayView(
         modifier = modifier,
-        show = show,
+        shouldShow = shouldShow,
         title = stringResource(R.string.select_audio_track),
     ) {
         Column(
@@ -42,7 +42,7 @@ fun BoxScope.AudioTrackSelectorView(
         ) {
             audioTracksState.tracks.forEachIndexed { index, track ->
                 RadioButtonRow(
-                    selected = track.isSelected,
+                    isSelected = track.isSelected,
                     text = track.mediaTrackGroup.getName(C.TRACK_TYPE_AUDIO, index),
                     onClick = {
                         audioTracksState.switchTrack(index)
@@ -51,7 +51,7 @@ fun BoxScope.AudioTrackSelectorView(
                 )
             }
             RadioButtonRow(
-                selected = audioTracksState.tracks.none { it.isSelected },
+                isSelected = audioTracksState.tracks.none { it.isSelected },
                 text = stringResource(R.string.disable),
                 onClick = {
                     audioTracksState.switchTrack(-1)

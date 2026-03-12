@@ -28,15 +28,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import one.next.player.feature.player.service.getIsLoudnessGainSupported
 import one.next.player.feature.player.service.getLoudnessGain
+import one.next.player.feature.player.service.isLoudnessGainSupported
 import one.next.player.feature.player.service.setLoudnessGain
 
 @OptIn(UnstableApi::class)
 @Composable
 fun rememberVolumeState(
     player: Player?,
-    showVolumePanelIfHeadsetIsOn: Boolean,
+    shouldShowVolumePanelIfHeadsetIsOn: Boolean,
 ): VolumeState {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -44,7 +44,7 @@ fun rememberVolumeState(
         VolumeState(
             player = player,
             context = context,
-            showVolumePanelIfHeadsetIsOn = showVolumePanelIfHeadsetIsOn,
+            shouldShowVolumePanelIfHeadsetIsOn = shouldShowVolumePanelIfHeadsetIsOn,
             scope = scope,
         )
     }
@@ -57,7 +57,7 @@ fun rememberVolumeState(
 class VolumeState(
     private val player: Player?,
     private val context: Context,
-    private val showVolumePanelIfHeadsetIsOn: Boolean,
+    private val shouldShowVolumePanelIfHeadsetIsOn: Boolean,
     private val scope: CoroutineScope,
 ) {
     private val audioManager = getSystemService(context, AudioManager::class.java)!!
@@ -86,12 +86,12 @@ class VolumeState(
         setVolume(targetVolume)
     }
 
-    fun increaseVolume(showVolumePanel: Boolean = false) {
-        setVolume(currentVolume + 1, showVolumePanel)
+    fun increaseVolume(shouldShowVolumePanel: Boolean = false) {
+        setVolume(currentVolume + 1, shouldShowVolumePanel)
     }
 
-    fun decreaseVolume(showVolumePanel: Boolean = false) {
-        setVolume(currentVolume - 1, showVolumePanel)
+    fun decreaseVolume(shouldShowVolumePanel: Boolean = false) {
+        setVolume(currentVolume - 1, shouldShowVolumePanel)
     }
 
     fun handleLifecycle(disposableEffectScope: DisposableEffectScope): DisposableEffectResult = with(disposableEffectScope) {
@@ -115,7 +115,7 @@ class VolumeState(
 
     suspend fun initialize() {
         val player = player as? MediaController ?: return
-        isLoudnessGainSupported = player.getIsLoudnessGainSupported()
+        isLoudnessGainSupported = player.isLoudnessGainSupported()
         val loudnessGain = player.getLoudnessGain()
         val systemVolume = audioManager.currentStreamVolume
 
@@ -134,28 +134,28 @@ class VolumeState(
         player.listen { events ->
             if (events.contains(Player.EVENT_AUDIO_SESSION_ID)) {
                 scope.launch {
-                    isLoudnessGainSupported = player.getIsLoudnessGainSupported()
+                    isLoudnessGainSupported = player.isLoudnessGainSupported()
                 }
             }
         }
     }
 
-    private fun setVolume(volume: Int, showVolumePanel: Boolean = false) {
+    private fun setVolume(volume: Int, shouldShowVolumePanel: Boolean = false) {
         val clampedVolume = volume.coerceIn(0, maxVolume)
         currentVolume = clampedVolume
         volumePercentage = calculateVolumePercentage()
 
         if (clampedVolume <= systemMaxVolume) {
-            setSystemVolume(clampedVolume, showVolumePanel)
+            setSystemVolume(clampedVolume, shouldShowVolumePanel)
             applyVolumeBoost(0)
         } else {
-            setSystemVolume(systemMaxVolume, showVolumePanel)
+            setSystemVolume(systemMaxVolume, shouldShowVolumePanel)
             applyVolumeBoost(clampedVolume - systemMaxVolume)
         }
     }
 
-    private fun setSystemVolume(volume: Int, showVolumePanel: Boolean) {
-        val shouldShowUi = showVolumePanel || (showVolumePanelIfHeadsetIsOn && audioManager.isHeadsetOn)
+    private fun setSystemVolume(volume: Int, shouldShowVolumePanel: Boolean) {
+        val shouldShowUi = shouldShowVolumePanel || (shouldShowVolumePanelIfHeadsetIsOn && audioManager.isHeadsetOn)
         audioManager.setStreamVolume(
             AudioManager.STREAM_MUSIC,
             volume.coerceIn(0, systemMaxVolume),

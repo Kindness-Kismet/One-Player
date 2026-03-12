@@ -53,7 +53,7 @@ import one.next.player.feature.player.state.rememberTracksState
 @Composable
 fun BoxScope.SubtitleSelectorView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     player: Player,
     onSelectSubtitleClick: () -> Unit,
     onEvent: (SubtitleOptionsEvent) -> Unit = {},
@@ -64,7 +64,7 @@ fun BoxScope.SubtitleSelectorView(
 
     OverlayView(
         modifier = modifier,
-        show = show,
+        shouldShow = shouldShow,
         title = stringResource(R.string.select_subtitle_track),
     ) {
         Column(
@@ -76,7 +76,7 @@ fun BoxScope.SubtitleSelectorView(
         ) {
             subtitleTracksState.tracks.forEachIndexed { index, track ->
                 RadioButtonRow(
-                    selected = track.isSelected,
+                    isSelected = track.isSelected,
                     text = track.mediaTrackGroup.getName(C.TRACK_TYPE_TEXT, index),
                     onClick = {
                         subtitleTracksState.switchTrack(index)
@@ -85,7 +85,7 @@ fun BoxScope.SubtitleSelectorView(
                 )
             }
             RadioButtonRow(
-                selected = subtitleTracksState.tracks.none { it.isSelected },
+                isSelected = subtitleTracksState.tracks.none { it.isSelected },
                 text = stringResource(R.string.disable),
                 onClick = {
                     subtitleTracksState.switchTrack(-1)
@@ -265,7 +265,7 @@ private fun NumberChooserInput(
 }
 
 private fun Modifier.repeatingClickable(
-    enabled: Boolean = true,
+    isEnabled: Boolean = true,
     maxDelayMillis: Long = 200,
     minDelayMillis: Long = 5,
     delayDecayFactor: Float = .20f,
@@ -273,13 +273,13 @@ private fun Modifier.repeatingClickable(
 ): Modifier = composed {
     val updatedOnClick by rememberUpdatedState(onClick)
 
-    this.pointerInput(enabled) {
+    this.pointerInput(isEnabled) {
         coroutineScope {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 val heldButtonJob = launch {
                     var currentDelayMillis = maxDelayMillis
-                    while (enabled && down.pressed) {
+                    while (isEnabled && down.pressed) {
                         updatedOnClick()
                         delay(currentDelayMillis)
                         val nextMillis = currentDelayMillis - (currentDelayMillis * delayDecayFactor)

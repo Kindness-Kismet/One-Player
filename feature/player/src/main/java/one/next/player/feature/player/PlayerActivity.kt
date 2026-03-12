@@ -74,7 +74,7 @@ class PlayerActivity : AppCompatActivity() {
     private val onWindowAttributesChangedListener = CopyOnWriteArrayList<Consumer<WindowManager.LayoutParams?>>()
 
     private var isPlaybackFinished = false
-    private var playInBackground: Boolean = false
+    private var shouldPlayInBackground: Boolean = false
     private var isIntentNew: Boolean = true
 
     /**
@@ -114,8 +114,8 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
 
-            CompositionLocalProvider(LocalUseMaterialYouControls provides (uiState.playerPreferences?.useMaterialYouControls == true)) {
-                NextPlayerTheme(darkTheme = true) {
+            CompositionLocalProvider(LocalUseMaterialYouControls provides (uiState.playerPreferences?.shouldUseMaterialYouControls == true)) {
+                NextPlayerTheme(shouldUseDarkTheme = true) {
                     MediaPlayerScreen(
                         player = player,
                         viewModel = viewModel,
@@ -140,7 +140,7 @@ class PlayerActivity : AppCompatActivity() {
                         },
                         onBackClick = { finishAndStopPlayerSession() },
                         onPlayInBackgroundClick = {
-                            playInBackground = true
+                            shouldPlayInBackground = true
                             finish()
                         },
                     )
@@ -167,10 +167,10 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onStop() {
         mediaController?.run {
-            viewModel.playWhenReady = playWhenReady
+            viewModel.shouldPlayWhenReady = playWhenReady
             removeListener(playbackStateListener)
         }
-        val shouldPlayInBackground = playInBackground || playerPreferences?.autoBackgroundPlay == true
+        val shouldPlayInBackground = shouldPlayInBackground || playerPreferences?.shouldAutoPlayInBackground == true
         if (subtitleFileSuspendLauncher.isAwaitingResult || !shouldPlayInBackground) {
             mediaController?.pause()
         }
@@ -199,16 +199,16 @@ class PlayerActivity : AppCompatActivity() {
     private fun startPlayback() {
         val uri = intent.data ?: return
 
-        val returningFromBackground = !isIntentNew && mediaController?.currentMediaItem != null
+        val isReturningFromBackground = !isIntentNew && mediaController?.currentMediaItem != null
         val isNewUriTheCurrentMediaItem = mediaController?.currentMediaItem?.localConfiguration?.uri.toString() == uri.toString()
 
-        if (returningFromBackground || isNewUriTheCurrentMediaItem) {
+        if (isReturningFromBackground || isNewUriTheCurrentMediaItem) {
             Logger.info(
                 TAG,
-                "startPlayback reused current item returning=$returningFromBackground same=$isNewUriTheCurrentMediaItem uri=$uri",
+                "startPlayback reused current item returning=$isReturningFromBackground same=$isNewUriTheCurrentMediaItem uri=$uri",
             )
             mediaController?.prepare()
-            mediaController?.playWhenReady = viewModel.playWhenReady
+            mediaController?.playWhenReady = viewModel.shouldPlayWhenReady
             return
         }
 
@@ -280,7 +280,7 @@ class PlayerActivity : AppCompatActivity() {
         withContext(Dispatchers.Main) {
             mediaController?.run {
                 setMediaItems(mediaItems, mediaItemIndexToPlay, playerApi.position?.toLong() ?: C.TIME_UNSET)
-                playWhenReady = viewModel.playWhenReady
+                playWhenReady = viewModel.shouldPlayWhenReady
                 prepare()
                 Logger.info(TAG, "playVideo prepare total=${System.currentTimeMillis() - t0}ms")
             }
@@ -341,8 +341,8 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-            super.onPlayWhenReadyChanged(playWhenReady, reason)
+        override fun onPlayWhenReadyChanged(shouldPlayWhenReady: Boolean, reason: Int) {
+            super.onPlayWhenReadyChanged(shouldPlayWhenReady, reason)
 
             if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) {
                 if (mediaController?.repeatMode != Player.REPEAT_MODE_OFF) return

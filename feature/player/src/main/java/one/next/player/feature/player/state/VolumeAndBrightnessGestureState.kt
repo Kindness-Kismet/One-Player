@@ -21,8 +21,8 @@ import kotlinx.coroutines.launch
 fun rememberVolumeAndBrightnessGestureState(
     volumeState: VolumeState,
     brightnessState: BrightnessState,
-    enableVolumeGesture: Boolean,
-    enableBrightnessGesture: Boolean,
+    isVolumeGestureEnabled: Boolean,
+    isBrightnessGestureEnabled: Boolean,
     volumeGestureSensitivity: Float,
     brightnessGestureSensitivity: Float,
 ): VolumeAndBrightnessGestureState {
@@ -31,8 +31,8 @@ fun rememberVolumeAndBrightnessGestureState(
         VolumeAndBrightnessGestureState(
             volumeState = volumeState,
             brightnessState = brightnessState,
-            enableVolumeGesture = enableVolumeGesture,
-            enableBrightnessGesture = enableBrightnessGesture,
+            isVolumeGestureEnabled = isVolumeGestureEnabled,
+            isBrightnessGestureEnabled = isBrightnessGestureEnabled,
             volumeGestureSensitivity = volumeGestureSensitivity,
             brightnessGestureSensitivity = brightnessGestureSensitivity,
             coroutineScope = coroutineScope,
@@ -45,8 +45,8 @@ fun rememberVolumeAndBrightnessGestureState(
 class VolumeAndBrightnessGestureState(
     private val volumeState: VolumeState,
     private val brightnessState: BrightnessState,
-    private val enableVolumeGesture: Boolean = true,
-    private val enableBrightnessGesture: Boolean = true,
+    private val isVolumeGestureEnabled: Boolean = true,
+    private val isBrightnessGestureEnabled: Boolean = true,
     private val volumeGestureSensitivity: Float,
     private val brightnessGestureSensitivity: Float,
     private val coroutineScope: CoroutineScope,
@@ -69,8 +69,8 @@ class VolumeAndBrightnessGestureState(
         val viewCenterX = size.width / 2
         job?.cancel()
         activeGesture = when {
-            offset.x < viewCenterX -> VerticalGesture.BRIGHTNESS.takeIf { enableBrightnessGesture }
-            else -> VerticalGesture.VOLUME.takeIf { enableVolumeGesture }
+            offset.x < viewCenterX -> VerticalGesture.BRIGHTNESS.takeIf { isBrightnessGestureEnabled }
+            else -> VerticalGesture.VOLUME.takeIf { isVolumeGestureEnabled }
         }
         startingY = offset.y
         startVolumePercentage = volumeState.volumePercentage

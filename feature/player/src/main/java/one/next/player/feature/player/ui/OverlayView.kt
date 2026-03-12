@@ -35,7 +35,7 @@ import one.next.player.core.ui.theme.NextPlayerTheme
 @Composable
 fun BoxScope.OverlayView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     title: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -53,7 +53,7 @@ fun BoxScope.OverlayView(
                 Alignment.CenterEnd
             },
         ),
-        visible = show,
+        visible = shouldShow,
         enter = if (configuration.isPortrait) slideInVertically { it } else slideInHorizontally { it },
         exit = if (configuration.isPortrait) slideOutVertically { it } else slideOutHorizontally { it },
     ) {
@@ -94,7 +94,7 @@ fun BoxScope.OverlayView(
 private fun PreviewOverlayView() {
     NextPlayerTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            OverlayView(modifier = Modifier.align(Alignment.BottomCenter), title = "Selector view", show = true) {
+            OverlayView(modifier = Modifier.align(Alignment.BottomCenter), title = "Selector view", shouldShow = true) {
                 Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum")
             }
         }

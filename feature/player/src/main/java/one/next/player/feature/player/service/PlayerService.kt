@@ -284,7 +284,7 @@ class PlayerService : MediaSessionService() {
             if (isMediaItemReady || tracks.groups.isEmpty()) return
             isMediaItemReady = true
 
-            if (!playerPreferences.rememberSelections) return
+            if (!playerPreferences.shouldRememberSelections) return
             val player = mediaSession?.player ?: return
             val metadata = player.mediaMetadata
             metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
@@ -348,8 +348,8 @@ class PlayerService : MediaSessionService() {
             }
         }
 
-        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-            super.onPlayWhenReadyChanged(playWhenReady, reason)
+        override fun onPlayWhenReadyChanged(shouldPlayWhenReady: Boolean, reason: Int) {
+            super.onPlayWhenReadyChanged(shouldPlayWhenReady, reason)
             if (reason != Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM) return
 
             val player = mediaSession?.player ?: return
@@ -419,7 +419,7 @@ class PlayerService : MediaSessionService() {
 
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
             super.onAudioSessionIdChanged(audioSessionId)
-            if (!playerPreferences.enableVolumeBoost) return
+            if (!playerPreferences.isVolumeBoostEnabled) return
             if (audioSessionId == C.AUDIO_SESSION_ID_UNSET) return
             try {
                 loudnessEnhancer?.release()
@@ -557,7 +557,7 @@ class PlayerService : MediaSessionService() {
         try {
             contentResolver.openInputStream(uri)?.use { stream ->
                 var offset = 0L
-                var firstMoovSeen = false
+                var hasSeenFirstMoov = false
                 val header = ByteArray(8)
 
                 while (true) {
@@ -572,10 +572,10 @@ class PlayerService : MediaSessionService() {
                     if (size < 8) break
 
                     if (type == "moov") {
-                        if (firstMoovSeen) {
+                        if (hasSeenFirstMoov) {
                             return SkipRegion(start = offset, length = size)
                         }
-                        firstMoovSeen = true
+                        hasSeenFirstMoov = true
                     }
 
                     if (type == "mdat") break
@@ -606,7 +606,7 @@ class PlayerService : MediaSessionService() {
     ) : DataSource by upstream {
 
         private var isTarget = false
-        private var gapCrossed = false
+        private var hasCrossedGap = false
         private var bytesUntilGap = Long.MAX_VALUE
         private var currentDataSpec: DataSpec? = null
 
@@ -617,7 +617,7 @@ class PlayerService : MediaSessionService() {
 
             val virtualPos = dataSpec.position
             if (virtualPos >= gapStart) {
-                gapCrossed = true
+                hasCrossedGap = true
                 bytesUntilGap = Long.MAX_VALUE
                 val adjustedSpec = dataSpec.buildUpon()
                     .setPosition(virtualPos + gapLength)
@@ -625,7 +625,7 @@ class PlayerService : MediaSessionService() {
                 return upstream.open(adjustedSpec)
             }
 
-            gapCrossed = false
+            hasCrossedGap = false
             bytesUntilGap = gapStart - virtualPos
             val length = upstream.open(dataSpec)
             if (length == C.LENGTH_UNSET.toLong()) return length
@@ -641,7 +641,7 @@ class PlayerService : MediaSessionService() {
         override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
             if (!isTarget) return upstream.read(buffer, offset, length)
 
-            if (!gapCrossed && bytesUntilGap <= 0L) {
+            if (!hasCrossedGap && bytesUntilGap <= 0L) {
                 upstream.close()
                 upstream.open(
                     DataSpec.Builder()
@@ -649,16 +649,16 @@ class PlayerService : MediaSessionService() {
                         .setPosition(gapStart + gapLength)
                         .build(),
                 )
-                gapCrossed = true
+                hasCrossedGap = true
             }
 
-            val toRead = if (!gapCrossed) {
+            val toRead = if (!hasCrossedGap) {
                 minOf(length.toLong(), bytesUntilGap).toInt()
             } else {
                 length
             }
             val bytesRead = upstream.read(buffer, offset, toRead)
-            if (bytesRead > 0 && !gapCrossed) {
+            if (bytesRead > 0 && !hasCrossedGap) {
                 bytesUntilGap -= bytesRead
             }
             return bytesRead
@@ -794,27 +794,27 @@ class PlayerService : MediaSessionService() {
                 }
 
                 CustomCommands.SET_SKIP_SILENCE_ENABLED -> {
-                    val enabled = args.getBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY)
-                    mediaSession?.player?.playerSpecificSkipSilenceEnabled = enabled
+                    val isSkipSilenceEnabled = args.getBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY)
+                    mediaSession?.player?.isSkipSilenceEnabledForPlayer = isSkipSilenceEnabled
                     mediaSession?.sessionExtras = Bundle().apply {
-                        putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, enabled)
+                        putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, isSkipSilenceEnabled)
                     }
                     return@future SessionResult(SessionResult.RESULT_SUCCESS)
                 }
 
                 CustomCommands.GET_SKIP_SILENCE_ENABLED -> {
-                    val enabled = mediaSession?.player?.playerSpecificSkipSilenceEnabled ?: false
+                    val isSkipSilenceEnabled = mediaSession?.player?.isSkipSilenceEnabledForPlayer ?: false
                     return@future SessionResult(
                         SessionResult.RESULT_SUCCESS,
                         Bundle().apply {
-                            putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, enabled)
+                            putBoolean(CustomCommands.SKIP_SILENCE_ENABLED_KEY, isSkipSilenceEnabled)
                         },
                     )
                 }
 
                 CustomCommands.SET_IS_SCRUBBING_MODE_ENABLED -> {
-                    val enabled = args.getBoolean(CustomCommands.IS_SCRUBBING_MODE_ENABLED_KEY)
-                    mediaSession?.player?.setIsScrubbingModeEnabled(enabled)
+                    val isScrubbingModeEnabled = args.getBoolean(CustomCommands.IS_SCRUBBING_MODE_ENABLED_KEY)
+                    mediaSession?.player?.setIsScrubbingModeEnabled(isScrubbingModeEnabled)
                     return@future SessionResult(SessionResult.RESULT_SUCCESS)
                 }
 
@@ -966,15 +966,15 @@ class PlayerService : MediaSessionService() {
                     .setUsage(C.USAGE_MEDIA)
                     .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                     .build(),
-                playerPreferences.requireAudioFocus,
+                playerPreferences.shouldRequireAudioFocus,
             )
-            .setHandleAudioBecomingNoisy(playerPreferences.pauseOnHeadsetDisconnect)
+            .setHandleAudioBecomingNoisy(playerPreferences.shouldPauseOnHeadsetDisconnect)
             .build()
             .also {
                 assHandler.init(it)
                 it.addListener(playbackStateListener)
                 it.addAnalyticsListener(startupAnalyticsListener)
-                it.pauseAtEndOfMediaItems = !playerPreferences.autoplay
+                it.pauseAtEndOfMediaItems = !playerPreferences.shouldAutoPlay
                 it.repeatMode = when (playerPreferences.loopMode) {
                     LoopMode.OFF -> Player.REPEAT_MODE_OFF
                     LoopMode.ONE -> Player.REPEAT_MODE_ONE
@@ -1247,7 +1247,7 @@ private fun readFully(stream: InputStream, buffer: ByteArray): Boolean {
 
 @get:UnstableApi
 @set:UnstableApi
-private var Player.playerSpecificSkipSilenceEnabled: Boolean
+private var Player.isSkipSilenceEnabledForPlayer: Boolean
     @OptIn(UnstableApi::class)
     get() = when (this) {
         is ExoPlayer -> this.skipSilenceEnabled

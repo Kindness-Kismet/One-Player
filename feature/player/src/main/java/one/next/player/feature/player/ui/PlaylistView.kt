@@ -63,7 +63,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun BoxScope.PlaylistView(
     modifier: Modifier = Modifier,
-    show: Boolean,
+    shouldShow: Boolean,
     player: Player,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -75,8 +75,8 @@ fun BoxScope.PlaylistView(
     }
 
     // Auto-scroll to current item when playlist opens
-    LaunchedEffect(show) {
-        if (show && playlistState.playlist.isNotEmpty()) {
+    LaunchedEffect(shouldShow) {
+        if (shouldShow && playlistState.playlist.isNotEmpty()) {
             val currentIndex = playlistState.currentMediaItemIndex
             if (currentIndex in playlistState.playlist.indices) {
                 lazyListState.scrollToItem(currentIndex)
@@ -86,7 +86,7 @@ fun BoxScope.PlaylistView(
 
     OverlayView(
         modifier = modifier,
-        show = show,
+        shouldShow = shouldShow,
         title = stringResource(R.string.now_playing),
     ) {
         if (playlistState.playlist.isEmpty()) {
@@ -150,7 +150,7 @@ private fun ReorderableCollectionItemScope.PlaylistItemView(
                 interactionSource = interactionSource,
                 dragGestureDetector = DragGestureDetector.LongPress,
             ),
-        selected = isCurrentItem,
+        isSelected = isCurrentItem,
         contentPadding = PaddingValues(8.dp),
         interactionSource = interactionSource,
         colors = ListItemDefaults.segmentedColors(

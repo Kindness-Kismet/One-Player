@@ -35,8 +35,8 @@ import one.next.player.feature.player.extensions.videoZoom
 fun rememberVideoZoomAndContentScaleState(
     player: Player,
     initialContentScale: VideoContentScale,
-    enableZoomGesture: Boolean,
-    enablePanGesture: Boolean,
+    isZoomGestureEnabled: Boolean,
+    isPanGestureEnabled: Boolean,
     onEvent: (VideoZoomEvent) -> Unit = {},
 ): VideoZoomAndContentScaleState {
     val coroutineScope = rememberCoroutineScope()
@@ -44,8 +44,8 @@ fun rememberVideoZoomAndContentScaleState(
         VideoZoomAndContentScaleState(
             player = player,
             initialContentScale = initialContentScale,
-            enableZoomGesture = enableZoomGesture,
-            enablePanGesture = enablePanGesture,
+            isZoomGestureEnabled = isZoomGestureEnabled,
+            isPanGestureEnabled = isPanGestureEnabled,
             onEvent = onEvent,
             coroutineScope = coroutineScope,
         )
@@ -58,8 +58,8 @@ fun rememberVideoZoomAndContentScaleState(
 class VideoZoomAndContentScaleState(
     private val player: Player,
     initialContentScale: VideoContentScale,
-    private val enableZoomGesture: Boolean = true,
-    private val enablePanGesture: Boolean = true,
+    private val isZoomGestureEnabled: Boolean = true,
+    private val isPanGestureEnabled: Boolean = true,
     private val onEvent: (VideoZoomEvent) -> Unit,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -81,7 +81,7 @@ class VideoZoomAndContentScaleState(
     var isZooming: Boolean by mutableStateOf(false)
         private set
 
-    var showContentScaleIndicator: Boolean by mutableStateOf(false)
+    var shouldShowContentScaleIndicator: Boolean by mutableStateOf(false)
         private set
 
     // 从 metadata extras 追踪视频尺寸，用于 resizeWithContentScale 的后备值
@@ -100,15 +100,15 @@ class VideoZoomAndContentScaleState(
         offset = Offset.Zero
         onEvent(VideoZoomEvent.ContentScaleChanged(videoContentScale))
         updateVideoScaleMetadataAndSendEvent()
-        showContentScaleIndicator()
+        shouldShowContentScaleIndicator()
     }
 
-    private fun showContentScaleIndicator() {
+    private fun shouldShowContentScaleIndicator() {
         showContentScaleJob?.cancel()
-        showContentScaleIndicator = true
+        shouldShowContentScaleIndicator = true
         showContentScaleJob = coroutineScope.launch {
             delay(CONTENT_SCALE_INDICATOR_DURATION_MS)
-            showContentScaleIndicator = false
+            shouldShowContentScaleIndicator = false
             showContentScaleJob = null
         }
     }
@@ -119,7 +119,7 @@ class VideoZoomAndContentScaleState(
 
     fun onZoomPanGesture(constraints: Constraints, panChange: Offset, zoomChange: Float) {
         if (player.duration == C.TIME_UNSET) return
-        if (!enableZoomGesture) return
+        if (!isZoomGestureEnabled) return
 
         isZooming = true
         zoom = (zoom * zoomChange).coerceIn(MIN_ZOOM, MAX_ZOOM)
@@ -130,7 +130,7 @@ class VideoZoomAndContentScaleState(
         val maxX = abs(extraWidth / 2)
         val maxY = abs(extraHeight / 2)
 
-        if (enablePanGesture) {
+        if (isPanGestureEnabled) {
             offset = Offset(
                 x = (offset.x + zoom * panChange.x).coerceIn(-maxX, maxX),
                 y = (offset.y + zoom * panChange.y).coerceIn(-maxY, maxY),

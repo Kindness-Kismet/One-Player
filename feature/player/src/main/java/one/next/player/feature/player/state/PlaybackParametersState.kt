@@ -15,7 +15,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import one.next.player.feature.player.service.getSkipSilenceEnabled
+import one.next.player.feature.player.service.isSkipSilenceEnabled
 import one.next.player.feature.player.service.setPersistentPlaybackSpeed
 import one.next.player.feature.player.service.setSkipSilenceEnabled
 
@@ -36,7 +36,7 @@ class PlaybackParametersState(
     var speed: Float by mutableFloatStateOf(1f)
         private set
 
-    var skipSilenceEnabled: Boolean by mutableStateOf(false)
+    var isSkipSilenceEnabled: Boolean by mutableStateOf(false)
         private set
 
     fun setPlaybackSpeed(speed: Float) {
@@ -46,11 +46,11 @@ class PlaybackParametersState(
         }
     }
 
-    fun setIsSkipSilenceEnabled(enabled: Boolean) {
+    fun setIsSkipSilenceEnabled(isEnabled: Boolean) {
         scope.launch {
             when (player) {
-                is MediaController -> player.setSkipSilenceEnabled(enabled)
-                is ExoPlayer -> player.skipSilenceEnabled = enabled
+                is MediaController -> player.setSkipSilenceEnabled(isEnabled)
+                is ExoPlayer -> player.skipSilenceEnabled = isEnabled
                 else -> return@launch
             }
             updateSkipSilenceEnabled()
@@ -74,8 +74,8 @@ class PlaybackParametersState(
 
     private fun updateSkipSilenceEnabled() {
         scope.launch {
-            skipSilenceEnabled = when (player) {
-                is MediaController -> player.getSkipSilenceEnabled()
+            isSkipSilenceEnabled = when (player) {
+                is MediaController -> player.isSkipSilenceEnabled()
                 is ExoPlayer -> player.skipSilenceEnabled
                 else -> return@launch
             }

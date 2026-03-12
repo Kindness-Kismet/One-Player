@@ -33,13 +33,13 @@ fun BoxScope.OverlayShowView(
     )
 
     AudioTrackSelectorView(
-        show = overlayView == OverlayView.AUDIO_SELECTOR,
+        shouldShow = overlayView == OverlayView.AUDIO_SELECTOR,
         player = player,
         onDismiss = onDismiss,
     )
 
     SubtitleSelectorView(
-        show = overlayView == OverlayView.SUBTITLE_SELECTOR,
+        shouldShow = overlayView == OverlayView.SUBTITLE_SELECTOR,
         player = player,
         onSelectSubtitleClick = onSelectSubtitleClick,
         onEvent = onSubtitleOptionEvent,
@@ -47,19 +47,19 @@ fun BoxScope.OverlayShowView(
     )
 
     PlaybackSpeedSelectorView(
-        show = overlayView == OverlayView.PLAYBACK_SPEED,
+        shouldShow = overlayView == OverlayView.PLAYBACK_SPEED,
         player = player,
     )
 
     VideoContentScaleSelectorView(
-        show = overlayView == OverlayView.VIDEO_CONTENT_SCALE,
+        shouldShow = overlayView == OverlayView.VIDEO_CONTENT_SCALE,
         videoContentScale = videoContentScale,
         onVideoContentScaleChanged = onVideoContentScaleChanged,
         onDismiss = onDismiss,
     )
 
     PlaylistView(
-        show = overlayView == OverlayView.PLAYLIST,
+        shouldShow = overlayView == OverlayView.PLAYLIST,
         player = player,
     )
 }

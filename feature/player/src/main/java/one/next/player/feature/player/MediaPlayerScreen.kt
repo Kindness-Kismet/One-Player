@@ -101,7 +101,7 @@ fun MediaPlayerScreen(
 ) {
     val volumeState = rememberVolumeState(
         player = player,
-        showVolumePanelIfHeadsetIsOn = playerPreferences.showSystemVolumePanel,
+        shouldShowVolumePanelIfHeadsetIsOn = playerPreferences.shouldShowSystemVolumePanel,
     )
     player ?: return
     val metadataState = rememberMetadataState(player)
@@ -114,31 +114,31 @@ fun MediaPlayerScreen(
         player = player,
         doubleTapGesture = playerPreferences.doubleTapGesture,
         seekIncrementMillis = playerPreferences.seekIncrement.seconds.inWholeMilliseconds,
-        useLongPressGesture = playerPreferences.useLongPressControls,
+        shouldUseLongPressGesture = playerPreferences.shouldUseLongPressControls,
         longPressSpeed = playerPreferences.longPressControlsSpeed,
     )
     val seekGestureState = rememberSeekGestureState(
         player = player,
         sensitivity = playerPreferences.seekSensitivity,
-        enableSeekGesture = playerPreferences.useSeekControls,
+        isSeekGestureEnabled = playerPreferences.shouldUseSeekControls,
     )
     val pictureInPictureState = rememberPictureInPictureState(
         player = player,
-        autoEnter = playerPreferences.autoPip,
+        shouldAutoEnter = playerPreferences.shouldAutoEnterPip,
     )
     val videoZoomAndContentScaleState = rememberVideoZoomAndContentScaleState(
         player = player,
         initialContentScale = playerPreferences.playerVideoZoom,
-        enableZoomGesture = playerPreferences.useZoomControls,
-        enablePanGesture = playerPreferences.enablePanGesture,
+        isZoomGestureEnabled = playerPreferences.shouldUseZoomControls,
+        isPanGestureEnabled = playerPreferences.isPanGestureEnabled,
         onEvent = viewModel::onVideoZoomEvent,
     )
     val brightnessState = rememberBrightnessState()
     val volumeAndBrightnessGestureState = rememberVolumeAndBrightnessGestureState(
         volumeState = volumeState,
         brightnessState = brightnessState,
-        enableVolumeGesture = playerPreferences.enableVolumeSwipeGesture,
-        enableBrightnessGesture = playerPreferences.enableBrightnessSwipeGesture,
+        isVolumeGestureEnabled = playerPreferences.isVolumeSwipeGestureEnabled,
+        isBrightnessGestureEnabled = playerPreferences.isBrightnessSwipeGestureEnabled,
         volumeGestureSensitivity = playerPreferences.volumeGestureSensitivity,
         brightnessGestureSensitivity = playerPreferences.brightnessGestureSensitivity,
     )
@@ -161,13 +161,13 @@ fun MediaPlayerScreen(
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        if (playerPreferences.rememberPlayerBrightness) {
+        if (playerPreferences.shouldRememberPlayerBrightness) {
             brightnessState.setBrightness(playerPreferences.playerBrightness)
         }
     }
 
     LaunchedEffect(brightnessState.currentBrightness) {
-        if (playerPreferences.rememberPlayerBrightness) {
+        if (playerPreferences.shouldRememberPlayerBrightness) {
             viewModel.updatePlayerBrightness(brightnessState.currentBrightness)
         }
     }
@@ -190,17 +190,17 @@ fun MediaPlayerScreen(
                     videoZoomAndContentScaleState = videoZoomAndContentScaleState,
                     volumeAndBrightnessGestureState = volumeAndBrightnessGestureState,
                     subtitleConfiguration = SubtitleConfiguration(
-                        useSystemCaptionStyle = playerPreferences.useSystemCaptionStyle,
-                        showBackground = playerPreferences.subtitleBackground,
+                        shouldUseSystemCaptionStyle = playerPreferences.shouldUseSystemCaptionStyle,
+                        shouldShowBackground = playerPreferences.shouldShowSubtitleBackground,
                         font = playerPreferences.subtitleFont,
                         textSize = playerPreferences.subtitleTextSize,
-                        textBold = playerPreferences.subtitleTextBold,
-                        applyEmbeddedStyles = playerPreferences.applyEmbeddedStyles,
+                        shouldUseBoldText = playerPreferences.shouldUseBoldSubtitleText,
+                        shouldApplyEmbeddedStyles = playerPreferences.shouldApplyEmbeddedStyles,
                     ),
                 )
 
                 AnimatedVisibility(
-                    visible = controlsVisibilityState.controlsVisible,
+                    visible = controlsVisibilityState.isControlsVisible,
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
@@ -244,7 +244,7 @@ fun MediaPlayerScreen(
                     }
                 }
 
-                if (controlsVisibilityState.controlsVisible && controlsVisibilityState.controlsLocked) {
+                if (controlsVisibilityState.isControlsVisible && controlsVisibilityState.isControlsLocked) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -262,7 +262,7 @@ fun MediaPlayerScreen(
                     PlayerControlsView(
                         topView = {
                             AnimatedVisibility(
-                                visible = controlsVisibilityState.controlsVisible,
+                                visible = controlsVisibilityState.isControlsVisible,
                                 enter = fadeIn(),
                                 exit = fadeOut(),
                             ) {
@@ -292,14 +292,14 @@ fun MediaPlayerScreen(
                             when {
                                 seekGestureState.seekAmount != null -> InfoView(info = "${seekGestureState.seekAmountFormatted}\n[${seekGestureState.seekToPositionFormated}]")
                                 videoZoomAndContentScaleState.isZooming -> InfoView(info = "${(videoZoomAndContentScaleState.zoom * 100).toInt()}%")
-                                videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()))
-                                controlsVisibilityState.controlsVisible -> ControlsMiddleView(player = player)
+                                videoZoomAndContentScaleState.shouldShowContentScaleIndicator -> InfoView(info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()))
+                                controlsVisibilityState.isControlsVisible -> ControlsMiddleView(player = player)
                                 else -> Unit
                             }
                         },
                         bottomView = {
                             AnimatedVisibility(
-                                visible = controlsVisibilityState.controlsVisible && !controlsVisibilityState.controlsLocked,
+                                visible = controlsVisibilityState.isControlsVisible && !controlsVisibilityState.isControlsLocked,
                                 enter = fadeIn(),
                                 exit = fadeOut(),
                             ) {
