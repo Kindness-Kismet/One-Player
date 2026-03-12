@@ -151,23 +151,31 @@ class LocalMediaSynchronizer @Inject constructor(
         manuallyDiscoveredPaths: Set<String>,
         shouldIgnoreNoMediaFiles: Boolean,
     ): List<MediaVideo> = withContext(dispatcher) {
+        val hasAllFilesAccess = hasManageExternalStorageAccess()
         if (manuallyDiscoveredPaths.isNotEmpty()) {
             Logger.info(TAG, "mergeVisibleMedia manualPaths=${manuallyDiscoveredPaths.size}")
         }
-        val manuallyDiscoveredVideos = manuallyDiscoveredPaths
-            .asSequence()
-            .map(::File)
-            .filter(File::exists)
-            .filter { it.isVisibleVideoFile() }
-            .map { it.toBasicMediaVideo() }
-            .toList()
+        val manuallyDiscoveredVideos = if (hasAllFilesAccess) {
+            manuallyDiscoveredPaths
+                .asSequence()
+                .map(::File)
+                .filter(File::exists)
+                .filter { it.isVisibleVideoFile() }
+                .map { it.toBasicMediaVideo() }
+                .toList()
+        } else {
+            if (manuallyDiscoveredPaths.isNotEmpty()) {
+                Logger.info(TAG, "mergeVisibleMedia skippedManualPaths=${manuallyDiscoveredPaths.size} noAllFilesAccess=true")
+            }
+            emptyList()
+        }
 
         val combinedVisibleMedia = mediaStoreVideos + manuallyDiscoveredVideos
         Logger.info(
             TAG,
-            "mergeVisibleMedia result mediaStore=${mediaStoreVideos.size} manual=${manuallyDiscoveredVideos.size} combined=${combinedVisibleMedia.size} noMedia=$shouldIgnoreNoMediaFiles manageAccess=${hasManageExternalStorageAccess()}",
+            "mergeVisibleMedia result mediaStore=${mediaStoreVideos.size} manual=${manuallyDiscoveredVideos.size} combined=${combinedVisibleMedia.size} noMedia=$shouldIgnoreNoMediaFiles manageAccess=$hasAllFilesAccess",
         )
-        if (!shouldIgnoreNoMediaFiles || !hasManageExternalStorageAccess()) {
+        if (!shouldIgnoreNoMediaFiles || !hasAllFilesAccess) {
             return@withContext combinedVisibleMedia
                 .distinctBy(MediaVideo::data)
                 .sortedBy(MediaVideo::data)
