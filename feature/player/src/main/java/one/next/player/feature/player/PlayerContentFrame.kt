@@ -97,15 +97,17 @@ fun PlayerContentFrame(
         volumeAndBrightnessGestureState = volumeAndBrightnessGestureState,
     )
 
-    SubtitleView(
-        modifier = Modifier.resizeWithContentScale(
-            contentScale = videoZoomAndContentScaleState.videoContentScale.toContentScale(),
-            sourceSizeDp = sourceSizeDp,
-        ),
-        player = player,
-        isInPictureInPictureMode = pictureInPictureState.isInPictureInPictureMode,
-        configuration = subtitleConfiguration,
-    )
+    if (!presentationState.coverSurface) {
+        SubtitleView(
+            modifier = Modifier.resizeWithContentScale(
+                contentScale = videoZoomAndContentScaleState.videoContentScale.toContentScale(),
+                sourceSizeDp = sourceSizeDp,
+            ),
+            player = player,
+            isInPictureInPictureMode = pictureInPictureState.isInPictureInPictureMode,
+            configuration = subtitleConfiguration,
+        )
+    }
 
     if (presentationState.coverSurface) {
         ShutterView()

@@ -14,8 +14,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
+import one.next.player.feature.player.extensions.availableDurationMs
+import one.next.player.feature.player.extensions.canSeekCurrentMediaItem
 import one.next.player.feature.player.extensions.formatted
 import one.next.player.feature.player.extensions.setIsScrubbingModeEnabled
+import one.next.player.feature.player.extensions.seekToRequestedPosition
 
 @UnstableApi
 @Composable
@@ -55,21 +58,23 @@ class SeekGestureState(
     private var seekStartX = 0f
 
     fun onSeek(value: Long) {
-        if (player.duration == C.TIME_UNSET) return
-        if (!player.isCurrentMediaItemSeekable) return
+        if (!player.canSeekCurrentMediaItem()) return
+        val duration = player.availableDurationMs()
+        if (duration == C.TIME_UNSET) return
+        val currentPosition = player.currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
 
         if (!isSeeking) {
             isSeeking = true
-            seekStartPosition = player.currentPosition
-            pendingSeekPosition = player.currentPosition
+            seekStartPosition = currentPosition
+            pendingSeekPosition = currentPosition
             player.setIsScrubbingModeEnabled(true)
         }
 
-        val newPosition = value.coerceIn(0L, player.duration)
+        val newPosition = value.coerceIn(0L, duration)
         pendingSeekPosition = newPosition
         seekAmount = (newPosition - seekStartPosition!!).coerceIn(
             minimumValue = 0 - seekStartPosition!!,
-            maximumValue = player.duration - seekStartPosition!!,
+            maximumValue = duration - seekStartPosition!!,
         )
     }
 
@@ -80,14 +85,15 @@ class SeekGestureState(
 
     fun onDragStart(offset: Offset) {
         if (!isSeekGestureEnabled) return
-        if (player.currentPosition == C.TIME_UNSET) return
-        if (player.duration == C.TIME_UNSET) return
-        if (!player.isCurrentMediaItemSeekable) return
+        if (!player.canSeekCurrentMediaItem()) return
+        val duration = player.availableDurationMs()
+        if (duration == C.TIME_UNSET) return
+        val currentPosition = player.currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
 
         isSeeking = true
         seekStartX = offset.x
-        seekStartPosition = player.currentPosition
-        pendingSeekPosition = player.currentPosition
+        seekStartPosition = currentPosition
+        pendingSeekPosition = currentPosition
 
         player.setIsScrubbingModeEnabled(true)
     }
@@ -95,20 +101,20 @@ class SeekGestureState(
     @OptIn(UnstableApi::class)
     fun onDrag(change: PointerInputChange, dragAmount: Float) {
         val seekStartPosition = seekStartPosition ?: return
-        if (player.duration == C.TIME_UNSET) return
-        if (!player.isCurrentMediaItemSeekable) return
+        val duration = player.availableDurationMs()
+        if (duration == C.TIME_UNSET) return
         if (change.isConsumed) return
 
         val currentPreviewPosition = pendingSeekPosition ?: seekStartPosition
         if (currentPreviewPosition <= 0L && dragAmount < 0) return
-        if (currentPreviewPosition >= player.duration && dragAmount > 0) return
+        if (currentPreviewPosition >= duration && dragAmount > 0) return
 
         val newPosition = (seekStartPosition + ((change.position.x - seekStartX) * (sensitivity * 100)).toInt())
-            .coerceIn(0L, player.duration)
+            .coerceIn(0L, duration)
         pendingSeekPosition = newPosition
         seekAmount = (newPosition - seekStartPosition).coerceIn(
             minimumValue = 0 - seekStartPosition,
-            maximumValue = player.duration - seekStartPosition,
+            maximumValue = duration - seekStartPosition,
         )
     }
 
@@ -119,8 +125,9 @@ class SeekGestureState(
 
     private fun commitPendingSeek() {
         val pendingSeekPosition = pendingSeekPosition ?: return
-        if (player.currentPosition != pendingSeekPosition) {
-            player.seekTo(pendingSeekPosition)
+        val currentPosition = player.currentPosition.takeIf { it != C.TIME_UNSET }
+        if (currentPosition == null || currentPosition != pendingSeekPosition) {
+            player.seekToRequestedPosition(pendingSeekPosition)
         }
     }
 

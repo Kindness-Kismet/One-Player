@@ -21,6 +21,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import one.next.player.core.model.DoubleTapGesture
+import one.next.player.feature.player.extensions.canSeekCurrentMediaItem
+import one.next.player.feature.player.extensions.seekByRequestedOffset
 import one.next.player.feature.player.service.setTransientPlaybackSpeed
 
 @UnstableApi
@@ -63,7 +65,7 @@ class TapGestureState(
     private var currentSpeed: Float = player.playbackParameters.speed
 
     fun handleDoubleTap(offset: Offset, size: IntSize) {
-        if (!player.isCurrentMediaItemSeekable) return
+        if (!player.canSeekCurrentMediaItem()) return
 
         val action = when (doubleTapGesture) {
             DoubleTapGesture.FAST_FORWARD_AND_REWIND -> {
@@ -90,7 +92,7 @@ class TapGestureState(
 
         when (action) {
             DoubleTapAction.SEEK_BACKWARD -> {
-                player.seekTo(player.currentPosition - seekIncrementMillis)
+                player.seekByRequestedOffset(-seekIncrementMillis)
                 if (seekMillis > 0L) {
                     seekMillis = 0L
                 }
@@ -99,7 +101,7 @@ class TapGestureState(
             }
 
             DoubleTapAction.SEEK_FORWARD -> {
-                player.seekTo(player.currentPosition + seekIncrementMillis)
+                player.seekByRequestedOffset(seekIncrementMillis)
                 if (seekMillis < 0L) {
                     seekMillis = 0L
                 }

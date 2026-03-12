@@ -9,6 +9,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import one.next.player.core.common.Logger
+import one.next.player.feature.player.service.preciseSeekTo
 import one.next.player.feature.player.service.setMediaControllerIsScrubbingModeEnabled
 
 /**
@@ -88,6 +89,54 @@ fun Player.addAdditionalSubtitleConfiguration(subtitle: MediaItem.SubtitleConfig
     addMediaItem(index + 1, updateMediaItem)
     seekToDefaultPosition(index + 1)
     removeMediaItem(index)
+}
+
+fun Player.availableDurationMs(): Long {
+    val playerDuration = duration
+    if (playerDuration != C.TIME_UNSET && playerDuration > 0L) {
+        return playerDuration
+    }
+
+    return currentMediaItem?.mediaMetadata?.durationMs?.takeIf { it > 0L } ?: C.TIME_UNSET
+}
+
+fun Player.canSeekCurrentMediaItem(): Boolean {
+    if (availableDurationMs() == C.TIME_UNSET) return false
+
+    return when (this) {
+        is MediaController -> {
+            isCommandAvailable(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) ||
+                currentMediaItem?.mediaMetadata?.isApproximateSeekEnabled == true
+        }
+
+        else -> true
+    }
+}
+
+fun Player.seekToRequestedPosition(positionMs: Long) {
+    val duration = availableDurationMs()
+    if (duration == C.TIME_UNSET) return
+
+    val targetPosition = positionMs.coerceIn(0L, duration)
+    if (this is MediaController) {
+        val shouldUsePreciseSeekCommand = !isCommandAvailable(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) &&
+            currentMediaItem?.mediaMetadata?.isApproximateSeekEnabled == true
+        if (shouldUsePreciseSeekCommand) {
+            Logger.info(
+                "Player",
+                "Request precise seek mediaId=${currentMediaItem?.mediaId} target=$targetPosition",
+            )
+            preciseSeekTo(targetPosition)
+            return
+        }
+    }
+
+    seekTo(targetPosition)
+}
+
+fun Player.seekByRequestedOffset(offsetMs: Long) {
+    val currentPosition = currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
+    seekToRequestedPosition(currentPosition + offsetMs)
 }
 
 @OptIn(UnstableApi::class)

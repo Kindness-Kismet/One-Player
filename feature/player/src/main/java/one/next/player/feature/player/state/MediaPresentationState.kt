@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.listen
 import androidx.media3.common.util.UnstableApi
@@ -58,6 +59,7 @@ class MediaPresentationState(
                 player.listen { events ->
                     if (events.containsAny(
                             Player.EVENT_MEDIA_ITEM_TRANSITION,
+                            Player.EVENT_MEDIA_METADATA_CHANGED,
                             Player.EVENT_TIMELINE_CHANGED,
                             Player.EVENT_PLAYBACK_STATE_CHANGED,
                         )
@@ -97,7 +99,10 @@ class MediaPresentationState(
     }
 
     private fun updateDuration() {
-        duration = player.duration.coerceAtLeast(0L)
+        duration = player.duration
+            .takeIf { it != C.TIME_UNSET && it > 0L }
+            ?: player.mediaMetadata.durationMs?.takeIf { it > 0L }
+            ?: 0L
     }
 }
 

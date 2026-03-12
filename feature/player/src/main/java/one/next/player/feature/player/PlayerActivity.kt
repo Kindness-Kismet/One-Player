@@ -13,6 +13,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.OpenDocument
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.CompositionLocalProvider
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +44,7 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import one.next.player.core.common.Logger
+import one.next.player.core.common.storagePermission
 import one.next.player.core.common.extensions.getMediaContentUri
 import one.next.player.core.common.extensions.scanFileForContentUri
 import one.next.player.core.media.sync.MediaSynchronizer
@@ -90,6 +93,19 @@ class PlayerActivity : AppCompatActivity() {
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
     private val subtitleFileSuspendLauncher = registerForSuspendActivityResult(OpenDocument())
+    private val mediaPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted ->
+        if (!isGranted) return@registerForActivityResult
+
+        lifecycleScope.launch {
+            maybeInitControllerFuture()
+            mediaController = controllerFuture?.await()
+            mediaController?.run {
+                updateKeepScreenOnFlag()
+                addListener(playbackStateListener)
+                startPlayback()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -154,6 +170,8 @@ class PlayerActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         lifecycleScope.launch {
+            if (!ensureMediaPermission()) return@launch
+
             maybeInitControllerFuture()
             mediaController = controllerFuture?.await()
 
@@ -287,6 +305,13 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun ensureMediaPermission(): Boolean {
+        if (hasMediaReadPermission()) return true
+
+        mediaPermissionLauncher.launch(storagePermission)
+        return false
+    }
+
     // file:// URI 在 scoped storage 下无法直接读取，需要逐级回退解析
     private suspend fun resolvePlaybackUri(uri: Uri): Uri {
         val t0 = System.currentTimeMillis()
@@ -297,25 +322,35 @@ class PlayerActivity : AppCompatActivity() {
             val canonicalPath = runCatching { File(rawPath).canonicalPath }.getOrDefault(rawPath)
             Logger.info(TAG, "resolveUri canonical=${System.currentTimeMillis() - t0}ms path=$canonicalPath")
 
-            scanFileForContentUri(path = canonicalPath, timeoutMs = 800L)?.let {
-                Logger.info(TAG, "resolveUri scanFile=${System.currentTimeMillis() - t0}ms result=$it")
-                return it
-            }
-            Logger.info(TAG, "resolveUri scanFileMiss=${System.currentTimeMillis() - t0}ms")
-
             if (File(canonicalPath).exists()) {
                 Logger.info(TAG, "resolveUri fileFallback=${System.currentTimeMillis() - t0}ms")
                 return Uri.fromFile(File(canonicalPath))
             }
+
+            if (hasMediaReadPermission()) {
+                scanFileForContentUri(path = canonicalPath, timeoutMs = 800L)?.let {
+                    Logger.info(TAG, "resolveUri scanFile=${System.currentTimeMillis() - t0}ms result=$it")
+                    return it
+                }
+                Logger.info(TAG, "resolveUri scanFileMiss=${System.currentTimeMillis() - t0}ms")
+            } else {
+                Logger.info(TAG, "resolveUri skipMediaStore noReadPermission=true")
+            }
             return uri
         }
 
-        getMediaContentUri(uri)?.let {
-            Logger.info(TAG, "resolveUri contentUri=${System.currentTimeMillis() - t0}ms")
-            return it
+        if (hasMediaReadPermission()) {
+            getMediaContentUri(uri)?.let {
+                Logger.info(TAG, "resolveUri contentUri=${System.currentTimeMillis() - t0}ms")
+                return it
+            }
         }
 
         return uri
+    }
+
+    private fun hasMediaReadPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, storagePermission) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 
     private fun playbackStateListener() = object : Player.Listener {

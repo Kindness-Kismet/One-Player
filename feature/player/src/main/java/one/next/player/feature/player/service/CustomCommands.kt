@@ -8,6 +8,7 @@ import kotlinx.coroutines.guava.await
 
 enum class CustomCommands(val customAction: String) {
     ADD_SUBTITLE_TRACK(customAction = "ADD_SUBTITLE_TRACK"),
+    PRECISE_SEEK_TO(customAction = "PRECISE_SEEK_TO"),
     SET_SKIP_SILENCE_ENABLED(customAction = "SET_SKIP_SILENCE_ENABLED"),
     GET_SKIP_SILENCE_ENABLED(customAction = "GET_SKIP_SILENCE_ENABLED"),
     SET_IS_SCRUBBING_MODE_ENABLED(customAction = "SET_IS_SCRUBBING_MODE_ENABLED"),
@@ -31,6 +32,7 @@ enum class CustomCommands(val customAction: String) {
         fun asSessionCommands(): List<SessionCommand> = entries.map { it.sessionCommand }
 
         const val SUBTITLE_TRACK_URI_KEY = "subtitle_track_uri"
+        const val SEEK_POSITION_MS_KEY = "seek_position_ms"
         const val SKIP_SILENCE_ENABLED_KEY = "skip_silence_enabled"
         const val IS_SCRUBBING_MODE_ENABLED_KEY = "is_scrubbing_mode_enabled"
         const val PLAYBACK_SPEED_KEY = "playback_speed"
@@ -46,6 +48,13 @@ fun MediaController.addSubtitleTrack(uri: Uri) {
         putString(CustomCommands.SUBTITLE_TRACK_URI_KEY, uri.toString())
     }
     sendCustomCommand(CustomCommands.ADD_SUBTITLE_TRACK.sessionCommand, args)
+}
+
+fun MediaController.preciseSeekTo(positionMs: Long) {
+    val args = Bundle().apply {
+        putLong(CustomCommands.SEEK_POSITION_MS_KEY, positionMs)
+    }
+    sendCustomCommand(CustomCommands.PRECISE_SEEK_TO.sessionCommand, args)
 }
 
 suspend fun MediaController.setSkipSilenceEnabled(isEnabled: Boolean) {

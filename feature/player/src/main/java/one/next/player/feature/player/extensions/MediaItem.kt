@@ -14,6 +14,7 @@ private const val MEDIA_METADATA_SUBTITLE_SPEED_KEY = "media_metadata_subtitle_s
 private const val MEDIA_METADATA_VIDEO_WIDTH_KEY = "media_metadata_video_width"
 private const val MEDIA_METADATA_VIDEO_HEIGHT_KEY = "media_metadata_video_height"
 private const val MEDIA_METADATA_VIDEO_ROTATION_KEY = "media_metadata_video_rotation"
+private const val MEDIA_METADATA_APPROXIMATE_SEEK_ENABLED_KEY = "media_metadata_approximate_seek_enabled"
 
 private fun Bundle.setExtras(
     positionMs: Long?,
@@ -26,6 +27,7 @@ private fun Bundle.setExtras(
     videoWidth: Int? = null,
     videoHeight: Int? = null,
     videoRotation: Int? = null,
+    isApproximateSeekEnabled: Boolean? = null,
 ) = apply {
     positionMs?.let { putLong(MEDIA_METADATA_POSITION_KEY, it) }
     videoScale?.let { putFloat(MEDIA_METADATA_VIDEO_ZOOM_KEY, it) }
@@ -37,6 +39,7 @@ private fun Bundle.setExtras(
     videoWidth?.let { putInt(MEDIA_METADATA_VIDEO_WIDTH_KEY, it) }
     videoHeight?.let { putInt(MEDIA_METADATA_VIDEO_HEIGHT_KEY, it) }
     videoRotation?.let { putInt(MEDIA_METADATA_VIDEO_ROTATION_KEY, it) }
+    isApproximateSeekEnabled?.let { putBoolean(MEDIA_METADATA_APPROXIMATE_SEEK_ENABLED_KEY, it) }
 }
 
 fun MediaMetadata.Builder.setExtras(
@@ -50,6 +53,7 @@ fun MediaMetadata.Builder.setExtras(
     videoWidth: Int? = null,
     videoHeight: Int? = null,
     videoRotation: Int? = null,
+    isApproximateSeekEnabled: Boolean? = null,
 ): MediaMetadata.Builder = setExtras(
     Bundle().setExtras(
         positionMs = positionMs,
@@ -62,6 +66,7 @@ fun MediaMetadata.Builder.setExtras(
         videoWidth = videoWidth,
         videoHeight = videoHeight,
         videoRotation = videoRotation,
+        isApproximateSeekEnabled = isApproximateSeekEnabled,
     ),
 )
 
@@ -125,6 +130,9 @@ val MediaMetadata.videoRotation: Int?
             .takeIf { containsKey(MEDIA_METADATA_VIDEO_ROTATION_KEY) }
     }
 
+val MediaMetadata.isApproximateSeekEnabled: Boolean
+    get() = extras?.getBoolean(MEDIA_METADATA_APPROXIMATE_SEEK_ENABLED_KEY, false) == true
+
 fun MediaItem.copy(
     positionMs: Long? = this.mediaMetadata.positionMs,
     durationMs: Long? = this.mediaMetadata.durationMs,
@@ -137,6 +145,7 @@ fun MediaItem.copy(
     videoWidth: Int? = this.mediaMetadata.videoWidth,
     videoHeight: Int? = this.mediaMetadata.videoHeight,
     videoRotation: Int? = this.mediaMetadata.videoRotation,
+    isApproximateSeekEnabled: Boolean? = this.mediaMetadata.isApproximateSeekEnabled,
 ): MediaItem = buildUpon().setMediaMetadata(
     mediaMetadata.buildUpon()
         .setDurationMs(durationMs)
@@ -152,6 +161,7 @@ fun MediaItem.copy(
                 videoWidth = videoWidth,
                 videoHeight = videoHeight,
                 videoRotation = videoRotation,
+                isApproximateSeekEnabled = isApproximateSeekEnabled,
             ),
         ).build(),
 ).build()
