@@ -149,7 +149,7 @@ private fun loadLibraries(context: Context): Libs? = try {
         .withJson(librariesJson)
         .build()
 } catch (throwable: Throwable) {
-    Logger.logError(TAG, "Failed to load libraries metadata", throwable)
+    Logger.error(TAG, "Failed to load libraries metadata", throwable)
     null
 }
 

@@ -18,7 +18,7 @@ object LocalesHelper {
             Pair(language, key)
         }.distinctBy { it.second }.sortedBy { it.first }
     } catch (e: Exception) {
-        Logger.logError(TAG, "Failed to load available locales", e)
+        Logger.error(TAG, "Failed to load available locales", e)
         listOf()
     }
 
@@ -29,7 +29,7 @@ object LocalesHelper {
             locale.isO3Language == key || locale.language == key
         }?.displayLanguage.orEmpty()
     } catch (e: Exception) {
-        Logger.logError(TAG, "Failed to resolve locale display language: $key", e)
+        Logger.error(TAG, "Failed to resolve locale display language: $key", e)
         ""
     }
 

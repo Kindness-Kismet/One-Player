@@ -21,7 +21,7 @@ class AppPreferencesDataSource @Inject constructor(
         try {
             appPreferences.updateData(transform)
         } catch (ioException: Exception) {
-            Logger.logError(TAG, "Failed to update app preferences: $ioException")
+            Logger.error(TAG, "Failed to update app preferences: $ioException")
         }
     }
 }

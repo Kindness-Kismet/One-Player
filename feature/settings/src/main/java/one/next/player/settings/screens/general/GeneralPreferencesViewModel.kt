@@ -74,7 +74,7 @@ class GeneralPreferencesViewModel @Inject constructor(
             }.onSuccess {
                 uiStateInternal.update { it.copy(resultMessage = GeneralPreferencesResultMessage.BackupSucceeded) }
             }.onFailure { throwable ->
-                Logger.logError(TAG, "Failed to back up settings", throwable)
+                Logger.error(TAG, "Failed to back up settings", throwable)
                 uiStateInternal.update { it.copy(resultMessage = GeneralPreferencesResultMessage.BackupFailed) }
             }
         }
@@ -95,7 +95,7 @@ class GeneralPreferencesViewModel @Inject constructor(
             }.onSuccess {
                 uiStateInternal.update { it.copy(resultMessage = GeneralPreferencesResultMessage.RestoreSucceeded) }
             }.onFailure { throwable ->
-                Logger.logError(TAG, "Failed to restore settings", throwable)
+                Logger.error(TAG, "Failed to restore settings", throwable)
                 uiStateInternal.update { it.copy(resultMessage = GeneralPreferencesResultMessage.RestoreFailed) }
             }
         }

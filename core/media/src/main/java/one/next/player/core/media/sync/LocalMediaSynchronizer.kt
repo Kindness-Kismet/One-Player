@@ -83,7 +83,7 @@ class LocalMediaSynchronizer @Inject constructor(
         if (path.isBlank()) return
 
         val canonicalPath = runCatching { File(path).canonicalPath }.getOrDefault(path)
-        Logger.logInfo(TAG, "registerManualVideoPath path=$canonicalPath")
+        Logger.info(TAG, "registerManualVideoPath path=$canonicalPath")
         appPreferencesDataSource.update { preferences ->
             val pendingPaths = preferences.pendingExternalVideoPaths + canonicalPath
             preferences.copy(
@@ -95,7 +95,7 @@ class LocalMediaSynchronizer @Inject constructor(
     // 将文件系统发现但 MediaStore 未收录的路径持久化，确保同步时能兜底
     private suspend fun registerUnindexedPaths(paths: List<String>) {
         if (paths.isEmpty()) return
-        Logger.logInfo(TAG, "registerUnindexedPaths count=${paths.size}")
+        Logger.info(TAG, "registerUnindexedPaths count=${paths.size}")
         appPreferencesDataSource.update {
             it.copy(manualVideoPaths = (it.manualVideoPaths + paths).distinct())
         }
@@ -105,7 +105,7 @@ class LocalMediaSynchronizer @Inject constructor(
         val preferences = appPreferencesDataSource.preferences.first()
         if (preferences.pendingExternalVideoPaths.isEmpty()) return
 
-        Logger.logInfo(
+        Logger.info(
             TAG,
             "mergePendingManualVideoPaths pending=${preferences.pendingExternalVideoPaths.size} manual=${preferences.manualVideoPaths.size}",
         )
@@ -120,7 +120,7 @@ class LocalMediaSynchronizer @Inject constructor(
     override fun startSync() {
         if (mediaSyncingJob != null) return
 
-        Logger.logInfo(TAG, "Starting media sync")
+        Logger.info(TAG, "Starting media sync")
         mediaSyncingJob = combine(
             getMediaVideosFlow(),
             appPreferencesDataSource.preferences,
@@ -131,7 +131,7 @@ class LocalMediaSynchronizer @Inject constructor(
                 includeNoMediaDirectories = preferences.ignoreNoMediaFiles,
             )
         }.onEach { media ->
-            Logger.logInfo(TAG, "onEach syncing ${media.size} media entries")
+            Logger.info(TAG, "onEach syncing ${media.size} media entries")
             applicationScope.launch { updateDirectories(media) }
             applicationScope.launch {
                 updateMedia(media)
@@ -143,7 +143,7 @@ class LocalMediaSynchronizer @Inject constructor(
     override fun stopSync() {
         mediaSyncingJob?.cancel()
         mediaSyncingJob = null
-        Logger.logInfo(TAG, "Stopped media sync")
+        Logger.info(TAG, "Stopped media sync")
     }
 
     private suspend fun mergeVisibleMedia(
@@ -152,7 +152,7 @@ class LocalMediaSynchronizer @Inject constructor(
         includeNoMediaDirectories: Boolean,
     ): List<MediaVideo> = withContext(dispatcher) {
         if (manuallyDiscoveredPaths.isNotEmpty()) {
-            Logger.logInfo(TAG, "mergeVisibleMedia manualPaths=${manuallyDiscoveredPaths.size}")
+            Logger.info(TAG, "mergeVisibleMedia manualPaths=${manuallyDiscoveredPaths.size}")
         }
         val manuallyDiscoveredVideos = manuallyDiscoveredPaths
             .asSequence()
@@ -163,7 +163,7 @@ class LocalMediaSynchronizer @Inject constructor(
             .toList()
 
         val combinedVisibleMedia = mediaStoreVideos + manuallyDiscoveredVideos
-        Logger.logInfo(
+        Logger.info(
             TAG,
             "mergeVisibleMedia result mediaStore=${mediaStoreVideos.size} manual=${manuallyDiscoveredVideos.size} combined=${combinedVisibleMedia.size} noMedia=$includeNoMediaDirectories manageAccess=${hasManageExternalStorageAccess()}",
         )
@@ -182,7 +182,7 @@ class LocalMediaSynchronizer @Inject constructor(
                 .sortedBy(MediaVideo::data)
         }
 
-        Logger.logInfo(TAG, "Found ${noMediaVideos.size} videos inside .nomedia directories")
+        Logger.info(TAG, "Found ${noMediaVideos.size} videos inside .nomedia directories")
         return@withContext (combinedVisibleMedia + noMediaVideos)
             .distinctBy(MediaVideo::data)
             .sortedBy(MediaVideo::data)
@@ -198,7 +198,7 @@ class LocalMediaSynchronizer @Inject constructor(
         }.distinct()
 
         if (targets.isNotEmpty()) {
-            Logger.logInfo(TAG, "Refreshing ${targets.size} unindexed video files")
+            Logger.info(TAG, "Refreshing ${targets.size} unindexed video files")
         }
         return targets
     }
@@ -300,7 +300,7 @@ class LocalMediaSynchronizer @Inject constructor(
             runCatching {
                 imageLoader.diskCache?.remove(mediumWithInfo.mediumEntity.uriString)
             }.onFailure { throwable ->
-                Logger.logError(TAG, "Failed to clear thumbnail cache for ${mediumWithInfo.mediumEntity.uriString}", throwable)
+                Logger.error(TAG, "Failed to clear thumbnail cache for ${mediumWithInfo.mediumEntity.uriString}", throwable)
             }
         }
 
@@ -318,7 +318,7 @@ class LocalMediaSynchronizer @Inject constructor(
                     runCatching {
                         context.contentResolver.releasePersistableUriPermission(sub, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }.onFailure { throwable ->
-                        Logger.logError(TAG, "Failed to release subtitle permission for $sub", throwable)
+                        Logger.error(TAG, "Failed to release subtitle permission for $sub", throwable)
                     }
                 }
             }
@@ -339,7 +339,7 @@ class LocalMediaSynchronizer @Inject constructor(
             }
         }
         if (count > 0) {
-            Logger.logInfo(TAG, "scheduleMediaInfoSync queued $count items")
+            Logger.info(TAG, "scheduleMediaInfoSync queued $count items")
         }
     }
 
@@ -493,7 +493,7 @@ class LocalMediaSynchronizer @Inject constructor(
                 dateModified = lastModified(),
             )
         }.onFailure { throwable ->
-            Logger.logError(TAG, errorMessage, throwable)
+            Logger.error(TAG, errorMessage, throwable)
         }.getOrNull().also {
             retriever.release()
         }

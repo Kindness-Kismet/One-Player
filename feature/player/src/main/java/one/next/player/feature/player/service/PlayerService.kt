@@ -156,7 +156,7 @@ class PlayerService : MediaSessionService() {
                 Player.STATE_ENDED -> "ENDED"
                 else -> "UNKNOWN($state)"
             }
-            Logger.logInfo(TAG, "startup state=$label t=${elapsed()}ms")
+            Logger.info(TAG, "startup state=$label t=${elapsed()}ms")
         }
 
         override fun onLoadStarted(
@@ -164,7 +164,7 @@ class PlayerService : MediaSessionService() {
             loadEventInfo: androidx.media3.exoplayer.source.LoadEventInfo,
             mediaLoadData: androidx.media3.exoplayer.source.MediaLoadData,
         ) {
-            Logger.logInfo(TAG, "startup loadStart t=${elapsed()}ms type=${mediaLoadData.dataType}")
+            Logger.info(TAG, "startup loadStart t=${elapsed()}ms type=${mediaLoadData.dataType}")
         }
 
         override fun onLoadCompleted(
@@ -172,7 +172,7 @@ class PlayerService : MediaSessionService() {
             loadEventInfo: androidx.media3.exoplayer.source.LoadEventInfo,
             mediaLoadData: androidx.media3.exoplayer.source.MediaLoadData,
         ) {
-            Logger.logInfo(
+            Logger.info(
                 TAG,
                 "startup loadDone t=${elapsed()}ms type=${mediaLoadData.dataType} bytes=${loadEventInfo.bytesLoaded}",
             )
@@ -183,7 +183,7 @@ class PlayerService : MediaSessionService() {
             output: Any,
             renderTimeMs: Long,
         ) {
-            Logger.logInfo(TAG, "startup firstFrame t=${elapsed()}ms")
+            Logger.info(TAG, "startup firstFrame t=${elapsed()}ms")
         }
 
         override fun onVideoDecoderInitialized(
@@ -192,7 +192,7 @@ class PlayerService : MediaSessionService() {
             initializedTimestampMs: Long,
             initializationDurationMs: Long,
         ) {
-            Logger.logInfo(TAG, "startup decoderInit=$decoderName dur=${initializationDurationMs}ms t=${elapsed()}ms")
+            Logger.info(TAG, "startup decoderInit=$decoderName dur=${initializationDurationMs}ms t=${elapsed()}ms")
         }
 
         override fun onAudioDecoderInitialized(
@@ -201,14 +201,14 @@ class PlayerService : MediaSessionService() {
             initializedTimestampMs: Long,
             initializationDurationMs: Long,
         ) {
-            Logger.logInfo(TAG, "startup audioDecoder=$decoderName dur=${initializationDurationMs}ms t=${elapsed()}ms")
+            Logger.info(TAG, "startup audioDecoder=$decoderName dur=${initializationDurationMs}ms t=${elapsed()}ms")
         }
 
         override fun onTracksChanged(
             eventTime: AnalyticsListener.EventTime,
             tracks: androidx.media3.common.Tracks,
         ) {
-            Logger.logInfo(TAG, "startup tracksChanged t=${elapsed()}ms groups=${tracks.groups.size}")
+            Logger.info(TAG, "startup tracksChanged t=${elapsed()}ms groups=${tracks.groups.size}")
         }
     }
 
@@ -461,7 +461,7 @@ class PlayerService : MediaSessionService() {
 
                 val item = currentPlayer.getMediaItemAt(index)
                 val dataSourceFactory = if (skipRegion != null) {
-                    Logger.logDebug(
+                    Logger.debug(
                         TAG,
                         "Duplicate moov at ${skipRegion.start}+${skipRegion.length}, retrying: $mediaId",
                     )
@@ -475,7 +475,7 @@ class PlayerService : MediaSessionService() {
                         )
                     }
                 } else {
-                    Logger.logDebug(TAG, "Retrying with lenient extractor: $mediaId")
+                    Logger.debug(TAG, "Retrying with lenient extractor: $mediaId")
                     DefaultDataSource.Factory(applicationContext)
                 }
 
@@ -531,7 +531,7 @@ class PlayerService : MediaSessionService() {
             field.isAccessible = true
             field.set(extractor, false)
         } catch (e: Exception) {
-            Logger.logError(TAG, "disableSeekForCues failed", e)
+            Logger.error(TAG, "disableSeekForCues failed", e)
         }
     }
 
@@ -592,7 +592,7 @@ class PlayerService : MediaSessionService() {
                 }
             }
         } catch (e: Exception) {
-            Logger.logError(TAG, "Failed to scan MP4 structure", e)
+            Logger.error(TAG, "Failed to scan MP4 structure", e)
         }
         return null
     }
@@ -692,7 +692,7 @@ class PlayerService : MediaSessionService() {
         override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int = try {
             delegate.read(input, seekPosition)
         } catch (e: ParserException) {
-            Logger.logError(TAG, "Lenient extractor treating error as end of input", e)
+            Logger.error(TAG, "Lenient extractor treating error as end of input", e)
             Extractor.RESULT_END_OF_INPUT
         }
 
@@ -1050,7 +1050,7 @@ class PlayerService : MediaSessionService() {
                         contentResolver.openInputStream(subUri)?.close()
                         true
                     } catch (_: Exception) {
-                        Logger.logDebug(TAG, "Removing stale external subtitle: $subUri")
+                        Logger.debug(TAG, "Removing stale external subtitle: $subUri")
                         false
                     }
                 }

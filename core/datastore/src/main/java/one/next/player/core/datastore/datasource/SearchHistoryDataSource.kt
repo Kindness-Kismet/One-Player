@@ -22,7 +22,7 @@ class SearchHistoryDataSource @Inject constructor(
         try {
             searchHistoryDataStore.updateData(transform)
         } catch (ioException: Exception) {
-            Logger.logError(TAG, "Failed to update search history: $ioException")
+            Logger.error(TAG, "Failed to update search history: $ioException")
         }
     }
 }

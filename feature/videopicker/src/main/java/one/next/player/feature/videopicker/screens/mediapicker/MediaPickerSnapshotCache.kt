@@ -77,7 +77,7 @@ class MediaPickerSnapshotCache(
                     }
                 }
             } catch (e: Exception) {
-                Logger.logError(TAG, "Failed to read snapshot ${file.name}", e)
+                Logger.error(TAG, "Failed to read snapshot ${file.name}", e)
                 file.delete()
             }
         }
@@ -91,7 +91,7 @@ class MediaPickerSnapshotCache(
                 stream.writeObject(SnapshotEntry(key, folder))
             }
         } catch (e: Exception) {
-            Logger.logError(TAG, "Failed to write snapshot", e)
+            Logger.error(TAG, "Failed to write snapshot", e)
         }
     }
 

@@ -42,7 +42,7 @@ suspend fun Context.uriToSubtitleConfiguration(
     val label = getFilenameFromUri(uri)
     val mimeType = uri.getSubtitleMime(displayName = label)
     val utf8ConvertedUri = convertToUTF8(uri = uri, charset = charset)
-    Logger.logDebug(
+    Logger.debug(
         "SubtitleConfig",
         "uri=$uri, convertedUri=$utf8ConvertedUri, mime=$mimeType, label=$label",
     )

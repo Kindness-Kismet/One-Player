@@ -203,7 +203,7 @@ class PlayerActivity : AppCompatActivity() {
         val isNewUriTheCurrentMediaItem = mediaController?.currentMediaItem?.localConfiguration?.uri.toString() == uri.toString()
 
         if (returningFromBackground || isNewUriTheCurrentMediaItem) {
-            Logger.logInfo(
+            Logger.info(
                 TAG,
                 "startPlayback reused current item returning=$returningFromBackground same=$isNewUriTheCurrentMediaItem uri=$uri",
             )
@@ -221,17 +221,17 @@ class PlayerActivity : AppCompatActivity() {
 
     private suspend fun playVideo(uri: Uri) = withContext(Dispatchers.Default) {
         val t0 = System.currentTimeMillis()
-        Logger.logInfo(TAG, "playVideo start uri=$uri")
+        Logger.info(TAG, "playVideo start uri=$uri")
 
         val playbackUri = resolvePlaybackUri(uri)
         if (uri.scheme == "file") {
             uri.path?.let { path ->
                 mediaSynchronizer.registerManualVideoPath(path)
-                Logger.logInfo(TAG, "playVideo registeredManualPath=$path")
+                Logger.info(TAG, "playVideo registeredManualPath=$path")
             }
         }
         val t1 = System.currentTimeMillis()
-        Logger.logInfo(TAG, "playVideo resolveUri=${t1 - t0}ms resolved=$playbackUri")
+        Logger.info(TAG, "playVideo resolveUri=${t1 - t0}ms resolved=$playbackUri")
 
         val shouldBuildPlaylist = uri.scheme != "file" && playbackUri.scheme != "file"
         val playlist = playerApi.getPlaylist().takeIf { it.isNotEmpty() }
@@ -248,7 +248,7 @@ class PlayerActivity : AppCompatActivity() {
                 mutableListOf(playbackUri.toString())
             }
         val t2 = System.currentTimeMillis()
-        Logger.logInfo(TAG, "playVideo playlist=${t2 - t1}ms size=${playlist.size}")
+        Logger.info(TAG, "playVideo playlist=${t2 - t1}ms size=${playlist.size}")
 
         val mediaItemIndexToPlay = playlist.indexOfFirst {
             it == playbackUri.toString()
@@ -282,7 +282,7 @@ class PlayerActivity : AppCompatActivity() {
                 setMediaItems(mediaItems, mediaItemIndexToPlay, playerApi.position?.toLong() ?: C.TIME_UNSET)
                 playWhenReady = viewModel.playWhenReady
                 prepare()
-                Logger.logInfo(TAG, "playVideo prepare total=${System.currentTimeMillis() - t0}ms")
+                Logger.info(TAG, "playVideo prepare total=${System.currentTimeMillis() - t0}ms")
             }
         }
     }
@@ -295,23 +295,23 @@ class PlayerActivity : AppCompatActivity() {
         if (uri.scheme == "file") {
             val rawPath = uri.path ?: return uri
             val canonicalPath = runCatching { File(rawPath).canonicalPath }.getOrDefault(rawPath)
-            Logger.logInfo(TAG, "resolveUri canonical=${System.currentTimeMillis() - t0}ms path=$canonicalPath")
+            Logger.info(TAG, "resolveUri canonical=${System.currentTimeMillis() - t0}ms path=$canonicalPath")
 
             scanFileForContentUri(path = canonicalPath, timeoutMs = 800L)?.let {
-                Logger.logInfo(TAG, "resolveUri scanFile=${System.currentTimeMillis() - t0}ms result=$it")
+                Logger.info(TAG, "resolveUri scanFile=${System.currentTimeMillis() - t0}ms result=$it")
                 return it
             }
-            Logger.logInfo(TAG, "resolveUri scanFileMiss=${System.currentTimeMillis() - t0}ms")
+            Logger.info(TAG, "resolveUri scanFileMiss=${System.currentTimeMillis() - t0}ms")
 
             if (File(canonicalPath).exists()) {
-                Logger.logInfo(TAG, "resolveUri fileFallback=${System.currentTimeMillis() - t0}ms")
+                Logger.info(TAG, "resolveUri fileFallback=${System.currentTimeMillis() - t0}ms")
                 return Uri.fromFile(File(canonicalPath))
             }
             return uri
         }
 
         getMediaContentUri(uri)?.let {
-            Logger.logInfo(TAG, "resolveUri contentUri=${System.currentTimeMillis() - t0}ms")
+            Logger.info(TAG, "resolveUri contentUri=${System.currentTimeMillis() - t0}ms")
             return it
         }
 

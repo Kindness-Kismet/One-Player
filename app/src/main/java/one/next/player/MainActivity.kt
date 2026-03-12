@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
@@ -140,7 +141,7 @@ class MainActivity : AppCompatActivity() {
                         if (lastAutoRefreshAt != 0L) return@LaunchedEffect
 
                         // 延迟 refresh，让 UI 先用 DB 缓存数据渲染
-                        kotlinx.coroutines.delay(2000)
+                        delay(2000)
                         synchronizer.refresh()
                         lastAutoRefreshAt = SystemClock.elapsedRealtime()
                     }

@@ -33,10 +33,10 @@ class DebugCommandReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_SET_IGNORE_NOMEDIA -> setIgnoreNoMedia(intent)
                     ACTION_REFRESH_LIBRARY -> refreshLibrary()
-                    else -> Logger.logInfo(TAG, "Ignored unknown debug action: ${intent.action}")
+                    else -> Logger.info(TAG, "Ignored unknown debug action: ${intent.action}")
                 }
             } catch (throwable: Throwable) {
-                Logger.logError(TAG, "Failed to handle debug command: ${intent.action}", throwable)
+                Logger.error(TAG, "Failed to handle debug command: ${intent.action}", throwable)
             } finally {
                 pendingResult.finish()
             }
@@ -50,15 +50,15 @@ class DebugCommandReceiver : BroadcastReceiver() {
         preferencesRepository.updateApplicationPreferences {
             it.copy(ignoreNoMediaFiles = enabled)
         }
-        Logger.logInfo(TAG, "ignoreNoMediaFiles set to $enabled")
+        Logger.info(TAG, "ignoreNoMediaFiles set to $enabled")
         refreshLibrary()
     }
 
     private suspend fun refreshLibrary() {
-        Logger.logInfo(TAG, "refreshLibrary start")
+        Logger.info(TAG, "refreshLibrary start")
         mediaSynchronizer.refresh(null)
         mediaSynchronizer.startSync()
-        Logger.logInfo(TAG, "Triggered media library refresh")
+        Logger.info(TAG, "Triggered media library refresh")
     }
 
     companion object {

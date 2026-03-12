@@ -104,7 +104,7 @@ class LocalMediaInfoSynchronizer @Inject constructor(
                 MediaInfoBuilder().from(context = context, uri = uri).build()
             } ?: throw NullPointerException("MediaInfoBuilder returned null for $uri")
         }.onFailure { throwable ->
-            Logger.logError(TAG, "Failed to read media info for $uri", throwable)
+            Logger.error(TAG, "Failed to read media info for $uri", throwable)
         }.getOrNull() ?: return
 
         try {
@@ -134,7 +134,7 @@ class LocalMediaInfoSynchronizer @Inject constructor(
                 mediumDao.upsert(updatedMedium)
             }
 
-            Logger.logInfo(TAG, "performSync ok uri=$uri duration=${updatedMedium.duration}")
+            Logger.info(TAG, "performSync ok uri=$uri duration=${updatedMedium.duration}")
         } finally {
             mediaInfo.release()
         }

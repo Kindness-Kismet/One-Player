@@ -224,7 +224,7 @@ suspend fun Context.scanPaths(paths: List<String>): Boolean {
                     paths.toTypedArray(),
                     null,
                 ) { path, uri ->
-                    Logger.logDebug("ScanPath", "scanPaths: path=$path, uri=$uri")
+                    Logger.debug("ScanPath", "scanPaths: path=$path, uri=$uri")
                     synchronized(paths) {
                         if (uri != null) {
                             hasSuccess = true

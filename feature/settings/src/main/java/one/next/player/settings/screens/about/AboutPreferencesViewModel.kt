@@ -89,7 +89,7 @@ class AboutPreferencesViewModel @Inject constructor(
                 UpdateState.UpToDate
             }
         }.getOrElse { throwable ->
-            Logger.logError(TAG, "Failed to check for updates", throwable)
+            Logger.error(TAG, "Failed to check for updates", throwable)
             UpdateState.Error
         }
     }

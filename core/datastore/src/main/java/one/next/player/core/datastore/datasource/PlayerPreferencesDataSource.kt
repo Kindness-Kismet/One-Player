@@ -19,7 +19,7 @@ class PlayerPreferencesDataSource @Inject constructor(
         try {
             preferencesDataStore.updateData(transform)
         } catch (ioException: Exception) {
-            Logger.logError(TAG, "Failed to update app preferences: $ioException")
+            Logger.error(TAG, "Failed to update app preferences: $ioException")
         }
     }
 }

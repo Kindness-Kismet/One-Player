@@ -53,10 +53,10 @@ class VideoThumbnailDecoder(
                 Size(MAX_THUMBNAIL_SIZE, MAX_THUMBNAIL_SIZE),
                 null,
             ).also {
-                Logger.logInfo(TAG, "systemThumbnail ok ${System.currentTimeMillis() - start}ms uri=$uri")
+                Logger.info(TAG, "systemThumbnail ok ${System.currentTimeMillis() - start}ms uri=$uri")
             }
         } catch (e: Exception) {
-            Logger.logInfo(TAG, "systemThumbnail fail ${System.currentTimeMillis() - start}ms uri=$uri err=${e.message}")
+            Logger.info(TAG, "systemThumbnail fail ${System.currentTimeMillis() - start}ms uri=$uri err=${e.message}")
             null
         }
     }
@@ -97,7 +97,7 @@ class VideoThumbnailDecoder(
 
     @OptIn(ExperimentalCoilApi::class)
     override suspend fun decode(): DecodeResult {
-        Logger.logInfo(TAG, "decode start key=$diskCacheKey")
+        Logger.info(TAG, "decode start key=$diskCacheKey")
         readFromDiskCache()?.use { snapshot ->
             val file = snapshot.data.toFile()
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -130,7 +130,7 @@ class VideoThumbnailDecoder(
         // FFmpeg 提取帧（全格式通用，不阻塞）
         val ffmpegStart = System.currentTimeMillis()
         getThumbnailFromMediaInfo()?.scaleToFit()?.let { rawBitmap ->
-            Logger.logInfo(TAG, "mediaInfo ok ${System.currentTimeMillis() - ffmpegStart}ms key=$diskCacheKey")
+            Logger.info(TAG, "mediaInfo ok ${System.currentTimeMillis() - ffmpegStart}ms key=$diskCacheKey")
             val bitmap = writeToDiskCache(rawBitmap)
             return DecodeResult(
                 image = bitmap.toDrawable(options.context.resources).asImage(),
@@ -243,7 +243,7 @@ class VideoThumbnailDecoder(
             options: Options,
             imageLoader: ImageLoader,
         ): Decoder? {
-            Logger.logInfo(TAG, "Factory.create mimeType=${result.mimeType}")
+            Logger.info(TAG, "Factory.create mimeType=${result.mimeType}")
             if (!isApplicable(result.mimeType)) return null
             return VideoThumbnailDecoder(
                 source = result.source,

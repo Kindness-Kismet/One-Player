@@ -28,7 +28,7 @@ fun Player.switchTrack(trackType: @C.TrackType Int, trackIndex: Int) {
     }
 
     if (trackIndex < 0) {
-        Logger.logDebug("Player", "Disabling $trackTypeText")
+        Logger.debug("Player", "Disabling $trackTypeText")
         trackSelectionParameters = trackSelectionParameters
             .buildUpon()
             .setTrackTypeDisabled(trackType, true)
@@ -37,14 +37,14 @@ fun Player.switchTrack(trackType: @C.TrackType Int, trackIndex: Int) {
         val tracks = currentTracks.groups.filter { it.type == trackType }
 
         if (tracks.isEmpty() || trackIndex >= tracks.size) {
-            Logger.logError("Player", "Operation failed: Invalid track index: $trackIndex")
+            Logger.error("Player", "Operation failed: Invalid track index: $trackIndex")
             return
         }
 
-        Logger.logDebug("Player", "Setting $trackTypeText track: $trackIndex")
+        Logger.debug("Player", "Setting $trackTypeText track: $trackIndex")
         val selectedGroup = tracks[trackIndex]
         val format = selectedGroup.mediaTrackGroup.getFormat(0)
-        Logger.logDebug(
+        Logger.debug(
             "Player",
             "Track format: mime=${format.sampleMimeType}, label=${format.label}, id=${format.id}",
         )
