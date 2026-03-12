@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import one.next.player.core.common.extensions.prettyName
+import one.next.player.core.common.hasManageExternalStorageAccess
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.domain.GetSortedMediaUseCase
@@ -44,7 +45,11 @@ class MediaPickerViewModel @Inject constructor(
     private val screenMode = folderArgs.screenMode
 
     private val initialPreferences = preferencesRepository.applicationPreferences.value
-    private val initialMediaDataState: DataState<Folder?> = snapshotCache.get(folderPath, initialPreferences)
+    private val initialMediaDataState: DataState<Folder?> = snapshotCache.get(
+        folderPath = folderPath,
+        preferences = initialPreferences,
+        hasAllFilesAccess = hasManageExternalStorageAccess(),
+    )
         ?.takeIf { screenMode == MediaPickerScreenMode.LIBRARY }
         ?.let { folder -> DataState.Success(folder) }
         ?: DataState.Loading
@@ -66,7 +71,12 @@ class MediaPickerViewModel @Inject constructor(
                 isRecycleBinOnly = screenMode == MediaPickerScreenMode.RECYCLE_BIN,
             ).collect { folder ->
                 if (screenMode == MediaPickerScreenMode.LIBRARY) {
-                    snapshotCache.put(folderPath, folder, uiStateInternal.value.preferences)
+                    snapshotCache.put(
+                        folderPath = folderPath,
+                        folder = folder,
+                        preferences = uiStateInternal.value.preferences,
+                        hasAllFilesAccess = hasManageExternalStorageAccess(),
+                    )
                 }
                 uiStateInternal.update { currentState ->
                     currentState.copy(
@@ -178,7 +188,12 @@ class MediaPickerViewModel @Inject constructor(
     }
 
     private fun cacheFolderSnapshot(folder: Folder) {
-        snapshotCache.put(folder.path, folder, uiStateInternal.value.preferences)
+        snapshotCache.put(
+            folderPath = folder.path,
+            folder = folder,
+            preferences = uiStateInternal.value.preferences,
+            hasAllFilesAccess = hasManageExternalStorageAccess(),
+        )
     }
 }
 

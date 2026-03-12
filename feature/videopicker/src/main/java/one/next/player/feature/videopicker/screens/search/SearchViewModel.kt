@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import one.next.player.core.common.hasManageExternalStorageAccess
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.data.repository.SearchHistoryRepository
 import one.next.player.core.domain.GetPopularFoldersUseCase
@@ -140,7 +141,12 @@ class SearchViewModel @Inject constructor(
         val preferences = uiStateInternal.value.preferences
         if (preferences.mediaViewMode == MediaViewMode.FOLDER_TREE) return
 
-        snapshotCache.put(folder.path, folder, preferences)
+        snapshotCache.put(
+            folderPath = folder.path,
+            folder = folder,
+            preferences = preferences,
+            hasAllFilesAccess = hasManageExternalStorageAccess(),
+        )
     }
 
     companion object {

@@ -28,11 +28,20 @@ class MediaPickerSnapshotCache(
     }
 
     @Synchronized
-    fun get(folderPath: String?, preferences: ApplicationPreferences): Folder? = snapshots[buildKey(folderPath, preferences)]
+    fun get(
+        folderPath: String?,
+        preferences: ApplicationPreferences,
+        hasAllFilesAccess: Boolean,
+    ): Folder? = snapshots[buildKey(folderPath, preferences, hasAllFilesAccess)]
 
     @Synchronized
-    fun put(folderPath: String?, folder: Folder?, preferences: ApplicationPreferences) {
-        val key = buildKey(folderPath, preferences)
+    fun put(
+        folderPath: String?,
+        folder: Folder?,
+        preferences: ApplicationPreferences,
+        hasAllFilesAccess: Boolean,
+    ) {
+        val key = buildKey(folderPath, preferences, hasAllFilesAccess)
         snapshots[key] = folder
         trimToMaxSize()
         scope.launch { writeToDisk(key, folder) }
@@ -103,7 +112,11 @@ class MediaPickerSnapshotCache(
         runCatching { cacheDir.deleteRecursively() }
     }
 
-    private fun buildKey(folderPath: String?, prefs: ApplicationPreferences): SnapshotKey = SnapshotKey(
+    private fun buildKey(
+        folderPath: String?,
+        prefs: ApplicationPreferences,
+        hasAllFilesAccess: Boolean,
+    ): SnapshotKey = SnapshotKey(
         folderPath = folderPath,
         mediaViewMode = prefs.mediaViewMode,
         sortBy = prefs.sortBy,
@@ -111,6 +124,7 @@ class MediaPickerSnapshotCache(
         shouldIgnoreNoMediaFiles = prefs.shouldIgnoreNoMediaFiles,
         isRecycleBinEnabled = prefs.isRecycleBinEnabled,
         excludeFolders = prefs.excludeFolders,
+        hasAllFilesAccess = hasAllFilesAccess,
     )
 
     private fun SnapshotKey.fileName(): String = "s_${hashCode().toUInt()}.$FILE_EXT"
@@ -123,6 +137,7 @@ class MediaPickerSnapshotCache(
         val shouldIgnoreNoMediaFiles: Boolean,
         val isRecycleBinEnabled: Boolean,
         val excludeFolders: List<String>,
+        val hasAllFilesAccess: Boolean,
     ) : Serializable {
         companion object {
             private const val serialVersionUID = 1L

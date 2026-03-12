@@ -42,15 +42,15 @@ class MediaPickerSnapshotCacheTest {
 
     @Test
     fun get_returnsNullForEmptyCache() {
-        assertNull(cache.get(null, defaultPrefs()))
+        assertNull(cache.get(null, defaultPrefs(), hasAllFilesAccess = false))
     }
 
     @Test
     fun putThenGet_returnsFolder() {
         val folder = testFolder("Movies", "/storage/Movies")
-        cache.put("/storage/Movies", folder, defaultPrefs())
+        cache.put("/storage/Movies", folder, defaultPrefs(), hasAllFilesAccess = false)
 
-        val result = cache.get("/storage/Movies", defaultPrefs())
+        val result = cache.get("/storage/Movies", defaultPrefs(), hasAllFilesAccess = false)
         assertEquals(folder, result)
     }
 
@@ -60,10 +60,10 @@ class MediaPickerSnapshotCacheTest {
         val titleSort = defaultPrefs().copy(sortBy = Sort.By.TITLE)
         val sizeSort = defaultPrefs().copy(sortBy = Sort.By.SIZE)
 
-        cache.put("/storage/Movies", folder, titleSort)
+        cache.put("/storage/Movies", folder, titleSort, hasAllFilesAccess = false)
 
-        assertNotNull(cache.get("/storage/Movies", titleSort))
-        assertNull(cache.get("/storage/Movies", sizeSort))
+        assertNotNull(cache.get("/storage/Movies", titleSort, hasAllFilesAccess = false))
+        assertNull(cache.get("/storage/Movies", sizeSort, hasAllFilesAccess = false))
     }
 
     @Test
@@ -72,18 +72,27 @@ class MediaPickerSnapshotCacheTest {
         val recycleEnabled = defaultPrefs().copy(isRecycleBinEnabled = true)
         val recycleDisabled = defaultPrefs().copy(isRecycleBinEnabled = false)
 
-        cache.put("/storage/Movies", folder, recycleEnabled)
+        cache.put("/storage/Movies", folder, recycleEnabled, hasAllFilesAccess = false)
 
-        assertNotNull(cache.get("/storage/Movies", recycleEnabled))
-        assertNull(cache.get("/storage/Movies", recycleDisabled))
+        assertNotNull(cache.get("/storage/Movies", recycleEnabled, hasAllFilesAccess = false))
+        assertNull(cache.get("/storage/Movies", recycleDisabled, hasAllFilesAccess = false))
+    }
+
+    @Test
+    fun get_returnsNullForDifferentAllFilesAccessState() {
+        val folder = testFolder("Movies", "/storage/Movies")
+        cache.put("/storage/Movies", folder, defaultPrefs(), hasAllFilesAccess = true)
+
+        assertNotNull(cache.get("/storage/Movies", defaultPrefs(), hasAllFilesAccess = true))
+        assertNull(cache.get("/storage/Movies", defaultPrefs(), hasAllFilesAccess = false))
     }
 
     @Test
     fun get_returnsNullForDifferentPath() {
         val folder = testFolder("Movies", "/storage/Movies")
-        cache.put("/storage/Movies", folder, defaultPrefs())
+        cache.put("/storage/Movies", folder, defaultPrefs(), hasAllFilesAccess = false)
 
-        assertNull(cache.get("/storage/Downloads", defaultPrefs()))
+        assertNull(cache.get("/storage/Downloads", defaultPrefs(), hasAllFilesAccess = false))
     }
 
     @Test
@@ -92,10 +101,10 @@ class MediaPickerSnapshotCacheTest {
         val folder2 = testFolder("New", "/storage/Movies")
         val prefs = defaultPrefs()
 
-        cache.put("/storage/Movies", folder1, prefs)
-        cache.put("/storage/Movies", folder2, prefs)
+        cache.put("/storage/Movies", folder1, prefs, hasAllFilesAccess = false)
+        cache.put("/storage/Movies", folder2, prefs, hasAllFilesAccess = false)
 
-        assertEquals(folder2, cache.get("/storage/Movies", prefs))
+        assertEquals(folder2, cache.get("/storage/Movies", prefs, hasAllFilesAccess = false))
         assertEquals(1, cache.size)
     }
 
@@ -104,24 +113,24 @@ class MediaPickerSnapshotCacheTest {
         val prefs = defaultPrefs()
 
         for (i in 0..MediaPickerSnapshotCache.MAX_SNAPSHOT_COUNT) {
-            cache.put("/folder/$i", testFolder("F$i", "/folder/$i"), prefs)
+            cache.put("/folder/$i", testFolder("F$i", "/folder/$i"), prefs, hasAllFilesAccess = false)
         }
 
-        assertNull(cache.get("/folder/0", prefs))
-        assertNotNull(cache.get("/folder/${MediaPickerSnapshotCache.MAX_SNAPSHOT_COUNT}", prefs))
+        assertNull(cache.get("/folder/0", prefs, hasAllFilesAccess = false))
+        assertNotNull(cache.get("/folder/${MediaPickerSnapshotCache.MAX_SNAPSHOT_COUNT}", prefs, hasAllFilesAccess = false))
         assertEquals(MediaPickerSnapshotCache.MAX_SNAPSHOT_COUNT, cache.size)
     }
 
     @Test
     fun clear_removesAllEntries() {
         val prefs = defaultPrefs()
-        cache.put("/a", testFolder("A", "/a"), prefs)
-        cache.put("/b", testFolder("B", "/b"), prefs)
+        cache.put("/a", testFolder("A", "/a"), prefs, hasAllFilesAccess = false)
+        cache.put("/b", testFolder("B", "/b"), prefs, hasAllFilesAccess = false)
 
         cache.clear()
 
-        assertNull(cache.get("/a", prefs))
-        assertNull(cache.get("/b", prefs))
+        assertNull(cache.get("/a", prefs, hasAllFilesAccess = false))
+        assertNull(cache.get("/b", prefs, hasAllFilesAccess = false))
         assertEquals(0, cache.size)
     }
 
@@ -130,7 +139,7 @@ class MediaPickerSnapshotCacheTest {
         val prefs = defaultPrefs()
         val folder = testFolder("Movies", "/storage/Movies")
 
-        cache.put("/storage/Movies", folder, prefs)
+        cache.put("/storage/Movies", folder, prefs, hasAllFilesAccess = false)
         testScope.testScheduler.advanceUntilIdle()
 
         val cache2 = MediaPickerSnapshotCache(
@@ -140,7 +149,7 @@ class MediaPickerSnapshotCacheTest {
         )
         testScope.testScheduler.advanceUntilIdle()
 
-        val result = cache2.get("/storage/Movies", prefs)
+        val result = cache2.get("/storage/Movies", prefs, hasAllFilesAccess = false)
         assertNotNull(result)
         assertEquals(folder.name, result!!.name)
         assertEquals(folder.path, result.path)
@@ -149,7 +158,7 @@ class MediaPickerSnapshotCacheTest {
     @Test
     fun diskPersistence_clearRemovesDiskFiles() {
         val prefs = defaultPrefs()
-        cache.put("/a", testFolder("A", "/a"), prefs)
+        cache.put("/a", testFolder("A", "/a"), prefs, hasAllFilesAccess = false)
         testScope.testScheduler.advanceUntilIdle()
 
         cache.clear()
@@ -162,7 +171,7 @@ class MediaPickerSnapshotCacheTest {
         )
         testScope.testScheduler.advanceUntilIdle()
 
-        assertNull(cache2.get("/a", prefs))
+        assertNull(cache2.get("/a", prefs, hasAllFilesAccess = false))
     }
 
     @Test
@@ -171,12 +180,12 @@ class MediaPickerSnapshotCacheTest {
         val diskFolder = testFolder("DiskVersion", "/storage/Movies")
         val memFolder = testFolder("MemVersion", "/storage/Movies")
 
-        cache.put("/storage/Movies", diskFolder, prefs)
+        cache.put("/storage/Movies", diskFolder, prefs, hasAllFilesAccess = false)
         testScope.testScheduler.advanceUntilIdle()
 
-        cache.put("/storage/Movies", memFolder, prefs)
+        cache.put("/storage/Movies", memFolder, prefs, hasAllFilesAccess = false)
 
-        assertEquals(memFolder, cache.get("/storage/Movies", prefs))
+        assertEquals(memFolder, cache.get("/storage/Movies", prefs, hasAllFilesAccess = false))
     }
 
     private fun defaultPrefs() = ApplicationPreferences()
