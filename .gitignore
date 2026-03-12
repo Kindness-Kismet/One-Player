@@ -69,3 +69,7 @@ audit/**
 /*.svg
 /*.avif
 /*.xml
+
+# Local docs
+docs/
+**/docs/
