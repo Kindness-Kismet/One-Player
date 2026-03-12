@@ -33,11 +33,7 @@ import one.next.player.core.common.Logger
 import org.mozilla.universalchardet.UniversalDetector
 
 val VIDEO_COLLECTION_URI: Uri
-    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-    } else {
-        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-    }
+    get() = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
 
 /**
  * get path from uri
@@ -244,22 +240,12 @@ suspend fun Context.scanFileForContentUri(
     }
 }
 
-suspend fun Context.scanPath(file: File): Boolean = if (file.isDirectory) {
-    file.listFiles()?.all { scanPath(it) } ?: true
-} else {
-    scanPaths(listOf(file.path))
-}
-
 suspend fun Context.scanStorage(
     storagePath: String? = Environment.getExternalStorageDirectory()?.path,
 ): Boolean = withContext(Dispatchers.IO) {
     if (storagePath == null) return@withContext false
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        scanPaths(listOf(storagePath))
-    } else {
-        scanPath(File(storagePath))
-    }
+    scanPaths(listOf(storagePath))
 }
 
 suspend fun Context.convertToUTF8(uri: Uri, charset: Charset? = null): Uri = withContext(Dispatchers.IO) {
@@ -353,12 +339,6 @@ fun Context.isDeviceTvBox(): Boolean {
     if (packageManager.hasSystemFeature("amazon.hardware.fire_tv")) return true
     // Missing Files app (DocumentsUI) means box (some boxes still have non functional app or stub)
     if (!hasStorageAccessFrameworkChooser()) return true
-
-    if (Build.VERSION.SDK_INT < 30) {
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) return true
-        if (packageManager.hasSystemFeature("android.hardware.hdmi.cec")) return true
-        if (Build.MANUFACTURER.equals("zidoo", ignoreCase = true)) return true
-    }
 
     return false
 }

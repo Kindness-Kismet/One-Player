@@ -1,7 +1,6 @@
 package one.next.player.core.media.services
 
 import android.net.Uri
-import android.os.Build
 import androidx.activity.ComponentActivity
 
 interface MediaService {
@@ -11,6 +10,6 @@ interface MediaService {
     suspend fun shareMedia(uris: List<Uri>)
 
     companion object {
-        fun willSystemAsksForDeleteConfirmation(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+        fun willSystemAsksForDeleteConfirmation(): Boolean = true
     }
 }
