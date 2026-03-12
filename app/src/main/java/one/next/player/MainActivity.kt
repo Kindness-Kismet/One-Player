@@ -1,13 +1,8 @@
 package one.next.player
 
-import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.SystemClock
-import android.provider.Settings
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -42,8 +36,6 @@ import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ThemeConfig
-import one.next.player.core.ui.R
-import one.next.player.core.ui.composables.PermissionDetailView
 import one.next.player.core.ui.composables.rememberRuntimePermissionState
 import one.next.player.core.ui.theme.NextPlayerTheme
 import one.next.player.navigation.MediaRootRoute
@@ -119,23 +111,13 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.surface,
                 ) {
                     val storagePermissionState = rememberRuntimePermissionState(permission = storagePermission)
-                    val requiresManageExternalStorage = remember {
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                    }
-                    val hasAllFilesAccess = remember {
-                        mutableStateOf(!requiresManageExternalStorage || Environment.isExternalStorageManager())
-                    }
 
                     LifecycleEventEffect(event = Lifecycle.Event.ON_START) {
                         storagePermissionState.launchPermissionRequest()
                     }
 
-                    LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-                        hasAllFilesAccess.value = !requiresManageExternalStorage || Environment.isExternalStorageManager()
-                    }
-
                     LaunchedEffect(storagePermissionState.isGranted) {
-                        if (!storagePermissionState.isGranted || !hasAllFilesAccess.value) return@LaunchedEffect
+                        if (!storagePermissionState.isGranted) return@LaunchedEffect
 
                         synchronizer.startSync()
                         if (lastAutoRefreshAt != 0L) return@LaunchedEffect
@@ -147,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-                        if (!storagePermissionState.isGranted || !hasAllFilesAccess.value) return@LifecycleEventEffect
+                        if (!storagePermissionState.isGranted) return@LifecycleEventEffect
 
                         val now = SystemClock.elapsedRealtime()
                         if (now - lastAutoRefreshAt < AUTO_REFRESH_INTERVAL_MILLIS) return@LifecycleEventEffect
@@ -207,22 +189,6 @@ class MainActivity : AppCompatActivity() {
                             navController = mainNavController,
                         )
                         settingsNavGraph(navController = mainNavController)
-                    }
-
-                    if (storagePermissionState.isGranted && !hasAllFilesAccess.value) {
-                        PermissionDetailView(
-                            text = getString(
-                                R.string.permission_settings,
-                                android.Manifest.permission.MANAGE_EXTERNAL_STORAGE,
-                            ),
-                            onOpenSettings = {
-                                startActivity(
-                                    Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                        data = Uri.parse("package:$packageName")
-                                    },
-                                )
-                            },
-                        )
                     }
                 }
             }

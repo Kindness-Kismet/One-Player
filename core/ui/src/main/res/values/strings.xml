@@ -195,9 +195,7 @@
     <string name="mark_last_played_media">Mark last played media</string>
     <string name="mark_last_played_media_desc">Mark last played media in home and in each folder</string>
     <string name="recycle_bin">Recycle bin</string>
-    <string name="recycle_bin_desc">Keep deleted items available until you remove them permanently</string>
-    <string name="show_recycle_bin_icon">Show recycle bin icon</string>
-    <string name="show_recycle_bin_icon_desc">Show a shortcut in the home top bar when recycle bin is enabled</string>
+    <string name="recycle_bin_desc">Keep deleted items available until you remove them permanently. When enabled, the recycle bin entry appears in the home top bar.</string>
     <string name="open_local_video">Open local video</string>
     <string name="open_network_stream">Open network stream</string>
     <string name="exit">Exit</string>
@@ -226,6 +224,7 @@
     <string name="error_opening_link">No app found to handle this link</string>
     <string name="all_files_access_title">Allow all files access</string>
     <string name="all_files_access_message">This app needs all files access to scan videos in folders hidden by .nomedia and keep the media library complete.</string>
+    <string name="media_library_all_files_access_desc">Ignore .nomedia files and recycle bin require all files access. Grant permission to enable both features.</string>
     <string name="go_to_settings">Go to settings</string>
     <string name="not_now">Not now</string>
     <string name="media_layout">Media Layout</string>

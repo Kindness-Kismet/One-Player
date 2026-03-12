@@ -189,6 +189,8 @@ class LocalMediaSynchronizer @Inject constructor(
     }
 
     private fun buildRefreshScanTargets(): List<String> {
+        if (!hasManageExternalStorageAccess()) return emptyList()
+
         val indexedPaths = getMediaVideo(selection = null, selectionArgs = null, sortOrder = null)
             .map { it.data }
             .toHashSet()

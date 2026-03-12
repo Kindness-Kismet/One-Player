@@ -1,7 +1,5 @@
 package one.next.player.settings.screens.medialibrary
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +15,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -47,37 +48,31 @@ fun MediaLibraryPreferencesScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val manageExternalStorageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-    ) {
-        if (!hasManageExternalStorageAccess()) return@rememberLauncherForActivityResult
-
-        viewModel.onEvent(MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles(enabled = true))
+    var hasAllFilesAccess by remember {
+        mutableStateOf(hasManageExternalStorageAccess())
     }
 
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) {
-        if (uiState.preferences.ignoreNoMediaFiles && !hasManageExternalStorageAccess()) {
-            viewModel.onEvent(MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles(enabled = false))
+        hasAllFilesAccess = hasManageExternalStorageAccess()
+        if (hasAllFilesAccess) return@LifecycleEventEffect
+        if (!uiState.preferences.ignoreNoMediaFiles && !uiState.preferences.recycleBinEnabled) {
+            return@LifecycleEventEffect
         }
+
+        viewModel.onEvent(MediaLibraryPreferencesUiEvent.ResetRestrictedFeatures)
     }
 
     MediaLibraryPreferencesContent(
         uiState = uiState,
+        hasAllFilesAccess = hasAllFilesAccess,
         onNavigateUp = onNavigateUp,
         onFolderSettingClick = onFolderSettingClick,
         onThumbnailSettingClick = onThumbnailSettingClick,
+        onOpenAllFilesAccessSettings = {
+            context.startActivity(createManageExternalStorageAccessIntent(context))
+        },
         onToggleIgnoreNoMediaFiles = {
-            if (it) {
-                if (hasManageExternalStorageAccess()) {
-                    viewModel.onEvent(MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles(enabled = true))
-                } else {
-                    manageExternalStorageLauncher.launch(
-                        createManageExternalStorageAccessIntent(context),
-                    )
-                }
-            } else {
-                viewModel.onEvent(MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles(enabled = false))
-            }
+            viewModel.onEvent(MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles(enabled = it))
         },
         onEvent = viewModel::onEvent,
     )
@@ -87,9 +82,11 @@ fun MediaLibraryPreferencesScreen(
 @Composable
 private fun MediaLibraryPreferencesContent(
     uiState: MediaLibraryPreferencesUiState,
+    hasAllFilesAccess: Boolean,
     onNavigateUp: () -> Unit,
     onFolderSettingClick: () -> Unit,
     onThumbnailSettingClick: () -> Unit,
+    onOpenAllFilesAccessSettings: () -> Unit,
     onToggleIgnoreNoMediaFiles: (Boolean) -> Unit,
     onEvent: (MediaLibraryPreferencesUiEvent) -> Unit,
 ) {
@@ -133,22 +130,21 @@ private fun MediaLibraryPreferencesContent(
                     isFirstItem = true,
                     isLastItem = false,
                 )
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.recycle_bin),
-                    description = stringResource(id = R.string.recycle_bin_desc),
-                    icon = NextIcons.DeleteSweep,
-                    isChecked = preferences.recycleBinEnabled,
-                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled) },
+                ClickablePreferenceItem(
+                    title = stringResource(id = R.string.all_files_access_title),
+                    description = stringResource(id = R.string.media_library_all_files_access_desc),
+                    icon = NextIcons.Settings,
+                    onClick = onOpenAllFilesAccessSettings,
                     isFirstItem = false,
                     isLastItem = false,
                 )
                 PreferenceSwitch(
-                    title = stringResource(id = R.string.show_recycle_bin_icon),
-                    description = stringResource(id = R.string.show_recycle_bin_icon_desc),
+                    title = stringResource(id = R.string.recycle_bin),
+                    description = stringResource(id = R.string.recycle_bin_desc),
                     icon = NextIcons.DeleteSweep,
-                    enabled = preferences.recycleBinEnabled,
-                    isChecked = preferences.showRecycleBinIcon,
-                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleShowRecycleBinIcon) },
+                    enabled = hasAllFilesAccess,
+                    isChecked = preferences.recycleBinEnabled,
+                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled) },
                     isFirstItem = false,
                     isLastItem = true,
                 )
@@ -162,6 +158,7 @@ private fun MediaLibraryPreferencesContent(
                     title = stringResource(id = R.string.ignore_nomedia_files),
                     description = stringResource(id = R.string.ignore_nomedia_files_desc),
                     icon = NextIcons.HideSource,
+                    enabled = hasAllFilesAccess,
                     isChecked = preferences.ignoreNoMediaFiles,
                     onClick = {
                         onToggleIgnoreNoMediaFiles(!preferences.ignoreNoMediaFiles)
@@ -206,9 +203,11 @@ private fun MediaLibraryPreferencesScreenPreview() {
     NextPlayerTheme {
         MediaLibraryPreferencesContent(
             uiState = MediaLibraryPreferencesUiState(),
+            hasAllFilesAccess = false,
             onNavigateUp = {},
             onFolderSettingClick = {},
             onThumbnailSettingClick = {},
+            onOpenAllFilesAccessSettings = {},
             onToggleIgnoreNoMediaFiles = {},
             onEvent = {},
         )

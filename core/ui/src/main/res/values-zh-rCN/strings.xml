@@ -192,9 +192,7 @@
     <string name="mark_last_played_media">标记上次播放的媒体</string>
     <string name="mark_last_played_media_desc">标记主页和每个文件夹中上次播放的媒体</string>
     <string name="recycle_bin">回收站</string>
-    <string name="recycle_bin_desc">保留已删除项目，直到您永久移除它们</string>
-    <string name="show_recycle_bin_icon">显示回收站图标</string>
-    <string name="show_recycle_bin_icon_desc">启用回收站时，在主页顶部栏显示快捷入口</string>
+    <string name="recycle_bin_desc">保留已删除项目，直到您永久移除它们。启用后会在主页顶部栏显示回收站入口</string>
     <string name="exit">退出</string>
     <string name="skip_silence">跳过无声部分</string>
     <string name="folder">文件夹</string>
@@ -220,6 +218,7 @@
     <string name="error_opening_link">未找到可打开此链接的应用</string>
     <string name="all_files_access_title">允许所有文件访问</string>
     <string name="all_files_access_message">应用需要所有文件访问权限，才能扫描被 .nomedia 隐藏的文件夹并保持媒体库完整。</string>
+    <string name="media_library_all_files_access_desc">忽略 .nomedia 和回收站功能需要所有文件访问权限，授权后才能启用这两项功能。</string>
     <string name="go_to_settings">前往设置</string>
     <string name="not_now">暂不</string>
     <string name="list">列表</string>
@@ -318,7 +317,7 @@
     <string name="backup_settings_failed">备份设置失败</string>
     <string name="restore_settings_success">设置已恢复</string>
     <string name="restore_settings_failed">恢复设置失败</string>
-    <string name="move_to_recycle_bin">移至回收站</string>
+    <string name="move_to_recycle_bin">回收站</string>
     <string name="move_to_recycle_bin_info">所选项目将移至回收站</string>
     <string name="settings_backup_file_name">nextplayer-settings.json</string>
     <string name="exclude">排除</string>

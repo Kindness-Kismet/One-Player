@@ -33,9 +33,9 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
     fun onEvent(event: MediaLibraryPreferencesUiEvent) {
         when (event) {
             is MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles -> setIgnoreNoMediaFiles(event.enabled)
+            MediaLibraryPreferencesUiEvent.ResetRestrictedFeatures -> resetRestrictedFeatures()
             MediaLibraryPreferencesUiEvent.ToggleMarkLastPlayedMedia -> toggleMarkLastPlayedMedia()
             MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled -> toggleRecycleBinEnabled()
-            MediaLibraryPreferencesUiEvent.ToggleShowRecycleBinIcon -> toggleShowRecycleBinIcon()
         }
     }
 
@@ -59,18 +59,28 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
         }
     }
 
-    private fun toggleRecycleBinEnabled() {
+    private fun resetRestrictedFeatures() {
         viewModelScope.launch {
             preferencesRepository.updateApplicationPreferences {
-                it.copy(recycleBinEnabled = !it.recycleBinEnabled)
+                val shouldResetIgnoreNoMediaFiles = it.ignoreNoMediaFiles
+                val shouldResetRecycleBin = it.recycleBinEnabled
+
+                if (!shouldResetIgnoreNoMediaFiles && !shouldResetRecycleBin) {
+                    it
+                } else {
+                    it.copy(
+                        ignoreNoMediaFiles = false,
+                        recycleBinEnabled = false,
+                    )
+                }
             }
         }
     }
 
-    private fun toggleShowRecycleBinIcon() {
+    private fun toggleRecycleBinEnabled() {
         viewModelScope.launch {
             preferencesRepository.updateApplicationPreferences {
-                it.copy(showRecycleBinIcon = !it.showRecycleBinIcon)
+                it.copy(recycleBinEnabled = !it.recycleBinEnabled)
             }
         }
     }
@@ -82,7 +92,7 @@ data class MediaLibraryPreferencesUiState(
 
 sealed interface MediaLibraryPreferencesUiEvent {
     data class SetIgnoreNoMediaFiles(val enabled: Boolean) : MediaLibraryPreferencesUiEvent
+    data object ResetRestrictedFeatures : MediaLibraryPreferencesUiEvent
     data object ToggleMarkLastPlayedMedia : MediaLibraryPreferencesUiEvent
     data object ToggleRecycleBinEnabled : MediaLibraryPreferencesUiEvent
-    data object ToggleShowRecycleBinIcon : MediaLibraryPreferencesUiEvent
 }

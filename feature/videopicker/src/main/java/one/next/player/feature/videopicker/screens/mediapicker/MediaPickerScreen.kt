@@ -158,14 +158,9 @@ internal fun MediaPickerScreen(
 
     val isLibraryMode = uiState.screenMode == MediaPickerScreenMode.LIBRARY
     val isRecycleBinMode = uiState.screenMode == MediaPickerScreenMode.RECYCLE_BIN
-    val showRecycleBinIcon = isLibraryMode &&
+    val showRecycleBinEntry = isLibraryMode &&
         uiState.folderName == null &&
-        uiState.preferences.recycleBinEnabled &&
-        uiState.preferences.showRecycleBinIcon
-    val showRecycleBinLongPressEntry = isLibraryMode &&
-        uiState.folderName == null &&
-        uiState.preferences.recycleBinEnabled &&
-        !uiState.preferences.showRecycleBinIcon
+        uiState.preferences.recycleBinEnabled
     val deleteAction = when {
         isRecycleBinMode -> MediaPickerDeleteAction.PermanentlyDelete
         uiState.preferences.recycleBinEnabled -> MediaPickerDeleteAction.MoveToRecycleBin
@@ -190,7 +185,6 @@ internal fun MediaPickerScreen(
                 onTitleLongClick = when {
                     selectionManager.isInSelectionMode -> null
                     uiState.folderName != null -> onNavigateHome
-                    showRecycleBinLongPressEntry -> onRecycleBinClick
                     else -> null
                 },
                 navigationIcon = {
@@ -258,7 +252,7 @@ internal fun MediaPickerScreen(
                                     contentDescription = stringResource(id = R.string.search),
                                 )
                             }
-                            if (showRecycleBinIcon) {
+                            if (showRecycleBinEntry) {
                                 IconButton(onClick = onRecycleBinClick) {
                                     Icon(
                                         imageVector = NextIcons.DeleteSweep,
