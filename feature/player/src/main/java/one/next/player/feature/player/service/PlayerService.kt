@@ -68,6 +68,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +77,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -96,6 +96,9 @@ import one.next.player.core.model.Resume
 import one.next.player.core.ui.R as coreUiR
 import one.next.player.feature.player.PlayerActivity
 import one.next.player.feature.player.R
+import one.next.player.feature.player.engine.media3.MkvCuesParser
+import one.next.player.feature.player.engine.media3.SeekMapInjectingExtractor
+import one.next.player.feature.player.engine.media3.buildSeekMapFromCues
 import one.next.player.feature.player.extensions.addAdditionalSubtitleConfiguration
 import one.next.player.feature.player.extensions.audioTrackIndex
 import one.next.player.feature.player.extensions.copy
@@ -122,10 +125,7 @@ class PlayerService : MediaSessionService() {
 
     companion object {
         private const val TAG = "PlayerService"
-        private const val FAST_SEEK_TOLERANCE_MS = 5_000L
         private const val FAST_SEEK_MIN_DELTA_MS = 2_000L
-        private const val FAST_SEEK_PROMOTION_CHECK_DELAY_MS = 1_500L
-        private const val FAST_SEEK_SUCCESS_DELTA_REDUCTION_MS = 10_000L
     }
 
     @Inject
@@ -152,6 +152,10 @@ class PlayerService : MediaSessionService() {
     private var pendingPreciseSeekPromotionJob: Job? = null
     private lateinit var fastStartMediaSourceFactory: DefaultMediaSourceFactory
     private lateinit var preciseSeekMediaSourceFactory: DefaultMediaSourceFactory
+    private lateinit var assSubtitleParserFactory: AssSubtitleParserFactory
+
+    // mediaId → 预解析的 IndexSeekMap
+    private val mkvSeekMapCache = ConcurrentHashMap<String, androidx.media3.extractor.SeekMap>()
 
     private var startupTimestamp = 0L
     private val startupAnalyticsListener = object : AnalyticsListener {
@@ -247,6 +251,7 @@ class PlayerService : MediaSessionService() {
 
                 if (metadata.isApproximateSeekEnabled) {
                     Logger.info(TAG, "Skip resume seek for approximate-seek media item=${mediaItem.mediaId}")
+                    preloadMkvCues(mediaItem)
                     return
                 }
 
@@ -561,16 +566,14 @@ class PlayerService : MediaSessionService() {
         assSubtitleParserFactory: AssSubtitleParserFactory,
         assHandler: AssHandler,
         shouldUseFastStart: Boolean,
-    ): DefaultMediaSourceFactory {
-        return DefaultMediaSourceFactory(
-            DefaultDataSource.Factory(applicationContext),
-            createPlaybackExtractorsFactory(
-                assSubtitleParserFactory = assSubtitleParserFactory,
-                assHandler = assHandler,
-                shouldUseFastStart = shouldUseFastStart,
-            ),
-        ).setSubtitleParserFactory(assSubtitleParserFactory)
-    }
+    ): DefaultMediaSourceFactory = DefaultMediaSourceFactory(
+        DefaultDataSource.Factory(applicationContext),
+        createPlaybackExtractorsFactory(
+            assSubtitleParserFactory = assSubtitleParserFactory,
+            assHandler = assHandler,
+            shouldUseFastStart = shouldUseFastStart,
+        ),
+    ).setSubtitleParserFactory(assSubtitleParserFactory)
 
     private fun disableSeekForCues(extractor: MatroskaExtractor) {
         try {
@@ -1007,6 +1010,7 @@ class PlayerService : MediaSessionService() {
         this.assHandler = assHandler
         AssHandlerRegistry.register(assHandler)
         val assSubtitleParserFactory = AssSubtitleParserFactory(assHandler)
+        this.assSubtitleParserFactory = assSubtitleParserFactory
         fastStartMediaSourceFactory = createMediaSourceFactory(
             assSubtitleParserFactory = assSubtitleParserFactory,
             assHandler = assHandler,
@@ -1191,6 +1195,16 @@ class PlayerService : MediaSessionService() {
     }
 
     private fun createMediaSource(mediaItem: MediaItem): MediaSource {
+        val cachedSeekMap = mkvSeekMapCache[mediaItem.mediaId]
+        if (cachedSeekMap != null) {
+            // 使用预解析的 SeekMap 注入到 extractor，跳过慢速 Cues 加载
+            val factory = DefaultMediaSourceFactory(
+                DefaultDataSource.Factory(applicationContext),
+                createSeekMapInjectedExtractorsFactory(cachedSeekMap),
+            ).setSubtitleParserFactory(assSubtitleParserFactory)
+            return factory.createMediaSource(mediaItem)
+        }
+
         val mediaSourceFactory = if (mediaItem.mediaMetadata.isApproximateSeekEnabled) {
             fastStartMediaSourceFactory
         } else {
@@ -1237,7 +1251,7 @@ class PlayerService : MediaSessionService() {
         val shouldPlayWhenReady = player.playWhenReady
         Logger.info(
             TAG,
-            "Promote current item to precise seek mediaId=${currentItem.mediaId} target=$targetPosition",
+            "Promote current item to precise seek mediaId=${currentItem.mediaId} target=$targetPosition hasCachedSeekMap=${mkvSeekMapCache.containsKey(currentItem.mediaId)}",
         )
         player.setMediaSources(updatedMediaSources, currentIndex, targetPosition)
         player.prepare()
@@ -1275,41 +1289,57 @@ class PlayerService : MediaSessionService() {
             return SessionResult(SessionResult.RESULT_SUCCESS)
         }
 
+        // approximate source 无法高效 seek，直接升级到 precise source
         Logger.info(
             TAG,
-            "Attempt fast seek on approximate source mediaId=${currentItem.mediaId} start=$startPosition target=$targetPosition",
+            "Promote to precise seek mediaId=${currentItem.mediaId} start=$startPosition target=$targetPosition",
         )
-        player.seekTo(targetPosition)
+        promoteCurrentItemToPreciseSeek(targetPosition)
+        return SessionResult(SessionResult.RESULT_SUCCESS)
+    }
 
-        pendingPreciseSeekPromotionJob?.cancel()
-        pendingPreciseSeekPromotionJob = serviceScope.launch {
-            delay(FAST_SEEK_PROMOTION_CHECK_DELAY_MS)
+    // 后台预解析 MKV Cues，为后续 seek 构建快速 SeekMap
+    private fun preloadMkvCues(mediaItem: MediaItem) {
+        val mediaId = mediaItem.mediaId
+        if (mkvSeekMapCache.containsKey(mediaId)) return
 
-            val currentPlayer = mediaSession?.player as? ExoPlayer ?: return@launch
-            val promotedItem = currentPlayer.currentMediaItem ?: return@launch
-            if (promotedItem.mediaId != currentItem.mediaId) return@launch
-            if (!promotedItem.mediaMetadata.isApproximateSeekEnabled) return@launch
+        val durationMs = mediaItem.mediaMetadata.durationMs ?: return
+        val uri = Uri.parse(mediaId)
 
-            val settledPosition = currentPlayer.currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
-            val settledDelta = kotlin.math.abs(targetPosition - settledPosition)
-            val deltaReduction = startDelta - settledDelta
-            val didFastSeekSucceed = settledDelta <= FAST_SEEK_TOLERANCE_MS ||
-                deltaReduction >= FAST_SEEK_SUCCESS_DELTA_REDUCTION_MS
-            if (didFastSeekSucceed) {
-                Logger.info(
-                    TAG,
-                    "Keep fast approximate seek mediaId=${currentItem.mediaId} settled=$settledPosition target=$targetPosition delta=$settledDelta",
-                )
+        serviceScope.launch(Dispatchers.IO) {
+            val startTime = System.currentTimeMillis()
+            val cuePoints = MkvCuesParser.parse(applicationContext, uri)
+            val elapsed = System.currentTimeMillis() - startTime
+
+            if (cuePoints == null) {
+                Logger.debug(TAG, "MKV Cues pre-parse returned null for $mediaId (${elapsed}ms)")
                 return@launch
             }
 
+            val durationUs = durationMs * 1_000L
+            val seekMap = buildSeekMapFromCues(cuePoints, durationUs)
+            mkvSeekMapCache[mediaId] = seekMap
             Logger.info(
                 TAG,
-                "Fast seek fallback to precise source mediaId=${currentItem.mediaId} settled=$settledPosition target=$targetPosition delta=$settledDelta",
+                "MKV Cues pre-parsed: ${cuePoints.size} cue points in ${elapsed}ms for $mediaId",
             )
-            promoteCurrentItemToPreciseSeek(targetPosition)
         }
-        return SessionResult(SessionResult.RESULT_SUCCESS)
+    }
+
+    // 创建注入了预解析 SeekMap 的 ExtractorsFactory
+    private fun createSeekMapInjectedExtractorsFactory(
+        seekMap: androidx.media3.extractor.SeekMap,
+    ): ExtractorsFactory = ExtractorsFactory {
+        val baseFactory = DefaultExtractorsFactory()
+        val extractors = baseFactory.createExtractors()
+        for (i in extractors.indices) {
+            if (extractors[i] is MatroskaExtractor) {
+                val assExtractor = AssMatroskaExtractor(assSubtitleParserFactory, assHandler!!)
+                disableSeekForCues(assExtractor)
+                extractors[i] = SeekMapInjectingExtractor(assExtractor, seekMap)
+            }
+        }
+        extractors
     }
 
     private fun getDefaultArtworkUri(): Uri = Uri.Builder().apply {
