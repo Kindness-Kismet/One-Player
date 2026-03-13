@@ -15,10 +15,9 @@ import androidx.media3.common.util.UnstableApi
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import one.next.player.feature.player.extensions.availableDurationMs
-import one.next.player.feature.player.extensions.canSeekCurrentMediaItem
 import one.next.player.feature.player.extensions.formatted
-import one.next.player.feature.player.extensions.setIsScrubbingModeEnabled
 import one.next.player.feature.player.extensions.seekToRequestedPosition
+import one.next.player.feature.player.extensions.setIsScrubbingModeEnabled
 
 @UnstableApi
 @Composable
@@ -58,9 +57,8 @@ class SeekGestureState(
     private var seekStartX = 0f
 
     fun onSeek(value: Long) {
-        if (!player.canSeekCurrentMediaItem()) return
         val duration = player.availableDurationMs()
-        if (duration == C.TIME_UNSET) return
+        if (duration == C.TIME_UNSET || duration <= 0L) return
         val currentPosition = player.currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
 
         if (!isSeeking) {
@@ -85,9 +83,8 @@ class SeekGestureState(
 
     fun onDragStart(offset: Offset) {
         if (!isSeekGestureEnabled) return
-        if (!player.canSeekCurrentMediaItem()) return
         val duration = player.availableDurationMs()
-        if (duration == C.TIME_UNSET) return
+        if (duration == C.TIME_UNSET || duration <= 0L) return
         val currentPosition = player.currentPosition.takeIf { it != C.TIME_UNSET } ?: 0L
 
         isSeeking = true

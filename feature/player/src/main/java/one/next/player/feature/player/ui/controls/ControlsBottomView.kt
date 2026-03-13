@@ -241,7 +241,7 @@ private fun MaterialYouSlider(
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
-        modifier = modifier.size(24.dp).semantics { contentDescription = "slider_seek" },
+        modifier = modifier.height(24.dp).semantics { contentDescription = "slider_seek" },
         track = { sliderState ->
             val disabledAlpha = 0.4f
 

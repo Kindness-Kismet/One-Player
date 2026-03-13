@@ -160,6 +160,13 @@ fun MediaPlayerScreen(
         }
     }
 
+    // seekbar 拖动中保持控件可见，拖动结束后恢复自动隐藏
+    LaunchedEffect(seekGestureState.isSeeking) {
+        if (seekGestureState.isSeeking) {
+            controlsVisibilityState.showControls()
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         if (playerPreferences.shouldRememberPlayerBrightness) {
             brightnessState.setBrightness(playerPreferences.playerBrightness)
