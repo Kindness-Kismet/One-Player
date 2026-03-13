@@ -97,7 +97,10 @@ fun Player.availableDurationMs(): Long {
         return playerDuration
     }
 
-    return currentMediaItem?.mediaMetadata?.durationMs?.takeIf { it > 0L } ?: C.TIME_UNSET
+    // currentMediaItem 的 metadata 和 player 顶层 metadata 可能不同步
+    return currentMediaItem?.mediaMetadata?.durationMs?.takeIf { it > 0L }
+        ?: mediaMetadata.durationMs?.takeIf { it > 0L }
+        ?: C.TIME_UNSET
 }
 
 fun Player.canSeekCurrentMediaItem(): Boolean {
@@ -119,13 +122,8 @@ fun Player.seekToRequestedPosition(positionMs: Long) {
 
     val targetPosition = positionMs.coerceIn(0L, duration)
     if (this is MediaController) {
-        val shouldUsePreciseSeekCommand = !isCommandAvailable(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) &&
-            currentMediaItem?.mediaMetadata?.isApproximateSeekEnabled == true
-        if (shouldUsePreciseSeekCommand) {
-            Logger.info(
-                "Player",
-                "Request precise seek mediaId=${currentMediaItem?.mediaId} target=$targetPosition",
-            )
+        // approximate source 的 seekTo 会从头顺序读取，必须走 preciseSeekTo 触发 source 升级
+        if (currentMediaItem?.mediaMetadata?.isApproximateSeekEnabled == true) {
             preciseSeekTo(targetPosition)
             return
         }

@@ -44,9 +44,9 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import one.next.player.core.common.Logger
-import one.next.player.core.common.storagePermission
 import one.next.player.core.common.extensions.getMediaContentUri
 import one.next.player.core.common.extensions.scanFileForContentUri
+import one.next.player.core.common.storagePermission
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ScreenOrientation
 import one.next.player.core.ui.theme.NextPlayerTheme
@@ -349,9 +349,7 @@ class PlayerActivity : AppCompatActivity() {
         return uri
     }
 
-    private fun hasMediaReadPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(this, storagePermission) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    }
+    private fun hasMediaReadPermission(): Boolean = ContextCompat.checkSelfPermission(this, storagePermission) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun playbackStateListener() = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
