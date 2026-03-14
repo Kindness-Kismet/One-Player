@@ -453,6 +453,7 @@ class LocalMediaSynchronizer @Inject constructor(
 
     private fun File.isVisibleVideoFile(): Boolean {
         if (!isFile) return false
+        if (name.startsWith(".trashed-")) return false
 
         if (extension.equals(RECYCLE_BIN_EXTENSION, ignoreCase = true)) return true
 

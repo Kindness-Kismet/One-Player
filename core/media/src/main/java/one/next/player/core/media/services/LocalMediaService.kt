@@ -54,9 +54,12 @@ class LocalMediaService @Inject constructor(
     }
 
     override suspend fun deleteMedia(uris: List<Uri>): Boolean = withContext(Dispatchers.IO) {
+        val contentUris = uris.mapNotNull(::ensureMediaStoreUri)
+        if (contentUris.isEmpty()) return@withContext false
+
         suspendCancellableCoroutine { continuation ->
             launchDeleteRequest(
-                uris = uris,
+                uris = contentUris,
                 onResultOk = { continuation.resume(true) },
                 onResultCanceled = { continuation.resume(false) },
             )
@@ -64,14 +67,16 @@ class LocalMediaService @Inject constructor(
     }
 
     override suspend fun renameMedia(uri: Uri, to: String): Boolean = withContext(Dispatchers.IO) {
+        val validUri = ensureMediaStoreUri(uri) ?: return@withContext false
+
         suspendCancellableCoroutine { continuation ->
             val scope = CoroutineScope(Dispatchers.Default)
             launchWriteRequest(
-                uris = listOf(uri),
+                uris = listOf(validUri),
                 onResultOk = {
                     scope.launch {
                         val result = contentResolver.updateMedia(
-                            uri = uri,
+                            uri = validUri,
                             contentValues = ContentValues().apply {
                                 put(MediaStore.MediaColumns.DISPLAY_NAME, to)
                             },
@@ -238,6 +243,16 @@ class LocalMediaService @Inject constructor(
             ContentUris.parseId(uri),
         )
     }.getOrElse { uri }
+
+    // createDeleteRequest / createWriteRequest 要求 content URI 且必须含 numeric ID
+    private fun ensureMediaStoreUri(uri: Uri): Uri? {
+        if (uri.scheme == "content") {
+            val id = runCatching { ContentUris.parseId(uri) }.getOrNull()
+            return if (id != null && id > 0) uri else null
+        }
+        val path = context.getPath(uri) ?: return null
+        return context.getMediaContentUri(uri) ?: context.getMediaFileContentUri(path)
+    }
 
     private fun resolveResultUri(
         path: String,
