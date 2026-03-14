@@ -67,7 +67,6 @@ android {
 
     splits {
         abi {
-            //noinspection WrongGradleMethod
             val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
             val abiTargets = if (configuredAbiFilter.isEmpty()) listOf("arm64-v8a", "x86_64") else configuredAbiFilter
 
@@ -89,9 +88,9 @@ android {
     }
 
     dependenciesInfo {
-        // Disables dependency metadata when building APKs.
+        // 构建 APK 时关闭依赖元数据写入
         includeInApk = false
-        // Disables dependency metadata when building Android App Bundles.
+        // 构建 Android App Bundle 时关闭依赖元数据写入
         includeInBundle = false
     }
 }
@@ -112,7 +111,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
 
-    // Compose
+    // Compose 依赖
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -126,7 +125,7 @@ dependencies {
 
     implementation(libs.coil.compose)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

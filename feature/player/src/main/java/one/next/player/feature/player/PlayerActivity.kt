@@ -80,16 +80,10 @@ class PlayerActivity : AppCompatActivity() {
     private var shouldPlayInBackground: Boolean = false
     private var isIntentNew: Boolean = true
 
-    /**
-     * Player
-     */
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
     private lateinit var playerApi: PlayerApi
 
-    /**
-     * Listeners
-     */
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
     private val subtitleFileSuspendLauncher = registerForSuspendActivityResult(OpenDocument())

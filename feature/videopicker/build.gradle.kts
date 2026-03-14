@@ -45,7 +45,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.google.android.material)
 
-    // Compose
+    // Compose 依赖
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -57,7 +57,7 @@ dependencies {
 
     implementation(libs.coil.compose)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

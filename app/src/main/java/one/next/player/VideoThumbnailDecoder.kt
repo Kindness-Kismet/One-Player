@@ -263,22 +263,17 @@ sealed class ThumbnailStrategy {
     data class Hybrid(val percentage: Float = 0.5f) : ThumbnailStrategy()
 }
 
-/**
- * Checks if a bitmap is mostly a solid color.
- * Uses a sampling approach to check a grid of pixels in the center region.
- * Returns true if 95% or more of sampled pixels are similar (within threshold).
- */
 private fun isSolidColor(bitmap: Bitmap, threshold: Float = 0.7f): Boolean {
     val width = bitmap.width
     val height = bitmap.height
 
-    // Sample a grid in the center region (avoiding edges which may be black bars)
+    // 采样中心区域网格，避开黑边干扰
     val marginX = width / 10
     val marginY = height / 10
     val sampleAreaRight = width - marginX
     val sampleAreaBottom = height - marginY
 
-    // Create a grid of sample points
+    // 构建采样点网格
     val gridSize = 10
     val stepX = (sampleAreaRight - marginX) / gridSize
     val stepY = (sampleAreaBottom - marginY) / gridSize
@@ -299,14 +294,14 @@ private fun isSolidColor(bitmap: Bitmap, threshold: Float = 0.7f): Boolean {
 
     if (sampledColors.isEmpty()) return false
 
-    // Use the first color as reference
+    // 以首个颜色作为参考值
     val referenceColor = sampledColors[0]
     val referenceR = (referenceColor shr 16) and 0xFF
     val referenceG = (referenceColor shr 8) and 0xFF
     val referenceB = referenceColor and 0xFF
 
-    // Count similar colors (within a tolerance)
-    val tolerance = 30 // RGB tolerance
+    // 统计容差内的相似颜色数量
+    val tolerance = 30 // RGB 容差
     val similarCount = sampledColors.count { color ->
         val r = (color shr 16) and 0xFF
         val g = (color shr 8) and 0xFF

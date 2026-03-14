@@ -35,11 +35,6 @@ import org.mozilla.universalchardet.UniversalDetector
 val VIDEO_COLLECTION_URI: Uri
     get() = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
 
-/**
- * get path from uri
- * @param uri uri of the file
- * @return path of the file
- */
 fun Context.getPath(uri: Uri): String? {
     if (DocumentsContract.isDocumentUri(this, uri)) {
         when {
@@ -52,7 +47,7 @@ fun Context.getPath(uri: Uri): String? {
                 if ("primary".equals(split[0], ignoreCase = true)) {
                     return Environment.getExternalStorageDirectory().path + "/" + split[1]
                 }
-                // TODO handle non-primary volumes
+                // 非 primary 卷暂不支持路径回填
             }
 
             uri.isDownloadsDocument -> {
@@ -99,13 +94,6 @@ fun Context.getPath(uri: Uri): String? {
     return null
 }
 
-/**
- * get data column from uri
- * @param uri uri of the file
- * @param selection selection
- * @param selectionArgs selection arguments
- * @return data column
- */
 private fun Context.getDataColumn(
     uri: Uri,
     selection: String? = null,
@@ -126,22 +114,12 @@ private fun Context.getDataColumn(
     return null
 }
 
-/**
- * get filename from uri
- * @param uri uri of the file
- * @return filename of the file
- */
 fun Context.getFilenameFromUri(uri: Uri): String = if (ContentResolver.SCHEME_FILE.equals(uri.scheme, ignoreCase = true)) {
     File(uri.toString()).name
 } else {
     getFilenameFromContentUri(uri) ?: uri.lastPathSegment ?: ""
 }
 
-/**
- * get filename from content uri
- * @param uri uri of the file
- * @return filename of the file
- */
 fun Context.getFilenameFromContentUri(uri: Uri): String? {
     val projection = arrayOf(
         OpenableColumns.DISPLAY_NAME,
@@ -310,7 +288,7 @@ private fun detectCharset(url: URL): Charset = url.openStream().use { inputStrea
 
 private fun detectCharsetFromStream(inputStream: InputStream): Charset {
     return BufferedInputStream(inputStream).use { bufferedStream ->
-        val maxBytes = 1024 * 100 // 100 KB
+        val maxBytes = 1024 * 100 // 100 KB 上限
         val data = ByteArray(maxBytes)
         val bytesRead = bufferedStream.read(data, 0, maxBytes)
 
@@ -359,9 +337,9 @@ private fun Context.convertNetworkUriToUTF8(url: URL, sourceCharset: Charset): U
 fun Context.isDeviceTvBox(): Boolean {
     val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
     if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) return true
-    // Fire tv
+    // Fire TV 设备直接判定为盒子
     if (packageManager.hasSystemFeature("amazon.hardware.fire_tv")) return true
-    // Missing Files app (DocumentsUI) means box (some boxes still have non functional app or stub)
+    // 缺少 DocumentsUI 时按盒子处理
     if (!hasStorageAccessFrameworkChooser()) return true
 
     return false

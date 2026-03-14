@@ -7,14 +7,8 @@ import one.next.player.core.model.SettingsBackup
 
 interface PreferencesRepository {
 
-    /**
-     * Stream of [ApplicationPreferences].
-     */
     val applicationPreferences: StateFlow<ApplicationPreferences>
 
-    /**
-     * Stream of [PlayerPreferences].
-     */
     val playerPreferences: StateFlow<PlayerPreferences>
 
     suspend fun updateApplicationPreferences(

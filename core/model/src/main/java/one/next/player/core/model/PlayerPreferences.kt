@@ -17,7 +17,7 @@ data class PlayerPreferences(
     val shouldAutoPlayInBackground: Boolean = false,
     val loopMode: LoopMode = LoopMode.OFF,
 
-    // Controls (Gestures)
+    // 手势控制
     @Deprecated(message = "Use individual isVolumeSwipeGestureEnabled and isBrightnessSwipeGestureEnabled instead")
     val shouldUseSwipeControls: Boolean = true,
     val isVolumeSwipeGestureEnabled: Boolean = true,
@@ -33,20 +33,20 @@ data class PlayerPreferences(
     val volumeGestureSensitivity: Float = DEFAULT_VOLUME_GESTURE_SENSITIVITY,
     val brightnessGestureSensitivity: Float = DEFAULT_BRIGHTNESS_GESTURE_SENSITIVITY,
 
-    // Player Interface
+    // 播放器界面
     val controllerAutoHideTimeout: Int = DEFAULT_CONTROLLER_AUTO_HIDE_TIMEOUT,
     val controlButtonsPosition: ControlButtonsPosition = ControlButtonsPosition.LEFT,
     val shouldHidePlayerButtonsBackground: Boolean = false,
     val shouldUseMaterialYouControls: Boolean = false,
 
-    // Audio Preferences
+    // 音频偏好
     val preferredAudioLanguage: String = "",
     val shouldPauseOnHeadsetDisconnect: Boolean = true,
     val shouldRequireAudioFocus: Boolean = true,
     val shouldShowSystemVolumePanel: Boolean = true,
     val isVolumeBoostEnabled: Boolean = false,
 
-    // Subtitle Preferences
+    // 字幕偏好
     val shouldUseSystemCaptionStyle: Boolean = false,
     val preferredSubtitleLanguage: String = "",
     val subtitleTextEncoding: String = "",
@@ -56,7 +56,7 @@ data class PlayerPreferences(
     val shouldUseBoldSubtitleText: Boolean = true,
     val shouldApplyEmbeddedStyles: Boolean = true,
 
-    // Decoder Preferences
+    // 解码偏好
     val decoderPriority: DecoderPriority = DecoderPriority.PREFER_DEVICE,
 ) {
 

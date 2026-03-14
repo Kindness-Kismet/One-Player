@@ -39,7 +39,7 @@ abstract class MediaDatabase : RoomDatabase() {
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Create the new media_state table
+                // 创建 media_state 新表
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `media_state` (
@@ -56,14 +56,14 @@ abstract class MediaDatabase : RoomDatabase() {
                     """,
                 )
 
-                // Create index for the uri column
+                // 为 uri 列创建索引
                 db.execSQL(
                     """
                     CREATE UNIQUE INDEX IF NOT EXISTS `index_media_state_uri` ON `media_state` (`uri`)
                     """,
                 )
 
-                // Copy data from media table to media_state table
+                // 将 media 表数据迁移到 media_state
                 db.execSQL(
                     """
                     INSERT INTO `media_state` (
@@ -89,7 +89,7 @@ abstract class MediaDatabase : RoomDatabase() {
                     """,
                 )
 
-                // Create a temporary table for the new media schema
+                // 为新 media 结构创建临时表
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `media_new` (
@@ -110,7 +110,7 @@ abstract class MediaDatabase : RoomDatabase() {
                     """,
                 )
 
-                // Copy data from the old media table to the new one
+                // 将旧 media 表数据迁移到新表
                 db.execSQL(
                     """
                     INSERT INTO `media_new` (
@@ -144,13 +144,13 @@ abstract class MediaDatabase : RoomDatabase() {
                     """,
                 )
 
-                // Drop the old media table
+                // 删除旧 media 表
                 db.execSQL("DROP TABLE `media`")
 
-                // Rename the new media table to media
+                // 将 media_new 重命名为 media
                 db.execSQL("ALTER TABLE `media_new` RENAME TO `media`")
 
-                // Recreate the indices for the media table
+                // 重建 media 表索引
                 db.execSQL(
                     """
                     CREATE UNIQUE INDEX IF NOT EXISTS `index_media_uri` ON `media` (`uri`)
@@ -166,10 +166,10 @@ abstract class MediaDatabase : RoomDatabase() {
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Drop the unique index on path
+                // 删除 path 唯一索引
                 db.execSQL("DROP INDEX IF EXISTS `index_media_path`")
 
-                // Recreate the index without unique constraint
+                // 以非唯一约束重建 path 索引
                 db.execSQL(
                     """
                     CREATE INDEX IF NOT EXISTS `index_media_path` ON `media` (`path`)

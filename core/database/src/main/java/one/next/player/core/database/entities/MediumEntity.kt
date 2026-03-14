@@ -26,7 +26,7 @@ data class MediumEntity(
     @ColumnInfo(name = "duration") val duration: Long,
     @ColumnInfo(name = "media_store_id") val mediaStoreId: Long,
 
-    // Medium info
+    // 媒体补充信息
     @ColumnInfo(name = "format") val format: String? = null,
     @ColumnInfo(name = "thumbnail_path") val thumbnailPath: String? = null,
 )

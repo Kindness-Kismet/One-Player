@@ -33,7 +33,7 @@ dependencies {
 
     implementation(libs.github.albfernandez.juniversalchardet)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

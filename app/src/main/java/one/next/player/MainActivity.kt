@@ -196,10 +196,6 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-/**
- * Returns `true` if dark theme should be used, as a function of the [uiState] and the
- * current system context.
- */
 @Composable
 fun shouldUseDarkTheme(
     uiState: MainActivityUiState,
@@ -220,9 +216,6 @@ fun shouldUseHighContrastDarkTheme(
     is MainActivityUiState.Success -> uiState.preferences.shouldUseHighContrastDarkTheme
 }
 
-/**
- * Returns `true` if the dynamic color is disabled, as a function of the [uiState].
- */
 @Composable
 fun shouldUseDynamicTheming(
     uiState: MainActivityUiState,

@@ -26,9 +26,6 @@ class DirectoryDaoTest {
         directoryDao = db.directoryDao()
     }
 
-    /**
-     * Test to check if the [DirectoryDao.upsert] method inserts a [DirectoryEntity] into the database.
-     */
     @Test
     fun directoryDao_inserts_directoryEntity() = runTest {
         val directoryEntity = sampleData[0]
@@ -39,9 +36,6 @@ class DirectoryDaoTest {
         assert(result[0] == directoryEntity)
     }
 
-    /**
-     * Test to check if the [DirectoryDao.upsert] method updates a [DirectoryEntity] in the database.
-     */
     @Test
     fun directoryDao_updates_directoryEntity() = runTest {
         val directoryEntity = sampleData[0]

@@ -30,14 +30,6 @@ import one.next.player.core.ui.theme.NextPlayerTheme
 
 private const val NORMAL_MAX_PERCENTAGE = 100
 
-/**
- * Vertical progress indicator for volume/brightness.
- *
- * @param value Current value (0 to maxValue)
- * @param maxValue Maximum value (100 for normal, 200 for boosted volume)
- * @param icon Icon to display at the bottom
- * @param boostColor Optional color for the boost portion (above 100%)
- */
 @Composable
 fun VerticalProgressView(
     modifier: Modifier = Modifier,

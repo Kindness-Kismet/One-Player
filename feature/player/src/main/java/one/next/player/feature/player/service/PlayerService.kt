@@ -154,7 +154,7 @@ class PlayerService : MediaSessionService() {
     private lateinit var preciseSeekMediaSourceFactory: DefaultMediaSourceFactory
     private lateinit var assSubtitleParserFactory: AssSubtitleParserFactory
 
-    // mediaId → 预解析的 IndexSeekMap
+    // mediaId 对应预解析 IndexSeekMap
     private val mkvSeekMapCache = ConcurrentHashMap<String, androidx.media3.extractor.SeekMap>()
 
     private var startupTimestamp = 0L
@@ -397,7 +397,7 @@ class PlayerService : MediaSessionService() {
             val player = mediaSession?.player ?: return
             val currentMediaItem = player.currentMediaItem ?: return
 
-            // 从 track format 获取视频尺寸，通过 metadata extras 传递给 MediaController
+            // 从 track format 读取视频尺寸，再通过 metadata extras 传给 MediaController
             val format = player.currentTracks.groups
                 .firstOrNull { it.type == C.TRACK_TYPE_VIDEO }
                 ?.getTrackFormat(0)
@@ -647,7 +647,7 @@ class PlayerService : MediaSessionService() {
         return null
     }
 
-    // DataSource 包装器，读取时透明跳过 [gapStart, gapStart+gapLength) 区间
+    // DataSource 包装器，读取时透明跳过 [gapStart, gapStart + gapLength) 区间
     private class GapSkipDataSource(
         private val upstream: DataSource,
         private val targetUri: Uri,
@@ -1135,7 +1135,7 @@ class PlayerService : MediaSessionService() {
                     )
                 }
 
-                // Use placeholder artwork initially - actual artwork will be loaded in background
+                // 先写入占位封面，后台再异步加载真实封面
                 val artworkUri = getDefaultArtworkUri()
 
                 val title = mediaItem.mediaMetadata.title ?: video?.nameWithExtension ?: getFilenameFromUri(uri)

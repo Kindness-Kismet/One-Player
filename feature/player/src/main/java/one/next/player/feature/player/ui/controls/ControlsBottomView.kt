@@ -262,7 +262,6 @@ private fun MaterialYouSlider(
                 val leftEnd = (playedPixels - gapHalf).coerceIn(0f, size.width)
                 val rightStart = (playedPixels + gapHalf).coerceIn(0f, size.width)
 
-                // Inactive track left side
                 if (leftEnd > 0f) {
                     drawRoundedRect(
                         offset = Offset(0f, 0f),
@@ -273,7 +272,6 @@ private fun MaterialYouSlider(
                     )
                 }
 
-                // Inactive track right side
                 if (rightStart < size.width) {
                     drawRoundedRect(
                         offset = Offset(rightStart, 0f),
@@ -284,7 +282,6 @@ private fun MaterialYouSlider(
                     )
                 }
 
-                // Active track
                 if (leftEnd > 0f) {
                     drawRoundedRect(
                         offset = Offset(0f, 0f),

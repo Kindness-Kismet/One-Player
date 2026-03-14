@@ -32,13 +32,10 @@ data class Sort(
             val thatChunk = getChunk(str2, str2Length, str2Marker)
             str2Marker += thatChunk.length
 
-            // If both chunks contain numeric characters, sort them numerically.
             val result: Int
             if (thisChunk[0].isDigit() && thatChunk[0].isDigit()) {
-                // Simple chunk comparison by length.
                 val thisChunkLength = thisChunk.length
                 val lengthDiff = thisChunkLength - thatChunk.length
-                // If equal, the first different number counts.
                 if (lengthDiff == 0) {
                     for (i in 0 until thisChunkLength) {
                         val charDiff = thisChunk[i] - thatChunk[i]

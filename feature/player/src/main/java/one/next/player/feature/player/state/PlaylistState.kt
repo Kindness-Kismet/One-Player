@@ -53,7 +53,7 @@ class PlaylistState(
 
     fun removeItem(index: Int) {
         if (index !in playlist.indices) return
-        if (playlist.size <= 1) return // Don't remove the last item
+        if (playlist.size <= 1) return // 不允许删除最后一项
 
         player.removeMediaItem(index)
         updatePlaylist()

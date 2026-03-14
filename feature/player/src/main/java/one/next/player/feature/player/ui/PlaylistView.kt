@@ -74,7 +74,6 @@ fun BoxScope.PlaylistView(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
-    // Auto-scroll to current item when playlist opens
     LaunchedEffect(shouldShow) {
         if (shouldShow && playlistState.playlist.isNotEmpty()) {
             val currentIndex = playlistState.currentMediaItemIndex
@@ -90,7 +89,6 @@ fun BoxScope.PlaylistView(
         title = stringResource(R.string.now_playing),
     ) {
         if (playlistState.playlist.isEmpty()) {
-            // Empty state
             EmptyPlaylistView()
         } else {
             LazyColumn(
@@ -220,7 +218,6 @@ private fun ThumbnailView(
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp))
             .aspectRatio(16f / 10f),
     ) {
-        // Fallback icon
         Icon(
             imageVector = NextIcons.Video,
             contentDescription = null,
@@ -230,7 +227,6 @@ private fun ThumbnailView(
                 .fillMaxSize(0.5f),
         )
 
-        // Thumbnail image
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(mediaItem.mediaMetadata.artworkData ?: mediaItem.mediaMetadata.artworkUri)
@@ -242,7 +238,6 @@ private fun ThumbnailView(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Duration overlay
         mediaItem.mediaMetadata.durationMs?.let { durationMs ->
             if (durationMs > 0) {
                 Text(

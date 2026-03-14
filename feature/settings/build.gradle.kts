@@ -43,7 +43,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // Compose
+    // Compose 依赖
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -54,7 +54,7 @@ dependencies {
 
     implementation(libs.aboutlibraries.core)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

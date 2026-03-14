@@ -217,9 +217,6 @@ class GetSortedVideosUseCaseTest {
     }
 }
 
-/**
- * Sorted video items by title in ascending order and duration in ascending order.
- */
 val testVideoItems = listOf(
     Video(
         id = 1,

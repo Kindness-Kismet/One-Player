@@ -17,7 +17,7 @@ data class ApplicationPreferences(
     val mediaViewMode: MediaViewMode = MediaViewMode.FOLDERS,
     val mediaLayoutMode: MediaLayoutMode = MediaLayoutMode.LIST,
 
-    // Fields
+    // 字段显示
     val shouldShowDurationField: Boolean = true,
     val shouldShowExtensionField: Boolean = false,
     val shouldShowPathField: Boolean = true,
@@ -26,7 +26,7 @@ data class ApplicationPreferences(
     val shouldShowThumbnailField: Boolean = true,
     val shouldShowPlayedProgress: Boolean = true,
 
-    // Thumbnail generation
+    // 缩略图生成
     val thumbnailGenerationStrategy: ThumbnailGenerationStrategy = ThumbnailGenerationStrategy.FRAME_AT_PERCENTAGE,
     val thumbnailFramePosition: Float = DEFAULT_THUMBNAIL_FRAME_POSITION,
     val shouldCheckForUpdatesOnStartup: Boolean = false,

@@ -34,13 +34,13 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)
     kspAndroidTest(libs.hilt.compiler)
 
-    // Room
+    // Room 依赖
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)

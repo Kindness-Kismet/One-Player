@@ -17,7 +17,7 @@
             android:windowSoftInputMode="adjustResize"
             tools:targetApi="o">
 
-            <!-- This filter captures protocols without type info -->
+            
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -36,7 +36,7 @@
                 <data android:scheme="udp" />
             </intent-filter>
 
-            <!-- This filter captures protocols with type info -->
+            
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

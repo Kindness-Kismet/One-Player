@@ -48,7 +48,7 @@ class ThumbnailPreferencesViewModel @Inject constructor(
             preferencesRepository.updateApplicationPreferences {
                 it.copy(thumbnailGenerationStrategy = strategy)
             }
-            // Clear cache only if strategy actually changed
+            // 仅在策略变更时清理缓存
             if (currentStrategy != strategy) {
                 mediaInfoSynchronizer.clearThumbnailsCache()
             }
@@ -61,7 +61,7 @@ class ThumbnailPreferencesViewModel @Inject constructor(
             preferencesRepository.updateApplicationPreferences {
                 it.copy(thumbnailFramePosition = position)
             }
-            // Clear cache only if position actually changed
+            // 仅在位置变更时清理缓存
             if (currentPosition != position) {
                 mediaInfoSynchronizer.clearThumbnailsCache()
             }

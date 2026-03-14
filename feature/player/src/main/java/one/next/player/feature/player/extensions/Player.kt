@@ -11,16 +11,6 @@ import androidx.media3.session.MediaController
 import one.next.player.core.common.Logger
 import one.next.player.feature.player.service.preciseSeekTo
 import one.next.player.feature.player.service.setMediaControllerIsScrubbingModeEnabled
-
-/**
- * Switches to selected track.
- *
- * @param trackType The type of track to switch.
- * @param trackIndex The index of the track to switch to, or null to enable the track.
- *
- * if trackIndex is a negative number, the track will be disabled
- * if trackIndex is a valid index, the track will be switched to that index
- */
 fun Player.switchTrack(trackType: @C.TrackType Int, trackIndex: Int) {
     val trackTypeText = when (trackType) {
         C.TRACK_TYPE_AUDIO -> "audio"
@@ -51,7 +41,7 @@ fun Player.switchTrack(trackType: @C.TrackType Int, trackIndex: Int) {
         )
         val trackSelectionOverride = TrackSelectionOverride(tracks[trackIndex].mediaTrackGroup, 0)
 
-        // Override the track selection parameters to force the selection of the specified track.
+        // 覆盖轨道选择参数，强制切到目标轨道
         trackSelectionParameters = trackSelectionParameters
             .buildUpon()
             .setTrackTypeDisabled(trackType, false)

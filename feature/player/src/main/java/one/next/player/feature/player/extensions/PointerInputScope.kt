@@ -19,20 +19,6 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.positionChanged
 import kotlin.math.abs
 
-/**
- * Detects custom transform gestures including pan, zoom, and rotation gestures.
- * This function allows customization of gesture handling and locks gestures to pan and zoom if specified.
- * This is a custom implementation of the [androidx.compose.foundation.gestures.detectTransformGestures] function that allows for more granular control over the gestures.
- *
- * https://stackoverflow.com/questions/76370595/how-to-handle-horizontal-scroll-gesture-combined-with-transform-gestures-in-jetp/76374985#76374985
- *
- * @param isPanZoomLocked If true, locks gestures to pan and zoom, ignoring rotation if the touch-slope threshold for rotation is not exceeded.
- * @param pass Specifies the type of pointer events to process (e.g., Main, Initial).
- * @param onGestureStart Function invoked when a gesture is initiated with the first down event. The function receives the initial pointer change.
- * @param onGesture Function invoked during each gesture update with details on the gesture including the centroid position, pan offset, zoom factor, rotation angle, the current primary
- *  pointer change, and the list of all pointer changes.
- * @param onGestureEnd Function invoked when the gesture ends. The function receives the final pointer change.
- */
 suspend fun PointerInputScope.detectCustomTransformGestures(
     isPanZoomLocked: Boolean = false,
     pass: PointerEventPass = PointerEventPass.Main,
@@ -55,40 +41,30 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
         var isLockedToPanZoom = false
         var hasGestureStarted = false
 
-        // Wait for at least one pointer to press down and set the first contact position
         val down: PointerInputChange = awaitFirstDown(
             requireUnconsumed = false,
             pass = pass,
         )
 
         var pointer = down
-        // The main pointer is the one that is down initially
         var pointerId = down.id
 
         do {
             val event = awaitPointerEvent(pass = pass)
 
-            // Count the number of pointers currently down
             val currentPointerCount = event.changes.count { it.pressed }
 
-            // If any position change is consumed from another PointerInputChange
-            // or pointer count requirement is not fulfilled
             val isCanceled = event.changes.any { it.isConsumed } || currentPointerCount != pointCount
 
             if (!isCanceled) {
-                // Trigger onGestureStart only once when pointer count requirement is met
                 if (!hasGestureStarted) {
                     hasGestureStarted = true
                     onGestureStart(pointer)
                 }
 
-                // Get a pointer that is down if the first pointer is up,
-                // get another and use it if other pointers are also down
-                // event.changes.first() doesn't return same order
                 val pointerInputChange = event.changes.firstOrNull { it.id == pointerId }
                     ?: event.changes.first()
 
-                // Next time will check the same pointer with this id
                 pointerId = pointerInputChange.id
                 pointer = pointerInputChange
 
@@ -141,7 +117,6 @@ suspend fun PointerInputScope.detectCustomTransformGestures(
             }
         } while (!isCanceled && event.changes.any { it.pressed })
 
-        // Only trigger onGestureEnd if gesture was actually started
         if (hasGestureStarted) {
             onGestureEnd(pointer)
         }

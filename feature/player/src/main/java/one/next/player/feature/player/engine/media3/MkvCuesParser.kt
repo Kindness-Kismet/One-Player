@@ -22,7 +22,7 @@ object MkvCuesParser {
     internal const val BUFFER_SIZE = 256 * 1024
     private const val MAX_CUE_POINTS = 10_000
 
-    // EBML Element ID
+    // EBML 元素 ID
     private const val ID_EBML: Long = 0x1A45DFA3
     private const val ID_SEGMENT: Long = 0x18538067
     private const val ID_SEEK_HEAD: Long = 0x114D9B74
@@ -70,12 +70,12 @@ object MkvCuesParser {
     }
 
     private fun parseWithReader(reader: BufferedReader): List<MkvCuePoint>? {
-        // 跳过 EBML header
+        // 跳过 EBML 头
         val ebmlHeader = reader.readElementHeader() ?: return null
         if (ebmlHeader.id != ID_EBML) return null
         reader.skip(ebmlHeader.dataSize)
 
-        // 读取 Segment header
+        // 读取 Segment 头
         val segmentHeader = reader.readElementHeader() ?: return null
         if (segmentHeader.id != ID_SEGMENT) return null
         val segmentDataStart = reader.position()
@@ -172,7 +172,7 @@ object MkvCuesParser {
         timestampScale: Long,
         segmentDataStart: Long,
     ): List<MkvCuePoint> {
-        // 第一阶段：快速扫描计数，只读 element header 并跳过 data
+        // 第一阶段，快速扫描计数，只读元素头并跳过数据
         val cuesStart = reader.position()
         var totalCount = 0
         while (reader.position() < cuesEnd) {
@@ -283,9 +283,8 @@ private interface BufferedReader {
         return value
     }
 
-    // EBML Variable-Size Integer
-    // withLengthBits=true: Element ID（保留长度标记位）
-    // withLengthBits=false: Data Size（清除长度标记位）
+    // 读取 EBML 变长整数
+    // withLengthBits=true 保留长度位，false 清除长度位
     fun readVint(withLengthBits: Boolean): Long? {
         val firstByte = readByte()
         if (firstByte == -1 || firstByte == 0) return null

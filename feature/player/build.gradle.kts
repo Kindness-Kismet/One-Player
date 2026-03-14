@@ -56,10 +56,10 @@ dependencies {
 
     implementation(libs.coil.compose)
 
-    // Reorderable list for drag-and-drop
+    // 可拖拽排序列表依赖
     implementation(libs.reorderable)
 
-    // Media3
+    // Media3 依赖
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
@@ -75,7 +75,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.guava)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

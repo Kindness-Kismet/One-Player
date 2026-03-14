@@ -32,19 +32,10 @@ fun createManageExternalStorageAccessIntent(context: Context): Intent {
     }
 }
 
-/**
- * Utility functions.
- */
 object Utils {
 
-    /**
-     * Converts px to dp.
-     */
     fun pxToDp(px: Float): Float = px / Resources.getSystem().displayMetrics.density
 
-    /**
-     * Formats the given duration in milliseconds to a string in the format of `mm:ss` or `hh:mm:ss`.
-     */
     fun formatDurationMillis(millis: Long): String {
         val hours = TimeUnit.MILLISECONDS.toHours(millis)
         val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(hours)
@@ -58,10 +49,6 @@ object Utils {
         }
     }
 
-    /**
-     * Formats the given duration in milliseconds to a string in the format of
-     * `+mm:ss` or `+hh:mm:ss` or `-mm:ss` or `-hh:mm:ss`.
-     */
     fun formatDurationMillisSign(millis: Long): String = if (millis >= 0) {
         "+${formatDurationMillis(millis)}"
     } else {

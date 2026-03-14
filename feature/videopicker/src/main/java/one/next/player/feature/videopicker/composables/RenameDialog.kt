@@ -51,7 +51,7 @@ fun RenameDialog(
     )
 
     LaunchedEffect(key1 = Unit) {
-        // To fix focus requester not initialized error on screen rotation
+        // 延迟请求焦点，避免旋转后 FocusRequester 未初始化
         delay(200.milliseconds)
         focusRequester.requestFocus()
     }

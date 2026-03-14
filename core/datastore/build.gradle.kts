@@ -37,7 +37,7 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.kotlinx.serialization.json)
 
-    // Hilt
+    // Hilt 依赖
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)

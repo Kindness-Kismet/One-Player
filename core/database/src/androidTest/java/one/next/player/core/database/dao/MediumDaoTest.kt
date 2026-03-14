@@ -26,9 +26,6 @@ class MediumDaoTest {
         mediumDao = db.mediumDao()
     }
 
-    /**
-     * Test to check if the [MediumDao.upsert] method inserts a [MediumEntity] into the database.
-     */
     @Test
     fun mediumDao_inserts_mediumEntity() = runTest {
         val mediumEntity = sampleData[0]
@@ -39,9 +36,6 @@ class MediumDaoTest {
         assert(result == mediumEntity)
     }
 
-    /**
-     * Test to check if the [MediumDao.upsert] method updates a [MediumEntity] in the database.
-     */
     @Test
     fun mediumDao_updates_mediumEntity() = runTest {
         val mediumEntity = sampleData[0]
@@ -55,9 +49,6 @@ class MediumDaoTest {
         assert(result == updatedMediumEntity)
     }
 
-    /**
-     * Test to check if the [MediumDao.get] method returns the [MediumEntity] from the database.
-     */
     @Test
     fun mediumDao_gets_mediumEntity_from_uri() = runTest {
         val mediumEntity = sampleData[0]
@@ -68,9 +59,6 @@ class MediumDaoTest {
         assert(result == mediumEntity)
     }
 
-    /**
-     * Test to check if the [MediumDao.get] method returns null if the path does not exist in the database.
-     */
     @Test
     fun mediumDao_gets_null_if_uri_does_not_exist_in_database() = runTest {
         val mediumEntity = sampleData[0]
