@@ -313,11 +313,19 @@ class PlayerService : MediaSessionService() {
             if (isMediaItemReady || tracks.groups.isEmpty()) return
             isMediaItemReady = true
 
-            if (!playerPreferences.shouldRememberSelections) return
             val player = mediaSession?.player ?: return
             val metadata = player.mediaMetadata
-            metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
-            metadata.subtitleTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_TEXT, it) }
+            if (playerPreferences.shouldRememberSelections) {
+                metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
+                metadata.subtitleTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_TEXT, it) }
+            }
+
+            // 没有保存的字幕轨道选择且文本轨道未被禁用时，选中第一个字幕轨
+            val hasTextTrack = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSupported }
+            val isTextTrackDisabled = player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)
+            if (metadata.subtitleTrackIndex == null && hasTextTrack && !isTextTrackDisabled) {
+                player.switchTrack(C.TRACK_TYPE_TEXT, 0)
+            }
         }
 
         override fun onTrackSelectionParametersChanged(parameters: TrackSelectionParameters) {
@@ -358,9 +366,15 @@ class PlayerService : MediaSessionService() {
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)
 
-            if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
+            if (playbackState == Player.STATE_IDLE) {
                 val player = mediaSession?.player ?: return
                 player.trackSelectionParameters = TrackSelectionParameters.DEFAULT
+                player.setPlaybackSpeed(playerPreferences.defaultPlaybackSpeed)
+                return
+            }
+
+            if (playbackState == Player.STATE_ENDED) {
+                val player = mediaSession?.player ?: return
                 player.setPlaybackSpeed(playerPreferences.defaultPlaybackSpeed)
                 return
             }
