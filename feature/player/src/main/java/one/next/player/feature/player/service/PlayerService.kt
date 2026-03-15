@@ -199,6 +199,7 @@ class PlayerService : MediaSessionService() {
             eventTime: AnalyticsListener.EventTime,
             loadEventInfo: androidx.media3.exoplayer.source.LoadEventInfo,
             mediaLoadData: androidx.media3.exoplayer.source.MediaLoadData,
+            retryCount: Int,
         ) {
             Logger.info(TAG, "startup loadStart t=${elapsed()}ms type=${mediaLoadData.dataType}")
         }
