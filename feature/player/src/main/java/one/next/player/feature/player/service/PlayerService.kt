@@ -12,6 +12,7 @@ import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
@@ -124,6 +125,26 @@ class PlayerService : MediaSessionService() {
     companion object {
         private const val TAG = "PlayerService"
         private const val FAST_SEEK_MIN_DELTA_MS = 2_000L
+        private val ISO_639_2T_TO_1 = mapOf(
+            "zho" to "zh", "chi" to "zh",
+            "eng" to "en",
+            "jpn" to "ja",
+            "kor" to "ko",
+            "fra" to "fr", "fre" to "fr",
+            "deu" to "de", "ger" to "de",
+            "spa" to "es",
+            "por" to "pt",
+            "rus" to "ru",
+            "ara" to "ar",
+            "tha" to "th",
+            "vie" to "vi",
+            "ita" to "it",
+            "pol" to "pl",
+            "nld" to "nl", "dut" to "nl",
+            "tur" to "tr",
+            "ind" to "id",
+            "msa" to "ms", "may" to "ms",
+        )
     }
 
     @Inject
@@ -145,6 +166,7 @@ class PlayerService : MediaSessionService() {
     private var loudnessEnhancer: LoudnessEnhancer? = null
     private var currentVolumeGain: Int = 0
     private val mediaParserRetried = mutableSetOf<String>()
+    private var isPendingExternalSubAutoSelect = false
     private var assHandler: AssHandler? = null
     private var pendingPreciseSeekPromotionJob: Job? = null
     private lateinit var fastStartMediaSourceFactory: DefaultMediaSourceFactory
@@ -239,6 +261,7 @@ class PlayerService : MediaSessionService() {
             pendingPreciseSeekPromotionJob?.cancel()
             pendingPreciseSeekPromotionJob = null
             isMediaItemReady = false
+            isPendingExternalSubAutoSelect = false
             mediaItem?.mediaMetadata?.let { metadata ->
                 mediaSession?.player?.run {
                     setPlaybackSpeed(metadata.playbackSpeed ?: playerPreferences.defaultPlaybackSpeed)
@@ -307,7 +330,20 @@ class PlayerService : MediaSessionService() {
 
         override fun onTracksChanged(tracks: Tracks) {
             super.onTracksChanged(tracks)
-            if (isMediaItemReady || tracks.groups.isEmpty()) return
+            if (tracks.groups.isEmpty()) return
+
+            if (isPendingExternalSubAutoSelect) {
+                isPendingExternalSubAutoSelect = false
+                val player = mediaSession?.player ?: return
+                val textTracks = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT && it.isSupported }
+                if (textTracks.isNotEmpty()) {
+                    val bestIndex = findBestSubtitleTrackIndex(textTracks)
+                    player.switchTrack(C.TRACK_TYPE_TEXT, bestIndex)
+                }
+                return
+            }
+
+            if (isMediaItemReady) return
             isMediaItemReady = true
 
             val player = mediaSession?.player ?: return
@@ -316,9 +352,11 @@ class PlayerService : MediaSessionService() {
                 metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
             }
 
-            // 有内置字幕时不加载外部字幕，无内置字幕时按需加载
-            val hasEmbeddedTextTracks = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSupported }
-            if (!hasEmbeddedTextTracks) {
+            val textTracks = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT && it.isSupported }
+            if (textTracks.isNotEmpty()) {
+                val bestIndex = findBestSubtitleTrackIndex(textTracks)
+                player.switchTrack(C.TRACK_TYPE_TEXT, bestIndex)
+            } else {
                 val mediaId = player.currentMediaItem?.mediaId ?: return
                 loadExternalSubtitlesForCurrentItem(mediaId)
             }
@@ -1386,6 +1424,7 @@ class PlayerService : MediaSessionService() {
                 val updatedMediaItem = currentMediaItem.buildUpon()
                     .setSubtitleConfigurations(mergedConfigs)
                     .build()
+                isPendingExternalSubAutoSelect = true
                 player.replaceMediaItem(index, updatedMediaItem)
                 Logger.info(TAG, "Applied external subtitles mediaId=$mediaId count=${configurations.size}")
             }
@@ -1399,29 +1438,15 @@ class PlayerService : MediaSessionService() {
         val videoState = mediaRepository.getVideoState(uri = mediaId)
         val dbExternalSubs = videoState?.externalSubs ?: emptyList()
 
-        // 验证已保存的外部字幕是否仍然存在
-        val validDbSubs = dbExternalSubs.filter { subUri ->
-            try {
-                contentResolver.openInputStream(subUri)?.close()
-                true
-            } catch (_: Exception) {
-                Logger.debug(TAG, "Removing stale external subtitle: $subUri")
-                false
-            }
-        }
-        if (validDbSubs.size != dbExternalSubs.size) {
-            mediaRepository.updateExternalSubs(uri = mediaId, externalSubs = validDbSubs)
-        }
-
         // 发现同名本地字幕（排除已保存的）
         val localSubs = (videoState?.path ?: getPath(uri))?.let {
             File(it).getLocalSubtitles(
                 context = this@PlayerService,
-                excludeSubsList = validDbSubs,
+                excludeSubsList = dbExternalSubs,
             )
         } ?: emptyList()
 
-        val allExternalSubs = validDbSubs + localSubs
+        val allExternalSubs = dbExternalSubs + localSubs
         if (allExternalSubs.isEmpty()) return emptyList()
 
         return allExternalSubs.map { subtitleUri ->
@@ -1445,6 +1470,50 @@ class PlayerService : MediaSessionService() {
         }
         return mergedById.values.toList()
     }
+
+    private fun findBestSubtitleTrackIndex(textTracks: List<Tracks.Group>): Int {
+        val preferred = playerPreferences.preferredSubtitleLanguage
+        if (preferred.isBlank()) return 0
+
+        val normalizedPref = normalizeLanguageTag(preferred)
+        for (i in textTracks.indices) {
+            val format = textTracks[i].getTrackFormat(0)
+            if (matchesPreferredLanguage(format, normalizedPref)) return i
+        }
+        return 0
+    }
+
+    private fun matchesPreferredLanguage(format: Format, preferred: String): Boolean {
+        val trackLang = format.language?.let(::normalizeLanguageTag) ?: return false
+
+        if (preferred.startsWith("zh-") && (trackLang == "zh" || trackLang.startsWith("zh-"))) {
+            return matchesChineseVariantByLabel(format.label, preferred)
+        }
+
+        return trackLang.startsWith(preferred) || preferred.startsWith(trackLang)
+    }
+
+    private fun matchesChineseVariantByLabel(label: String?, preferred: String): Boolean {
+        if (label == null) return preferred == "zh"
+        val lower = label.lowercase()
+        val isSimplified = preferred.contains("hans") || preferred.contains("cn")
+        val isTraditional = preferred.contains("hant") || preferred.contains("tw") || preferred.contains("hk")
+
+        return when {
+            isSimplified -> lower.containsAny("简", "chs", "simplified")
+            isTraditional -> lower.containsAny("繁", "cht", "traditional")
+            else -> true
+        }
+    }
+
+    private fun normalizeLanguageTag(tag: String): String {
+        val lower = tag.lowercase().replace('_', '-')
+        return ISO_639_2T_TO_1[lower] ?: ISO_639_2T_TO_1[lower.substringBefore('-')]?.let {
+            it + lower.removePrefix(lower.substringBefore('-'))
+        } ?: lower
+    }
+
+    private fun String.containsAny(vararg keywords: String): Boolean = keywords.any { contains(it, ignoreCase = true) }
 
     private fun Bitmap.toByteArray(): ByteArray {
         val stream = ByteArrayOutputStream()
