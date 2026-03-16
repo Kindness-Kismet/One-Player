@@ -69,6 +69,8 @@
     <string name="preferred_audio_lang">首选音频语言</string>
     <string name="preferred_audio_lang_description">您想要默认使用的音轨语言</string>
     <string name="subtitle">字幕</string>
+    <string name="subtitle_auto_load">自动加载字幕</string>
+    <string name="subtitle_auto_load_desc">播放视频时自动选择字幕轨道</string>
     <string name="preferred_subtitle_lang">首选字幕语言</string>
     <string name="preferred_subtitle_lang_description">您想要默认使用的字幕语言</string>
     <string name="system_default">系统默认</string>

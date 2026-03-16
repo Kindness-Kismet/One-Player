@@ -38,6 +38,7 @@ class SubtitlePreferencesViewModel @Inject constructor(
     fun onEvent(event: SubtitlePreferencesUiEvent) {
         when (event) {
             is SubtitlePreferencesUiEvent.ShowDialog -> showDialog(event.value)
+            SubtitlePreferencesUiEvent.ToggleSubtitleAutoLoad -> toggleSubtitleAutoLoad()
             is SubtitlePreferencesUiEvent.UpdateSubtitleLanguage -> updateSubtitleLanguage(event.value)
             is SubtitlePreferencesUiEvent.UpdateSubtitleFont -> updateSubtitleFont(event.value)
             SubtitlePreferencesUiEvent.ToggleSubtitleTextBold -> toggleSubtitleTextBold()
@@ -52,6 +53,14 @@ class SubtitlePreferencesViewModel @Inject constructor(
     private fun showDialog(value: SubtitlePreferenceDialog?) {
         uiStateInternal.update {
             it.copy(showDialog = value)
+        }
+    }
+
+    private fun toggleSubtitleAutoLoad() {
+        viewModelScope.launch {
+            preferencesRepository.updatePlayerPreferences {
+                it.copy(isSubtitleAutoLoadEnabled = !it.isSubtitleAutoLoadEnabled)
+            }
         }
     }
 
@@ -130,6 +139,7 @@ sealed interface SubtitlePreferenceDialog {
 
 sealed interface SubtitlePreferencesUiEvent {
     data class ShowDialog(val value: SubtitlePreferenceDialog?) : SubtitlePreferencesUiEvent
+    data object ToggleSubtitleAutoLoad : SubtitlePreferencesUiEvent
     data class UpdateSubtitleLanguage(val value: String) : SubtitlePreferencesUiEvent
     data class UpdateSubtitleFont(val value: Font) : SubtitlePreferencesUiEvent
     data object ToggleSubtitleTextBold : SubtitlePreferencesUiEvent

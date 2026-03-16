@@ -335,6 +335,7 @@ class PlayerService : MediaSessionService() {
 
             if (isPendingExternalSubAutoSelect) {
                 isPendingExternalSubAutoSelect = false
+                if (!playerPreferences.isSubtitleAutoLoadEnabled) return
                 val player = mediaSession?.player ?: return
                 val textTracks = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT && it.isSupported }
                 if (textTracks.isNotEmpty()) {
@@ -351,6 +352,11 @@ class PlayerService : MediaSessionService() {
             val metadata = player.mediaMetadata
             if (playerPreferences.shouldRememberSelections) {
                 metadata.audioTrackIndex?.let { player.switchTrack(C.TRACK_TYPE_AUDIO, it) }
+            }
+
+            if (!playerPreferences.isSubtitleAutoLoadEnabled) {
+                player.switchTrack(C.TRACK_TYPE_TEXT, -1)
+                return
             }
 
             val textTracks = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT && it.isSupported }

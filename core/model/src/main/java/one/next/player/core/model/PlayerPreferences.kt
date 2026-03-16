@@ -47,6 +47,7 @@ data class PlayerPreferences(
     val isVolumeBoostEnabled: Boolean = false,
 
     // 字幕偏好
+    val isSubtitleAutoLoadEnabled: Boolean = true,
     val shouldUseSystemCaptionStyle: Boolean = false,
     val preferredSubtitleLanguage: String = "",
     val subtitleTextEncoding: String = "",

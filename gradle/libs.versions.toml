@@ -32,7 +32,7 @@ reorderable = "3.0.0"
 room = "2.8.4"
 nextlib = "1.9.1-0.11.0"
 universalChardet = "2.5.0"
-libassAndroid = "9e84afd"
+libassAndroid = "0.4.0"
 
 
 [libraries]
@@ -74,7 +74,7 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 androidx-test-ext = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "androidxTestExt" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 github-albfernandez-juniversalchardet = { group="com.github.albfernandez", name = "juniversalchardet", version.ref="universalChardet" }
-github-peerless2012-ass-media = { group = "com.github.Kindness-Kismet.libass-android", name = "lib_ass_media", version.ref = "libassAndroid" }
+github-peerless2012-ass-media = { group = "io.github.peerless2012", name = "ass-media", version.ref = "libassAndroid" }
 github-anilbeesetti-nextlib-media3ext = { group = "io.github.anilbeesetti", name = "nextlib-media3ext", version.ref = "nextlib" }
 github-anilbeesetti-nextlib-mediainfo = { group = "io.github.anilbeesetti", name = "nextlib-mediainfo", version.ref = "nextlib" }
 google-android-material = { group = "com.google.android.material", name = "material", version.ref = "androidMaterial" }

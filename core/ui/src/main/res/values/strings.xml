@@ -76,6 +76,8 @@
     <string name="preferred_audio_lang">Preferred audio language</string>
     <string name="preferred_audio_lang_description">Language of the audio track you want to use by default</string>
     <string name="subtitle">Subtitle</string>
+    <string name="subtitle_auto_load">Auto-load subtitles</string>
+    <string name="subtitle_auto_load_desc">Automatically select subtitle track when playing video</string>
     <string name="preferred_subtitle_lang">Preferred subtitle language</string>
     <string name="preferred_subtitle_lang_description">Language of the subtitle track you want to use by default</string>
     <string name="system_default">System Default</string>
