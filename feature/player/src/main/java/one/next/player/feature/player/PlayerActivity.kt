@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -44,7 +43,9 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import one.next.player.core.common.Logger
+import one.next.player.core.common.extensions.applyPrivacyProtection
 import one.next.player.core.common.extensions.getMediaContentUri
+import one.next.player.core.common.extensions.resolvePrivacyPreviewScrim
 import one.next.player.core.common.extensions.scanFileForContentUri
 import one.next.player.core.common.storagePermission
 import one.next.player.core.media.sync.MediaSynchronizer
@@ -103,15 +104,33 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyPrivacyProtection(
+            shouldPreventScreenshots = viewModel.uiState.value.applicationPreferences.shouldPreventScreenshots,
+            shouldHideInRecents = viewModel.uiState.value.applicationPreferences.shouldHideInRecents,
+        )
         presetVideoOrientation()
+        val systemBarScrim = resolvePrivacyPreviewScrim(
+            shouldHideInRecents = viewModel.uiState.value.applicationPreferences.shouldHideInRecents,
+        )
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            statusBarStyle = SystemBarStyle.dark(systemBarScrim),
+            navigationBarStyle = SystemBarStyle.dark(systemBarScrim),
         )
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             var player by remember { mutableStateOf<MediaController?>(null) }
+
+            LifecycleStartEffect(
+                uiState.applicationPreferences.shouldPreventScreenshots,
+                uiState.applicationPreferences.shouldHideInRecents,
+            ) {
+                this@PlayerActivity.applyPrivacyProtection(
+                    shouldPreventScreenshots = uiState.applicationPreferences.shouldPreventScreenshots,
+                    shouldHideInRecents = uiState.applicationPreferences.shouldHideInRecents,
+                )
+                onStopOrDispose {}
+            }
 
             LifecycleStartEffect(Unit) {
                 maybeInitControllerFuture()

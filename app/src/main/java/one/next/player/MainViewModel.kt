@@ -15,6 +15,9 @@ class MainViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
 
+    val currentPreferences: ApplicationPreferences
+        get() = preferencesRepository.applicationPreferences.value
+
     val uiState = preferencesRepository.applicationPreferences.map { preferences ->
         MainActivityUiState.Success(preferences)
     }.stateIn(

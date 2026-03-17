@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.domain.GetSortedPlaylistUseCase
+import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.LoopMode
 import one.next.player.core.model.PlayerPreferences
 import one.next.player.core.model.Video
@@ -32,6 +33,7 @@ class PlayerViewModel @Inject constructor(
     private val internalUiState = MutableStateFlow(
         PlayerUiState(
             playerPreferences = preferencesRepository.playerPreferences.value,
+            applicationPreferences = preferencesRepository.applicationPreferences.value,
         ),
     )
     val uiState = internalUiState.asStateFlow()
@@ -40,6 +42,11 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.playerPreferences.collect { prefs ->
                 internalUiState.update { it.copy(playerPreferences = prefs) }
+            }
+        }
+        viewModelScope.launch {
+            preferencesRepository.applicationPreferences.collect { prefs ->
+                internalUiState.update { it.copy(applicationPreferences = prefs) }
             }
         }
     }
@@ -110,6 +117,7 @@ class PlayerViewModel @Inject constructor(
 @Stable
 data class PlayerUiState(
     val playerPreferences: PlayerPreferences? = null,
+    val applicationPreferences: ApplicationPreferences = ApplicationPreferences(),
 )
 
 sealed interface PlayerEvent

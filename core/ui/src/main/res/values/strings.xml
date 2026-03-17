@@ -273,6 +273,12 @@
     <string name="crash_screen_share">Share crash logs</string>
     <string name="crash_screen_restart">Restart the app</string>
     <string name="crash_screen_logcat">Logcat:</string>
+    <string name="privacy_protection">Privacy protection</string>
+    <string name="privacy_protection_description">Prevent screenshots and hide app content in recents</string>
+    <string name="prevent_screenshots">Prevent screenshots</string>
+    <string name="prevent_screenshots_description">Block screenshots and screen recording inside the app</string>
+    <string name="hide_in_recents">Hide in recents</string>
+    <string name="hide_in_recents_description">Do not show this app in the recent tasks screen</string>
     <string name="general_name">General</string>
     <string name="general_description">User data options</string>
     <string name="user_data">User data</string>

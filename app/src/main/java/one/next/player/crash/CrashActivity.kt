@@ -2,7 +2,6 @@ package one.next.player.crash
 
 import android.content.ClipData
 import android.content.Intent
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
@@ -65,6 +64,8 @@ import one.next.player.BuildConfig
 import one.next.player.MainActivity
 import one.next.player.MainActivityUiState
 import one.next.player.MainViewModel
+import one.next.player.core.common.extensions.applyPrivacyProtection
+import one.next.player.core.common.extensions.resolvePrivacyPreviewScrim
 import one.next.player.core.ui.R
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.theme.NextPlayerTheme
@@ -79,6 +80,10 @@ class CrashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyPrivacyProtection(
+            shouldPreventScreenshots = viewModel.currentPreferences.shouldPreventScreenshots,
+            shouldHideInRecents = viewModel.currentPreferences.shouldHideInRecents,
+        )
 
         var uiState: MainActivityUiState by mutableStateOf(MainActivityUiState.Loading)
         val exceptionString = intent.getStringExtra("exception") ?: ""
@@ -106,16 +111,28 @@ class CrashActivity : AppCompatActivity() {
         setContent {
             val shouldUseDarkTheme = shouldUseDarkTheme(uiState = uiState)
 
-            LaunchedEffect(shouldUseDarkTheme) {
+            val preferences = (uiState as? MainActivityUiState.Success)?.preferences
+            val shouldPreventScreenshots = preferences?.shouldPreventScreenshots == true
+            val shouldHideInRecents = preferences?.shouldHideInRecents == true
+
+            LaunchedEffect(shouldPreventScreenshots, shouldHideInRecents) {
+                this@CrashActivity.applyPrivacyProtection(
+                    shouldPreventScreenshots = shouldPreventScreenshots,
+                    shouldHideInRecents = shouldHideInRecents,
+                )
+            }
+
+            LaunchedEffect(shouldHideInRecents, shouldUseDarkTheme) {
+                val systemBarScrim = this@CrashActivity.resolvePrivacyPreviewScrim(shouldHideInRecents)
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = systemBarScrim,
+                        darkScrim = systemBarScrim,
                         detectDarkMode = { shouldUseDarkTheme },
                     ),
                     navigationBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = systemBarScrim,
+                        darkScrim = systemBarScrim,
                         detectDarkMode = { shouldUseDarkTheme },
                     ),
                 )

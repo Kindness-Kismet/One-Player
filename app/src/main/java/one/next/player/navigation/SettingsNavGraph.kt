@@ -23,9 +23,11 @@ import one.next.player.settings.navigation.navigateToGesturePreferences
 import one.next.player.settings.navigation.navigateToLibraries
 import one.next.player.settings.navigation.navigateToMediaLibraryPreferencesScreen
 import one.next.player.settings.navigation.navigateToPlayerPreferences
+import one.next.player.settings.navigation.navigateToPrivacyPreferences
 import one.next.player.settings.navigation.navigateToSubtitlePreferences
 import one.next.player.settings.navigation.navigateToThumbnailPreferencesScreen
 import one.next.player.settings.navigation.playerPreferencesScreen
+import one.next.player.settings.navigation.privacyPreferencesScreen
 import one.next.player.settings.navigation.settingsNavigationRoute
 import one.next.player.settings.navigation.settingsScreen
 import one.next.player.settings.navigation.subtitlePreferencesScreen
@@ -51,6 +53,7 @@ fun NavGraphBuilder.settingsNavGraph(
                     Setting.DECODER -> navController.navigateToDecoderPreferences()
                     Setting.AUDIO -> navController.navigateToAudioPreferences()
                     Setting.SUBTITLE -> navController.navigateToSubtitlePreferences()
+                    Setting.PRIVACY -> navController.navigateToPrivacyPreferences()
                     Setting.GENERAL -> navController.navigateToGeneralPreferences()
                     Setting.ABOUT -> navController.navigateToAboutPreferences()
                 }
@@ -83,6 +86,9 @@ fun NavGraphBuilder.settingsNavGraph(
             onNavigateUp = navController::navigateUp,
         )
         subtitlePreferencesScreen(
+            onNavigateUp = navController::navigateUp,
+        )
+        privacyPreferencesScreen(
             onNavigateUp = navController::navigateUp,
         )
         generalPreferencesScreen(

@@ -78,6 +78,7 @@ enum class Setting {
     DECODER,
     AUDIO,
     SUBTITLE,
+    PRIVACY,
     GENERAL,
     ABOUT,
 }
@@ -129,6 +130,12 @@ private enum class SettingRow(
         descriptionResId = R.string.subtitle_desc,
         icon = NextIcons.Subtitle,
         setting = Setting.SUBTITLE,
+    ),
+    PRIVACY(
+        titleResId = R.string.privacy_protection,
+        descriptionResId = R.string.privacy_protection_description,
+        icon = NextIcons.HideSource,
+        setting = Setting.PRIVACY,
     ),
     GENERAL(
         titleResId = R.string.general_name,

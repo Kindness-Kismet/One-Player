@@ -1,6 +1,5 @@
 package one.next.player
 
-import android.graphics.Color
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.SystemBarStyle
@@ -32,6 +31,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import one.next.player.core.common.extensions.applyPrivacyProtection
+import one.next.player.core.common.extensions.resolvePrivacyPreviewScrim
 import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
 import one.next.player.core.media.sync.MediaSynchronizer
@@ -64,6 +65,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyPrivacyProtection(
+            shouldPreventScreenshots = viewModel.currentPreferences.shouldPreventScreenshots,
+            shouldHideInRecents = viewModel.currentPreferences.shouldHideInRecents,
+        )
         mediaService.initialize(this@MainActivity)
 
         var uiState: MainActivityUiState by mutableStateOf(MainActivityUiState.Loading)
@@ -86,16 +91,28 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val shouldUseDarkTheme = shouldUseDarkTheme(uiState = uiState)
 
-            LaunchedEffect(shouldUseDarkTheme) {
+            val preferences = (uiState as? MainActivityUiState.Success)?.preferences
+            val shouldPreventScreenshots = preferences?.shouldPreventScreenshots == true
+            val shouldHideInRecents = preferences?.shouldHideInRecents == true
+
+            LaunchedEffect(shouldPreventScreenshots, shouldHideInRecents) {
+                this@MainActivity.applyPrivacyProtection(
+                    shouldPreventScreenshots = shouldPreventScreenshots,
+                    shouldHideInRecents = shouldHideInRecents,
+                )
+            }
+
+            LaunchedEffect(shouldHideInRecents, shouldUseDarkTheme) {
+                val systemBarScrim = this@MainActivity.resolvePrivacyPreviewScrim(shouldHideInRecents)
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = systemBarScrim,
+                        darkScrim = systemBarScrim,
                         detectDarkMode = { shouldUseDarkTheme },
                     ),
                     navigationBarStyle = SystemBarStyle.auto(
-                        lightScrim = Color.TRANSPARENT,
-                        darkScrim = Color.TRANSPARENT,
+                        lightScrim = systemBarScrim,
+                        darkScrim = systemBarScrim,
                         detectDarkMode = { shouldUseDarkTheme },
                     ),
                 )
