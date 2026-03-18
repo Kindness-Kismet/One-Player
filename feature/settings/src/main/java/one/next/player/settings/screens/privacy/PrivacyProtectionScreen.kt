@@ -1,5 +1,6 @@
 package one.next.player.settings.screens.privacy
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -74,6 +75,8 @@ private fun PrivacyProtectionContent(
                 .padding(horizontal = 16.dp),
         ) {
             ListSectionTitle(text = stringResource(id = R.string.privacy_protection))
+            val isHideInRecentsAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
             Column(
                 verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
             ) {
@@ -84,19 +87,21 @@ private fun PrivacyProtectionContent(
                     isChecked = uiState.preferences.shouldPreventScreenshots,
                     onClick = { onEvent(PrivacyProtectionUiEvent.TogglePreventScreenshots) },
                     isFirstItem = true,
-                    isLastItem = false,
+                    isLastItem = !isHideInRecentsAvailable,
                     modifier = Modifier.testTag("privacy_prevent_screenshots"),
                 )
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.hide_in_recents),
-                    description = stringResource(id = R.string.hide_in_recents_description),
-                    icon = NextIcons.Background,
-                    isChecked = uiState.preferences.shouldHideInRecents,
-                    onClick = { onEvent(PrivacyProtectionUiEvent.ToggleHideInRecents) },
-                    isFirstItem = false,
-                    isLastItem = true,
-                    modifier = Modifier.testTag("privacy_hide_in_recents"),
-                )
+                if (isHideInRecentsAvailable) {
+                    PreferenceSwitch(
+                        title = stringResource(id = R.string.hide_in_recents),
+                        description = stringResource(id = R.string.hide_in_recents_description),
+                        icon = NextIcons.Background,
+                        isChecked = uiState.preferences.shouldHideInRecents,
+                        onClick = { onEvent(PrivacyProtectionUiEvent.ToggleHideInRecents) },
+                        isFirstItem = false,
+                        isLastItem = true,
+                        modifier = Modifier.testTag("privacy_hide_in_recents"),
+                    )
+                }
             }
         }
     }

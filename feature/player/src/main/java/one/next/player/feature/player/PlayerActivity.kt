@@ -105,12 +105,12 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyPrivacyProtection(
-            shouldPreventScreenshots = viewModel.uiState.value.applicationPreferences.shouldPreventScreenshots,
-            shouldHideInRecents = viewModel.uiState.value.applicationPreferences.shouldHideInRecents,
+            shouldPreventScreenshots = viewModel.uiState.value.shouldPreventScreenshots,
+            shouldHideInRecents = viewModel.uiState.value.shouldHideInRecents,
         )
         presetVideoOrientation()
         val systemBarScrim = resolvePrivacyPreviewScrim(
-            shouldHideInRecents = viewModel.uiState.value.applicationPreferences.shouldHideInRecents,
+            shouldHideInRecents = viewModel.uiState.value.shouldHideInRecents,
         )
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(systemBarScrim),
@@ -122,12 +122,12 @@ class PlayerActivity : AppCompatActivity() {
             var player by remember { mutableStateOf<MediaController?>(null) }
 
             LifecycleStartEffect(
-                uiState.applicationPreferences.shouldPreventScreenshots,
-                uiState.applicationPreferences.shouldHideInRecents,
+                uiState.shouldPreventScreenshots,
+                uiState.shouldHideInRecents,
             ) {
                 this@PlayerActivity.applyPrivacyProtection(
-                    shouldPreventScreenshots = uiState.applicationPreferences.shouldPreventScreenshots,
-                    shouldHideInRecents = uiState.applicationPreferences.shouldHideInRecents,
+                    shouldPreventScreenshots = uiState.shouldPreventScreenshots,
+                    shouldHideInRecents = uiState.shouldHideInRecents,
                 )
                 onStopOrDispose {}
             }

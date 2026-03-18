@@ -261,8 +261,8 @@
     <string name="privacy_protection_description">禁止截图并隐藏最近任务中的应用内容</string>
     <string name="prevent_screenshots">禁止截图</string>
     <string name="prevent_screenshots_description">阻止在应用内截图和录屏</string>
-    <string name="hide_in_recents">最近任务不可显示</string>
-    <string name="hide_in_recents_description">不在最近任务界面显示此应用</string>
+    <string name="hide_in_recents">隐藏最近任务预览</string>
+    <string name="hide_in_recents_description">在最近任务界面隐藏应用预览内容</string>
     <string name="general_name">常规</string>
     <string name="general_description">用户数据选项</string>
     <string name="user_data">用户数据</string>

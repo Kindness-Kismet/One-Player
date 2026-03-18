@@ -116,6 +116,7 @@ class CrashActivity : AppCompatActivity() {
             val shouldHideInRecents = preferences?.shouldHideInRecents == true
 
             LaunchedEffect(shouldPreventScreenshots, shouldHideInRecents) {
+                if (preferences == null) return@LaunchedEffect
                 this@CrashActivity.applyPrivacyProtection(
                     shouldPreventScreenshots = shouldPreventScreenshots,
                     shouldHideInRecents = shouldHideInRecents,
