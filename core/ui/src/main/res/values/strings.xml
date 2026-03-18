@@ -342,4 +342,5 @@
     <string name="update_status_up_to_date">Already up to date</string>
     <string name="update_status_available">New version %1$s available, tap to view</string>
     <string name="update_status_error">Check failed, tap to retry</string>
+    <string name="search_settings">Search settings…</string>
 </resources>

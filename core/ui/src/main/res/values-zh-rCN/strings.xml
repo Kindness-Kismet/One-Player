@@ -338,4 +338,5 @@
     <string name="update_status_up_to_date">已是最新版本</string>
     <string name="update_status_available">新版本 %1$s 可用，点按查看</string>
     <string name="update_status_error">检查失败，点按重试</string>
+    <string name="search_settings">搜索设置…</string>
 </resources>
