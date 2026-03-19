@@ -12,20 +12,36 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -37,9 +53,14 @@ import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ThemeConfig
+import one.next.player.core.ui.R
 import one.next.player.core.ui.composables.rememberRuntimePermissionState
+import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.navigation.CloudRootRoute
 import one.next.player.navigation.MediaRootRoute
+import one.next.player.navigation.SETTINGS_ROUTE
+import one.next.player.navigation.cloudNavGraph
 import one.next.player.navigation.mediaNavGraph
 import one.next.player.navigation.settingsNavGraph
 
@@ -63,6 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyPrivacyProtection(
@@ -159,59 +181,143 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     val mainNavController = rememberNavController()
+                    val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
 
-                    NavHost(
-                        navController = mainNavController,
-                        startDestination = MediaRootRoute,
-                        enterTransition = {
-                            slideIntoContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                                animationSpec = tween(
-                                    durationMillis = 200,
-                                    easing = LinearEasing,
-                                ),
-                            )
+                    Scaffold(
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
                         },
-                        exitTransition = {
-                            slideOutOfContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                                animationSpec = tween(
-                                    durationMillis = 200,
-                                    easing = LinearEasing,
-                                ),
-                                targetOffset = { fullOffset -> (fullOffset * 0.3f).toInt() },
-                            )
+                        bottomBar = {
+                            NavigationBar {
+                                TopLevelTab.entries.forEach { tab ->
+                                    val isSelected = currentDestination?.hierarchy?.any { destination ->
+                                        when (tab) {
+                                            TopLevelTab.LOCAL -> destination.hasRoute<MediaRootRoute>()
+                                            TopLevelTab.CLOUD -> destination.hasRoute<CloudRootRoute>()
+                                            TopLevelTab.SETTINGS -> destination.route == SETTINGS_ROUTE
+                                        }
+                                    } == true
+
+                                    NavigationBarItem(
+                                        selected = isSelected,
+                                        onClick = {
+                                            val startDestinationId = mainNavController.graph.findStartDestination().id
+                                            when (tab) {
+                                                TopLevelTab.LOCAL -> mainNavController.navigate(MediaRootRoute) {
+                                                    popUpTo(startDestinationId) { saveState = true }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+
+                                                TopLevelTab.CLOUD -> mainNavController.navigate(CloudRootRoute) {
+                                                    popUpTo(startDestinationId) { saveState = true }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+
+                                                TopLevelTab.SETTINGS -> mainNavController.navigate(SETTINGS_ROUTE) {
+                                                    popUpTo(startDestinationId) { saveState = true }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            }
+                                        },
+                                        icon = {
+                                            Icon(
+                                                imageVector = tab.icon,
+                                                contentDescription = stringResource(tab.labelResId),
+                                            )
+                                        },
+                                        modifier = Modifier.testTag(
+                                            when (tab) {
+                                                TopLevelTab.LOCAL -> "tab_local"
+                                                TopLevelTab.CLOUD -> "tab_cloud"
+                                                TopLevelTab.SETTINGS -> "tab_settings"
+                                            },
+                                        ),
+                                        label = { Text(text = stringResource(tab.labelResId)) },
+                                    )
+                                }
+                            }
                         },
-                        popEnterTransition = {
-                            slideIntoContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.End,
-                                animationSpec = tween(
-                                    durationMillis = 200,
-                                    easing = LinearEasing,
-                                ),
-                                initialOffset = { fullOffset -> (fullOffset * 0.3f).toInt() },
-                            )
-                        },
-                        popExitTransition = {
-                            slideOutOfContainer(
-                                towards = AnimatedContentTransitionScope.SlideDirection.End,
-                                animationSpec = tween(
-                                    durationMillis = 200,
-                                    easing = LinearEasing,
-                                ),
-                            )
-                        },
-                    ) {
-                        mediaNavGraph(
-                            context = this@MainActivity,
+                    ) { innerPadding ->
+                        NavHost(
                             navController = mainNavController,
-                        )
-                        settingsNavGraph(navController = mainNavController)
+                            startDestination = MediaRootRoute,
+                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                            enterTransition = {
+                                slideIntoContainer(
+                                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                    animationSpec = tween(
+                                        durationMillis = 200,
+                                        easing = LinearEasing,
+                                    ),
+                                )
+                            },
+                            exitTransition = {
+                                slideOutOfContainer(
+                                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                    animationSpec = tween(
+                                        durationMillis = 200,
+                                        easing = LinearEasing,
+                                    ),
+                                    targetOffset = { fullOffset -> (fullOffset * 0.3f).toInt() },
+                                )
+                            },
+                            popEnterTransition = {
+                                slideIntoContainer(
+                                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                    animationSpec = tween(
+                                        durationMillis = 200,
+                                        easing = LinearEasing,
+                                    ),
+                                    initialOffset = { fullOffset -> (fullOffset * 0.3f).toInt() },
+                                )
+                            },
+                            popExitTransition = {
+                                slideOutOfContainer(
+                                    towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                    animationSpec = tween(
+                                        durationMillis = 200,
+                                        easing = LinearEasing,
+                                    ),
+                                )
+                            },
+                        ) {
+                            mediaNavGraph(
+                                context = this@MainActivity,
+                                navController = mainNavController,
+                            )
+                            cloudNavGraph(
+                                context = this@MainActivity,
+                                navController = mainNavController,
+                            )
+                            settingsNavGraph(navController = mainNavController)
+                        }
                     }
                 }
             }
         }
     }
+}
+
+private enum class TopLevelTab(
+    val labelResId: Int,
+    val icon: ImageVector,
+) {
+    LOCAL(
+        labelResId = R.string.tab_local,
+        icon = NextIcons.Movie,
+    ),
+    CLOUD(
+        labelResId = R.string.tab_cloud,
+        icon = NextIcons.Cloud,
+    ),
+    SETTINGS(
+        labelResId = R.string.tab_settings,
+        icon = NextIcons.Settings,
+    ),
 }
 
 @Composable

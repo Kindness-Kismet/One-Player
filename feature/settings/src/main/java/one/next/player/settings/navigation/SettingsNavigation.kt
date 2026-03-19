@@ -14,7 +14,7 @@ fun NavController.navigateToSettings(navOptions: NavOptions? = navOptions { laun
     this.navigate(settingsNavigationRoute, navOptions)
 }
 
-fun NavGraphBuilder.settingsScreen(onNavigateUp: () -> Unit, onItemClick: (Setting) -> Unit) {
+fun NavGraphBuilder.settingsScreen(onNavigateUp: (() -> Unit)? = null, onItemClick: (Setting) -> Unit) {
     composable(route = settingsNavigationRoute) {
         SettingsScreen(onNavigateUp = onNavigateUp, onItemClick = onItemClick)
     }

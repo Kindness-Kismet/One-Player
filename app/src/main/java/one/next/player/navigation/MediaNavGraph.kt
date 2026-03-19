@@ -15,7 +15,6 @@ import one.next.player.feature.videopicker.navigation.navigateToMediaPickerScree
 import one.next.player.feature.videopicker.navigation.navigateToRecycleBinScreen
 import one.next.player.feature.videopicker.navigation.navigateToSearch
 import one.next.player.feature.videopicker.navigation.searchScreen
-import one.next.player.settings.navigation.navigateToSettings
 
 @Serializable
 data object MediaRootRoute
@@ -52,7 +51,6 @@ fun NavGraphBuilder.mediaNavGraph(
                 )
             },
             onRecycleBinClick = navController::navigateToRecycleBinScreen,
-            onSettingsClick = navController::navigateToSettings,
             onSearchClick = navController::navigateToSearch,
         )
 

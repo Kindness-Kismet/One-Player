@@ -105,7 +105,6 @@ fun MediaPickerRoute(
     onPlayVideos: (uris: List<Uri>) -> Unit,
     onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
     onRecycleBinClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNavigateUp: () -> Unit,
     onNavigateHome: () -> Unit,
@@ -120,7 +119,6 @@ fun MediaPickerRoute(
         onNavigateHome = onNavigateHome,
         onFolderClick = onFolderClick,
         onRecycleBinClick = onRecycleBinClick,
-        onSettingsClick = onSettingsClick,
         onSearchClick = onSearchClick,
         onEvent = viewModel::onEvent,
     )
@@ -136,7 +134,6 @@ internal fun MediaPickerScreen(
     onPlayVideos: (List<Uri>) -> Unit = {},
     onFolderClick: (String, MediaPickerScreenMode) -> Unit = { _, _ -> },
     onRecycleBinClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onEvent: (MediaPickerUiEvent) -> Unit = {},
 ) {
@@ -264,12 +261,6 @@ internal fun MediaPickerScreen(
                                 Icon(
                                     imageVector = NextIcons.DashBoard,
                                     contentDescription = stringResource(id = R.string.menu),
-                                )
-                            }
-                            IconButton(onClick = onSettingsClick) {
-                                Icon(
-                                    imageVector = NextIcons.Settings,
-                                    contentDescription = stringResource(id = R.string.settings),
                                 )
                             }
                         }
