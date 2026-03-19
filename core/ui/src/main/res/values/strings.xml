@@ -342,5 +342,33 @@
     <string name="update_status_up_to_date">Already up to date</string>
     <string name="update_status_available">New version %1$s available, tap to view</string>
     <string name="update_status_error">Check failed, tap to retry</string>
+    <string name="tab_local">Local</string>
+    <string name="tab_cloud">Cloud</string>
+    <string name="tab_settings">Settings</string>
+    <string name="cloud_servers">Cloud servers</string>
+    <string name="no_servers_configured">No servers configured.
+Tap + to add a WebDAV or SMB server.</string>
+    <string name="add_server">Add server</string>
+    <string name="edit_server">Edit server</string>
+    <string name="delete_server">Delete server</string>
+    <string name="delete_server_confirmation">Are you sure you want to delete "%1$s"?</string>
+    <string name="server_name">Server name</string>
+    <string name="server_protocol">Protocol</string>
+    <string name="server_host">Host</string>
+    <string name="server_port">Port</string>
+    <string name="server_path">Path</string>
+    <string name="server_username">Username</string>
+    <string name="server_password">Password</string>
+    <string name="save">Save</string>
+    <string name="proxy_settings">Proxy</string>
+    <string name="proxy_host">Proxy host</string>
+    <string name="proxy_port">Proxy port</string>
+    <string name="proxy_enabled">Enable proxy</string>
+    <string name="browsing">Browsing</string>
+    <string name="connection_failed">Connection failed</string>
+    <string name="connecting">Connecting…</string>
+    <string name="empty_directory">Empty directory</string>
+    <string name="parent_directory">Parent directory</string>
+    <string name="retry">Retry</string>
     <string name="search_settings">Search settings…</string>
 </resources>

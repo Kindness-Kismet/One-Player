@@ -338,5 +338,33 @@
     <string name="update_status_up_to_date">已是最新版本</string>
     <string name="update_status_available">新版本 %1$s 可用，点按查看</string>
     <string name="update_status_error">检查失败，点按重试</string>
+    <string name="tab_local">本地</string>
+    <string name="tab_cloud">云端</string>
+    <string name="tab_settings">设置</string>
+    <string name="cloud_servers">云端服务器</string>
+    <string name="no_servers_configured">暂无配置的服务器
+点击 + 添加 WebDAV 或 SMB 服务器</string>
+    <string name="add_server">添加服务器</string>
+    <string name="edit_server">编辑服务器</string>
+    <string name="delete_server">删除服务器</string>
+    <string name="delete_server_confirmation">确定删除“%1$s”吗？</string>
+    <string name="server_name">服务器名称</string>
+    <string name="server_protocol">协议</string>
+    <string name="server_host">主机</string>
+    <string name="server_port">端口</string>
+    <string name="server_path">路径</string>
+    <string name="server_username">用户名</string>
+    <string name="server_password">密码</string>
+    <string name="save">保存</string>
+    <string name="proxy_settings">代理</string>
+    <string name="proxy_host">代理主机</string>
+    <string name="proxy_port">代理端口</string>
+    <string name="proxy_enabled">启用代理</string>
+    <string name="browsing">浏览中</string>
+    <string name="connection_failed">连接失败</string>
+    <string name="connecting">正在连接…</string>
+    <string name="empty_directory">空目录</string>
+    <string name="parent_directory">上级目录</string>
+    <string name="retry">重试</string>
     <string name="search_settings">搜索设置…</string>
 </resources>

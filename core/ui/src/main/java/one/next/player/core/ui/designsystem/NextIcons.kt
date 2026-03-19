@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.CenterFocusStrong
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.ClosedCaption
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Contrast
@@ -139,6 +140,7 @@ object NextIcons {
     val Video = Icons.Rounded.Movie
     val VolumeUp = Icons.AutoMirrored.Rounded.VolumeUp
     val ButtonsPosition = Icons.Rounded.AppSettingsAlt
+    val Cloud = Icons.Rounded.Cloud
     val Close = Icons.Rounded.Close
     val History = Icons.Rounded.History
     val Pan = Icons.Rounded.PanToolAlt

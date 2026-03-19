@@ -336,5 +336,33 @@
     <string name="update_status_up_to_date">已是最新版本</string>
     <string name="update_status_available">新版本 %1$s 可用，點按查看</string>
     <string name="update_status_error">檢查失敗，點按重試</string>
+    <string name="tab_local">本機</string>
+    <string name="tab_cloud">雲端</string>
+    <string name="tab_settings">設定</string>
+    <string name="cloud_servers">雲端伺服器</string>
+    <string name="no_servers_configured">尚無設定的伺服器
+點擊 + 新增 WebDAV 或 SMB 伺服器</string>
+    <string name="add_server">新增伺服器</string>
+    <string name="edit_server">編輯伺服器</string>
+    <string name="delete_server">刪除伺服器</string>
+    <string name="delete_server_confirmation">確定刪除「%1$s」嗎？</string>
+    <string name="server_name">伺服器名稱</string>
+    <string name="server_protocol">協定</string>
+    <string name="server_host">主機</string>
+    <string name="server_port">連接埠</string>
+    <string name="server_path">路徑</string>
+    <string name="server_username">使用者名稱</string>
+    <string name="server_password">密碼</string>
+    <string name="save">儲存</string>
+    <string name="proxy_settings">代理</string>
+    <string name="proxy_host">代理主機</string>
+    <string name="proxy_port">代理連接埠</string>
+    <string name="proxy_enabled">啟用代理</string>
+    <string name="browsing">瀏覽中</string>
+    <string name="connection_failed">連線失敗</string>
+    <string name="connecting">正在連線…</string>
+    <string name="empty_directory">空目錄</string>
+    <string name="parent_directory">上層目錄</string>
+    <string name="retry">重試</string>
     <string name="search_settings">搜尋設定…</string>
 </resources>
