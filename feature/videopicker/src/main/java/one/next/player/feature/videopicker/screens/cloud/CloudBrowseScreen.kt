@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -83,6 +84,10 @@ internal fun CloudBrowseScreen(
     val isAtRoot = uiState.server?.let { server ->
         uiState.currentPath.removeSuffix("/") == server.path.removeSuffix("/")
     } ?: true
+
+    BackHandler(enabled = !isAtRoot) {
+        onEvent(CloudBrowseEvent.NavigateUp)
+    }
 
     Scaffold(
         topBar = {
