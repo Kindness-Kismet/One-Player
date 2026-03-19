@@ -7,10 +7,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import one.next.player.core.database.dao.DirectoryDao
 import one.next.player.core.database.dao.MediumDao
 import one.next.player.core.database.dao.MediumStateDao
+import one.next.player.core.database.dao.RemoteServerDao
 import one.next.player.core.database.entities.AudioStreamInfoEntity
 import one.next.player.core.database.entities.DirectoryEntity
 import one.next.player.core.database.entities.MediumEntity
 import one.next.player.core.database.entities.MediumStateEntity
+import one.next.player.core.database.entities.RemoteServerEntity
 import one.next.player.core.database.entities.SubtitleStreamInfoEntity
 import one.next.player.core.database.entities.VideoStreamInfoEntity
 
@@ -22,8 +24,9 @@ import one.next.player.core.database.entities.VideoStreamInfoEntity
         VideoStreamInfoEntity::class,
         AudioStreamInfoEntity::class,
         SubtitleStreamInfoEntity::class,
+        RemoteServerEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class MediaDatabase : RoomDatabase() {
@@ -33,6 +36,8 @@ abstract class MediaDatabase : RoomDatabase() {
     abstract fun mediumStateDao(): MediumStateDao
 
     abstract fun directoryDao(): DirectoryDao
+
+    abstract fun remoteServerDao(): RemoteServerDao
 
     companion object {
         const val DATABASE_NAME = "media_db"
@@ -201,6 +206,28 @@ abstract class MediaDatabase : RoomDatabase() {
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `media_state` ADD COLUMN `original_file_name` TEXT")
+            }
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `remote_server` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `protocol` TEXT NOT NULL,
+                        `host` TEXT NOT NULL,
+                        `port` INTEGER,
+                        `path` TEXT NOT NULL,
+                        `username` TEXT NOT NULL,
+                        `password` TEXT NOT NULL,
+                        `is_proxy_enabled` INTEGER NOT NULL DEFAULT 0,
+                        `proxy_host` TEXT NOT NULL DEFAULT '',
+                        `proxy_port` INTEGER
+                    )
+                    """,
+                )
             }
         }
     }
