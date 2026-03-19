@@ -133,6 +133,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.github.anilbeesetti.nextlib.mediainfo)
+    implementation(libs.okhttp)
+    implementation(libs.smbj)
 
     testImplementation(libs.junit4)
     androidTestImplementation(platform(libs.androidx.compose.bom))
