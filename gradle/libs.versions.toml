@@ -33,6 +33,8 @@ room = "2.8.4"
 nextlib = "1.9.1-0.11.0"
 universalChardet = "2.5.0"
 libassAndroid = "0.4.0"
+okhttp = "4.12.0"
+smbj = "0.13.0"
 
 
 [libraries]
@@ -86,6 +88,8 @@ kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlin-metadata-jvm = { group = "org.jetbrains.kotlin", name = "kotlin-metadata-jvm", version.ref = "kotlin" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+smbj = { group = "com.hierynomus", name = "smbj", version.ref = "smbj" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 [plugins]
