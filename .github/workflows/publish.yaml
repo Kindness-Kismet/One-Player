@@ -294,7 +294,7 @@ jobs:
           cat release_notes.md
 
       - name: 创建 GitHub 发布
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
