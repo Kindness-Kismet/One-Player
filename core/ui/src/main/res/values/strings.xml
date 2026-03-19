@@ -331,7 +331,7 @@
     <string name="move_to_recycle_bin_info">The selected items will be moved to recycle bin</string>
     <string name="restore">Restore</string>
     <string name="delete_permanently">Delete permanently</string>
-    <string name="settings_backup_file_name">nextplayer-settings.json</string>
+    <string name="settings_backup_file_name">oneplayer-settings.json</string>
     <string name="exclude">Exclude</string>
     <string name="update_check">Update</string>
     <string name="check_for_updates">Check for updates</string>

@@ -325,7 +325,7 @@
     <string name="restore_settings_failed">還原設定失敗</string>
     <string name="move_to_recycle_bin">回收站</string>
     <string name="move_to_recycle_bin_info">選取的項目將移至回收站</string>
-    <string name="settings_backup_file_name">nextplayer-settings.json</string>
+    <string name="settings_backup_file_name">oneplayer-settings.json</string>
     <string name="exclude">排除</string>
     <string name="update_check">更新</string>
     <string name="check_for_updates">檢查更新</string>

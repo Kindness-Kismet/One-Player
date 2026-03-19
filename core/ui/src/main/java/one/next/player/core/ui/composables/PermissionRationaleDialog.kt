@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import one.next.player.core.ui.R
 import one.next.player.core.ui.preview.DayNightPreview
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun PermissionRationaleDialog(
@@ -40,7 +40,7 @@ fun PermissionRationaleDialog(
 @DayNightPreview
 @Composable
 fun PermissionRationaleDialogPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             PermissionRationaleDialog(
                 text = stringResource(

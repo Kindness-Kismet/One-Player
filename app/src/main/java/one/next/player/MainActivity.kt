@@ -56,7 +56,7 @@ import one.next.player.core.model.ThemeConfig
 import one.next.player.core.ui.R
 import one.next.player.core.ui.composables.rememberRuntimePermissionState
 import one.next.player.core.ui.designsystem.NextIcons
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.navigation.CloudRootRoute
 import one.next.player.navigation.MediaRootRoute
 import one.next.player.navigation.SETTINGS_ROUTE
@@ -141,7 +141,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            NextPlayerTheme(
+            OnePlayerTheme(
                 shouldUseDarkTheme = shouldUseDarkTheme,
                 shouldUseHighContrastDarkTheme = shouldUseHighContrastDarkTheme(uiState = uiState),
                 shouldUseDynamicColor = shouldUseDynamicTheming(uiState = uiState),

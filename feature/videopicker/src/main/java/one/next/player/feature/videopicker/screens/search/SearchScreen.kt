@@ -67,7 +67,7 @@ import one.next.player.core.ui.components.NextTopAppBar
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.copy
 import one.next.player.core.ui.extensions.plus
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.feature.videopicker.composables.FolderItem
 import one.next.player.feature.videopicker.composables.MediaView
 
@@ -427,7 +427,7 @@ private fun SearchResultsContent(
 @PreviewLightDark
 @Composable
 private fun SearchScreenEmptyPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         SearchScreen(
             uiState = SearchUiState(),
         )
@@ -437,7 +437,7 @@ private fun SearchScreenEmptyPreview() {
 @PreviewLightDark
 @Composable
 private fun SearchScreenWithHistoryPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         SearchScreen(
             uiState = SearchUiState(
                 searchHistory = listOf("avengers", "movie", "trailer"),
@@ -463,7 +463,7 @@ private fun SearchScreenWithHistoryPreview() {
 @PreviewLightDark
 @Composable
 private fun SearchScreenWithResultsPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         SearchScreen(
             uiState = SearchUiState(
                 query = "movie",
@@ -488,7 +488,7 @@ private fun SearchScreenWithResultsPreview() {
 @PreviewLightDark
 @Composable
 private fun SearchScreenNoResultsPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         SearchScreen(
             uiState = SearchUiState(
                 query = "xyz123",

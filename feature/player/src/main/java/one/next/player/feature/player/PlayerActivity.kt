@@ -53,7 +53,7 @@ import one.next.player.core.common.extensions.scanFileForContentUri
 import one.next.player.core.common.storagePermission
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ScreenOrientation
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.feature.player.extensions.OpenDocumentWithInitialUri
 import one.next.player.feature.player.extensions.registerForSuspendActivityResult
 import one.next.player.feature.player.extensions.setExtras
@@ -149,14 +149,14 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             CompositionLocalProvider(LocalUseMaterialYouControls provides (uiState.playerPreferences?.shouldUseMaterialYouControls == true)) {
-                NextPlayerTheme(shouldUseDarkTheme = true) {
+                OnePlayerTheme(shouldUseDarkTheme = true) {
                     MediaPlayerScreen(
                         modifier = Modifier.semantics {
                             testTagsAsResourceId = true
                         },
                         player = player,
                         viewModel = viewModel,
-                        playerPreferences = uiState.playerPreferences ?: return@NextPlayerTheme,
+                        playerPreferences = uiState.playerPreferences ?: return@OnePlayerTheme,
                         onSelectSubtitleClick = {
                             lifecycleScope.launch {
                                 val uri = subtitleFileSuspendLauncher.launch(

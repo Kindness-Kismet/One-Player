@@ -10,14 +10,14 @@
         android:maxSdkVersion="32" />
 
     <application
-        android:name=".NextPlayerApplication"
+        android:name=".OnePlayerApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NextPlayer.Splash"
+        android:theme="@style/Theme.OnePlayer.Splash"
         tools:targetApi="s">
         <activity
             android:name=".MainActivity"

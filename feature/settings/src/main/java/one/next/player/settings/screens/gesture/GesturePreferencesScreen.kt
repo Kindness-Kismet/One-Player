@@ -44,7 +44,7 @@ import one.next.player.core.ui.components.RadioTextButton
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.withBottomFallback
 import one.next.player.core.ui.preview.DayNightPreview
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.settings.composables.OptionsDialog
 import one.next.player.settings.extensions.name
 
@@ -286,7 +286,7 @@ private fun GesturePreferencesContent(
 @DayNightPreview
 @Composable
 private fun GesturePreferencesScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         GesturePreferencesContent(
             uiState = GesturePreferencesUiState(),
             onEvent = {},

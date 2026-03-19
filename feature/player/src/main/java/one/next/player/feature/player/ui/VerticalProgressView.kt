@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import one.next.player.core.ui.R
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 private const val NORMAL_MAX_PERCENTAGE = 100
 
@@ -95,7 +95,7 @@ fun VerticalProgressView(
 @Preview
 @Composable
 private fun VerticalProgressPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         VerticalProgressView(
             value = 50,
             icon = painterResource(R.drawable.ic_volume),
@@ -106,7 +106,7 @@ private fun VerticalProgressPreview() {
 @Preview
 @Composable
 private fun VerticalProgressBoostPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         VerticalProgressView(
             value = 150,
             maxValue = 200,

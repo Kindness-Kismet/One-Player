@@ -44,7 +44,7 @@ import one.next.player.core.model.MediaLayoutMode
 import one.next.player.core.model.Video
 import one.next.player.core.ui.components.NextSegmentedListItem
 import one.next.player.core.ui.designsystem.NextIcons
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun VideoItem(
@@ -295,7 +295,7 @@ private fun ThumbnailView(
 @PreviewLightDark
 @Composable
 fun VideoItemRecentlyPlayedPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             VideoListItem(
                 video = Video.sample,
@@ -309,7 +309,7 @@ fun VideoItemRecentlyPlayedPreview() {
 @PreviewLightDark
 @Composable
 fun VideoItemPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             VideoListItem(
                 video = Video.sample,
@@ -323,7 +323,7 @@ fun VideoItemPreview() {
 @PreviewLightDark
 @Composable
 fun VideoGridItemPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         VideoGridItem(
             video = Video.sample,
             preferences = ApplicationPreferences(),

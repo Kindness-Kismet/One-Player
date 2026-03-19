@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.time.Duration.Companion.milliseconds
 import one.next.player.core.model.DoubleTapGesture
 import one.next.player.core.ui.R
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.feature.player.state.TapGestureState
 
 @Composable
@@ -172,7 +172,7 @@ private fun DoubleTapArrow(alpha: Float) {
 @Preview
 @Composable
 private fun OvalShapePreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier

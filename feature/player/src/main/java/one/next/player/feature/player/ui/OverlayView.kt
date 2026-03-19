@@ -33,7 +33,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun BoxScope.OverlayView(
@@ -105,7 +105,7 @@ fun BoxScope.OverlayView(
 @Preview
 @Composable
 private fun PreviewOverlayView() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             OverlayView(modifier = Modifier.align(Alignment.BottomCenter), title = "Selector view", shouldShow = true) {
                 Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum")

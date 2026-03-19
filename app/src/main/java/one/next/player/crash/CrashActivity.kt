@@ -68,7 +68,7 @@ import one.next.player.core.common.extensions.applyPrivacyProtection
 import one.next.player.core.common.extensions.resolvePrivacyPreviewScrim
 import one.next.player.core.ui.R
 import one.next.player.core.ui.designsystem.NextIcons
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.shouldUseDarkTheme
 import one.next.player.shouldUseDynamicTheming
 import one.next.player.shouldUseHighContrastDarkTheme
@@ -139,7 +139,7 @@ class CrashActivity : AppCompatActivity() {
                 )
             }
 
-            NextPlayerTheme(
+            OnePlayerTheme(
                 shouldUseDarkTheme = shouldUseDarkTheme,
                 shouldUseHighContrastDarkTheme = shouldUseHighContrastDarkTheme(uiState = uiState),
                 shouldUseDynamicColor = shouldUseDynamicTheming(uiState = uiState),
@@ -353,7 +353,7 @@ private fun LogsSelectionContainer(
 @PreviewLightDark
 @Composable
 private fun CrashLogsScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         CrashScreen(
             exceptionString = "Exception message",
             logcat = "Logcat message",

@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import one.next.player.core.ui.R
 import one.next.player.core.ui.preview.DayNightPreview
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun PermissionDetailView(
@@ -72,7 +72,7 @@ fun PermissionDetailView(
 @DayNightPreview
 @Composable
 fun PermissionDetailViewPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             PermissionDetailView(
                 text = stringResource(

@@ -85,7 +85,7 @@ import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.copy
 import one.next.player.core.ui.preview.DayNightPreview
 import one.next.player.core.ui.preview.VideoPickerPreviewParameterProvider
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.feature.videopicker.composables.CenterCircularProgressBar
 import one.next.player.feature.videopicker.composables.MediaView
 import one.next.player.feature.videopicker.composables.NoVideosFound
@@ -743,7 +743,7 @@ private fun MediaPickerScreenPreview(
     @PreviewParameter(VideoPickerPreviewParameterProvider::class)
     videos: List<Video>,
 ) {
-    NextPlayerTheme {
+    OnePlayerTheme {
         MediaPickerScreen(
             uiState = MediaPickerUiState(
                 folderName = null,
@@ -783,7 +783,7 @@ private fun ButtonPreview() {
 @DayNightPreview
 @Composable
 private fun MediaPickerNoVideosFoundPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             MediaPickerScreen(
                 uiState = MediaPickerUiState(
@@ -799,7 +799,7 @@ private fun MediaPickerNoVideosFoundPreview() {
 @DayNightPreview
 @Composable
 private fun MediaPickerLoadingPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         Surface {
             MediaPickerScreen(
                 uiState = MediaPickerUiState(

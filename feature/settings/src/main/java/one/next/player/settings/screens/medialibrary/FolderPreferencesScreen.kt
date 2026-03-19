@@ -32,7 +32,7 @@ import one.next.player.core.ui.components.SelectablePreference
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.plus
 import one.next.player.core.ui.extensions.withBottomFallback
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun FolderPreferencesScreen(
@@ -109,7 +109,7 @@ private fun FolderPreferencesContent(
 @PreviewLightDark
 @Composable
 private fun FolderPreferencesScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         FolderPreferencesContent(
             uiState = FolderPreferencesUiState(),
             onNavigateUp = {},

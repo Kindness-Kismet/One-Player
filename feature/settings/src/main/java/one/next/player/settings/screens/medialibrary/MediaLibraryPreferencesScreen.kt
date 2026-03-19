@@ -37,7 +37,7 @@ import one.next.player.core.ui.components.NextTopAppBar
 import one.next.player.core.ui.components.PreferenceSwitch
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.withBottomFallback
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun MediaLibraryPreferencesScreen(
@@ -204,7 +204,7 @@ private fun MediaLibraryPreferencesContent(
 @PreviewLightDark
 @Composable
 private fun MediaLibraryPreferencesScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         MediaLibraryPreferencesContent(
             uiState = MediaLibraryPreferencesUiState(),
             hasAllFilesAccess = false,

@@ -43,7 +43,7 @@ import one.next.player.core.ui.components.PreferenceSlider
 import one.next.player.core.ui.components.SingleSelectablePreference
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.withBottomFallback
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun ThumbnailPreferencesScreen(
@@ -224,7 +224,7 @@ private sealed interface ThumbnailPreferenceChange {
 @PreviewLightDark
 @Composable
 private fun ThumbnailPreferencesScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         ThumbnailPreferencesContent(
             uiState = ThumbnailPreferencesUiState(),
             onNavigateUp = {},

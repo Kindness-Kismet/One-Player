@@ -240,7 +240,7 @@ private val highContrastDarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun NextPlayerTheme(
+fun OnePlayerTheme(
     shouldUseDarkTheme: Boolean = isSystemInDarkTheme(),
     shouldUseHighContrastDarkTheme: Boolean = false,
     shouldUseDynamicColor: Boolean = true,

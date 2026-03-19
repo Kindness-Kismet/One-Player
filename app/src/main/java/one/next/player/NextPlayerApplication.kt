@@ -10,7 +10,7 @@ import one.next.player.crash.CrashActivity
 import one.next.player.crash.GlobalExceptionHandler
 
 @HiltAndroidApp
-class NextPlayerApplication :
+class OnePlayerApplication :
     Application(),
     SingletonImageLoader.Factory {
 

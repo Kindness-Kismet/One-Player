@@ -28,7 +28,7 @@ import one.next.player.core.ui.components.NextTopAppBar
 import one.next.player.core.ui.components.PreferenceSwitch
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.withBottomFallback
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun PrivacyProtectionScreen(
@@ -110,7 +110,7 @@ private fun PrivacyProtectionContent(
 @PreviewLightDark
 @Composable
 private fun PrivacyProtectionScreenPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         PrivacyProtectionContent(
             uiState = PrivacyProtectionUiState(),
             onNavigateUp = {},

@@ -36,7 +36,7 @@ import one.next.player.core.model.Folder
 import one.next.player.core.model.MediaLayoutMode
 import one.next.player.core.ui.R
 import one.next.player.core.ui.components.NextSegmentedListItem
-import one.next.player.core.ui.theme.NextPlayerTheme
+import one.next.player.core.ui.theme.OnePlayerTheme
 
 @Composable
 fun FolderItem(
@@ -298,7 +298,7 @@ private fun FolderGridItem(
 @PreviewLightDark
 @Composable
 fun FolderItemRecentlyPlayedPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         FolderListItem(
             folder = Folder.sample,
             preferences = ApplicationPreferences(),
@@ -310,7 +310,7 @@ fun FolderItemRecentlyPlayedPreview() {
 @PreviewLightDark
 @Composable
 fun FolderItemPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         FolderListItem(
             folder = Folder.sample.copy(folderList = listOf(Folder.sample)),
             preferences = ApplicationPreferences(),
@@ -322,7 +322,7 @@ fun FolderItemPreview() {
 @PreviewLightDark
 @Composable
 fun FolderGridViewPreview() {
-    NextPlayerTheme {
+    OnePlayerTheme {
         FolderGridItem(
             folder = Folder.sample.copy(folderList = listOf(Folder.sample)),
             preferences = ApplicationPreferences(),
