@@ -57,6 +57,7 @@ import androidx.media3.common.util.UnstableApi
 import kotlin.time.Duration.Companion.milliseconds
 import one.next.player.core.model.VideoContentScale
 import one.next.player.core.ui.R
+import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.copy
 import one.next.player.feature.player.LocalUseMaterialYouControls
 import one.next.player.feature.player.buttons.LoopButton
@@ -84,6 +85,7 @@ fun ControlsBottomView(
     onPictureInPictureClick: () -> Unit,
     onRotateClick: () -> Unit,
     onPlayInBackgroundClick: () -> Unit,
+    onScreenshotClick: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekEnd: () -> Unit,
 ) {
@@ -177,6 +179,12 @@ fun ControlsBottomView(
                         contentDescription = "btn_pip",
                     )
                 }
+            }
+            PlayerButton(onClick = onScreenshotClick) {
+                Icon(
+                    imageVector = NextIcons.Image,
+                    contentDescription = "btn_screenshot",
+                )
             }
             PlayerButton(onClick = onPlayInBackgroundClick) {
                 Icon(

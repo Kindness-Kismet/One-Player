@@ -98,6 +98,7 @@ fun MediaPlayerScreen(
     onSelectSubtitleClick: () -> Unit,
     onBackClick: () -> Unit,
     onPlayInBackgroundClick: () -> Unit,
+    onScreenshotClick: () -> Unit,
 ) {
     val volumeState = rememberVolumeState(
         player = player,
@@ -325,6 +326,7 @@ fun MediaPlayerScreen(
                                     onSeekEnd = seekGestureState::onSeekEnd,
                                     onRotateClick = rotationState::rotate,
                                     onPlayInBackgroundClick = onPlayInBackgroundClick,
+                                    onScreenshotClick = onScreenshotClick,
                                     onLockControlsClick = {
                                         controlsVisibilityState.showControls()
                                         controlsVisibilityState.lockControls()

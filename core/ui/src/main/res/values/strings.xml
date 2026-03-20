@@ -373,4 +373,7 @@ Tap + to add a WebDAV or SMB server.</string>
     <string name="search_settings">Search settings…</string>
     <string name="show_cloud_tab">Show cloud tab</string>
     <string name="show_cloud_tab_description">Show cloud in the bottom navigation bar</string>
+    <string name="take_screenshot">Take screenshot</string>
+    <string name="screenshot_saved">Screenshot saved to Pictures/Screenshots</string>
+    <string name="screenshot_failed">Failed to save screenshot</string>
 </resources>

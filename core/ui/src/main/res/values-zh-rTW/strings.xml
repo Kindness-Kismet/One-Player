@@ -367,4 +367,7 @@
     <string name="search_settings">搜尋設定…</string>
     <string name="show_cloud_tab">顯示雲端分頁</string>
     <string name="show_cloud_tab_description">在底部導覽列顯示雲端入口</string>
+    <string name="take_screenshot">截圖</string>
+    <string name="screenshot_saved">截圖已儲存到 Pictures/Screenshots</string>
+    <string name="screenshot_failed">截圖儲存失敗</string>
 </resources>

@@ -369,4 +369,7 @@
     <string name="search_settings">搜索设置…</string>
     <string name="show_cloud_tab">显示云端标签</string>
     <string name="show_cloud_tab_description">在底部导航栏显示云端入口</string>
+    <string name="take_screenshot">截图</string>
+    <string name="screenshot_saved">截图已保存到 Pictures/Screenshots</string>
+    <string name="screenshot_failed">截图保存失败</string>
 </resources>

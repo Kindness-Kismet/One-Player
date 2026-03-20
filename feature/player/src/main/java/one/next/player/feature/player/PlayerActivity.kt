@@ -7,7 +7,14 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.Handler
+import android.provider.MediaStore
+import android.view.PixelCopy
+import android.view.SurfaceView
+import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,11 +47,17 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
+import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import one.next.player.core.common.Logger
 import one.next.player.core.common.extensions.applyPrivacyProtection
@@ -182,6 +196,21 @@ class PlayerActivity : AppCompatActivity() {
                         onPlayInBackgroundClick = {
                             shouldPlayInBackground = true
                             finish()
+                        },
+                        onScreenshotClick = {
+                            lifecycleScope.launch {
+                                val messageResId = runCatching {
+                                    if (saveCurrentFrameScreenshot()) {
+                                        one.next.player.core.ui.R.string.screenshot_saved
+                                    } else {
+                                        one.next.player.core.ui.R.string.screenshot_failed
+                                    }
+                                }.getOrElse {
+                                    Logger.error(TAG, "Failed to take screenshot", it)
+                                    one.next.player.core.ui.R.string.screenshot_failed
+                                }
+                                Toast.makeText(this@PlayerActivity, messageResId, Toast.LENGTH_SHORT).show()
+                            }
                         },
                     )
                 }
@@ -452,6 +481,75 @@ class PlayerActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    private suspend fun saveCurrentFrameScreenshot(): Boolean = withContext(Dispatchers.Main) {
+        val surfaceView = findPlayerSurfaceView() ?: return@withContext false
+        if (surfaceView.width <= 0 || surfaceView.height <= 0) return@withContext false
+
+        val bitmap = createBitmap(surfaceView.width, surfaceView.height)
+        val copyResult = suspendCancellableCoroutine<Int> { continuation ->
+            PixelCopy.request(surfaceView, bitmap, { result ->
+                continuation.resume(result)
+            }, Handler(mainLooper))
+        }
+        if (copyResult != PixelCopy.SUCCESS) return@withContext false
+
+        withContext(Dispatchers.IO) {
+            saveScreenshotBitmap(bitmap)
+        }
+    }
+
+    private fun findPlayerSurfaceView(): SurfaceView? {
+        val rootView = window.decorView.rootView ?: return null
+        return findSurfaceView(rootView)
+    }
+
+    private fun findSurfaceView(view: View): SurfaceView? {
+        if (view is SurfaceView) return view
+        val group = view as? android.view.ViewGroup ?: return null
+        for (index in 0 until group.childCount) {
+            findSurfaceView(group.getChildAt(index))?.let { return it }
+        }
+        return null
+    }
+
+    private fun saveScreenshotBitmap(bitmap: android.graphics.Bitmap): Boolean {
+        val fileName = buildScreenshotFileName()
+        val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val contentValues = android.content.ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Screenshots")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+
+        val uri = contentResolver.insert(collection, contentValues) ?: return false
+        return try {
+            contentResolver.openOutputStream(uri)?.use { stream ->
+                if (!bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)) {
+                    throw IOException("Failed to compress screenshot")
+                }
+            } ?: throw IOException("Failed to open screenshot output stream")
+
+            contentResolver.update(
+                uri,
+                android.content.ContentValues().apply {
+                    put(MediaStore.Images.Media.IS_PENDING, 0)
+                },
+                null,
+                null,
+            ) > 0
+        } catch (e: Exception) {
+            contentResolver.delete(uri, null, null)
+            Logger.error(TAG, "Failed to save screenshot", e)
+            false
+        }
+    }
+
+    private fun buildScreenshotFileName(): String {
+        val timestamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
+        return "Screenshot-$timestamp.png"
     }
 
     private fun finishAndStopPlayerSession() {
