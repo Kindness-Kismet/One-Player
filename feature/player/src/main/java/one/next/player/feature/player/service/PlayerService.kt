@@ -88,8 +88,8 @@ import one.next.player.core.common.Logger
 import one.next.player.core.common.extensions.deleteFiles
 import one.next.player.core.common.extensions.getFilenameFromUri
 import one.next.player.core.common.extensions.getLocalSubtitles
-import one.next.player.core.common.extensions.matchesSubtitleBase
 import one.next.player.core.common.extensions.getPath
+import one.next.player.core.common.extensions.matchesSubtitleBase
 import one.next.player.core.common.extensions.subtitleCacheDir
 import one.next.player.core.data.remote.SmbClient
 import one.next.player.core.data.remote.WebDavClient

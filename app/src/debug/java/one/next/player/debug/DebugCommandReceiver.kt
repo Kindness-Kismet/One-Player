@@ -17,9 +17,6 @@ import one.next.player.core.model.ServerProtocol
 
 class DebugCommandReceiver : BroadcastReceiver() {
 
-    // Debug 广播直接读写仓库，供设备自动化测试注入云端服务器配置
-
-
     override fun onReceive(context: Context, intent: Intent) {
         val pendingResult = goAsync()
         Thread {
@@ -28,21 +25,23 @@ class DebugCommandReceiver : BroadcastReceiver() {
                     context.applicationContext,
                     DebugCommandReceiverEntryPoint::class.java,
                 )
-                runBlocking {
-                    when (intent.action) {
-                        ACTION_SET_IGNORE_NOMEDIA -> setIgnoreNoMedia(entryPoint.preferencesRepository(), intent)
-                        ACTION_REFRESH_LIBRARY -> refreshLibrary(entryPoint.mediaSynchronizer())
-                        ACTION_ADD_REMOTE_SERVER -> addRemoteServer(entryPoint.remoteServerRepository(), intent)
-                        ACTION_DELETE_REMOTE_SERVER -> deleteRemoteServer(entryPoint.remoteServerRepository(), intent)
-                        else -> Logger.info(TAG, "Ignored unknown debug action: ${intent.action}")
-                    }
-                }
+                runBlocking { dispatch(entryPoint, intent) }
             } catch (throwable: Throwable) {
                 Logger.error(TAG, "Failed to handle debug command: ${intent.action}", throwable)
             } finally {
                 pendingResult.finish()
             }
         }.start()
+    }
+
+    private suspend fun dispatch(entryPoint: DebugCommandReceiverEntryPoint, intent: Intent) {
+        when (intent.action) {
+            ACTION_SET_IGNORE_NOMEDIA -> setIgnoreNoMedia(entryPoint.preferencesRepository(), intent)
+            ACTION_REFRESH_LIBRARY -> refreshLibrary(entryPoint.mediaSynchronizer())
+            ACTION_ADD_REMOTE_SERVER -> addRemoteServer(entryPoint.remoteServerRepository(), intent)
+            ACTION_DELETE_REMOTE_SERVER -> deleteRemoteServer(entryPoint.remoteServerRepository(), intent)
+            else -> Logger.info(TAG, "Ignored unknown debug action: ${intent.action}")
+        }
     }
 
     private suspend fun setIgnoreNoMedia(

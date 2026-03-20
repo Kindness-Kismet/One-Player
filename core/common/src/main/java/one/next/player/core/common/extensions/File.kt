@@ -7,6 +7,7 @@ import androidx.core.net.toUri
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import one.next.player.core.common.Logger
 
 suspend fun File.getSubtitles(): List<File> = withContext(Dispatchers.IO) {
     val mediaName = this@getSubtitles.nameWithoutExtension
@@ -60,7 +61,7 @@ fun File.deleteFiles() {
             it.delete()
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        Logger.error("File", "Failed to delete files", e)
     }
 }
 

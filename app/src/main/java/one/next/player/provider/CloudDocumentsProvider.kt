@@ -539,7 +539,7 @@ class CloudDocumentsProvider : DocumentsProvider() {
         val serverBaseSegments = serverBasePath.removePrefix("/").removeSuffix("/")
             .split('/')
             .filter { it.isNotBlank() }
-        var currentSegments = serverBaseSegments.toMutableList()
+        val currentSegments = serverBaseSegments.toMutableList()
         val relativeSegments = segments.drop(serverBaseSegments.size)
 
         for (segment in relativeSegments) {
