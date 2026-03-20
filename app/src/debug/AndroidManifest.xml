@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <permission
-        android:name="${applicationId}.permission.DEBUG_COMMAND"
-        android:protectionLevel="signature" />
-
-    <uses-permission android:name="${applicationId}.permission.DEBUG_COMMAND" />
-
     <application>
         <receiver
             android:name=".debug.DebugCommandReceiver"
             android:enabled="true"
-            android:exported="true"
-            android:permission="${applicationId}.permission.DEBUG_COMMAND">
+            android:exported="true">
             <intent-filter>
                 <action android:name="one.next.player.debug.SET_IGNORE_NOMEDIA" />
                 <action android:name="one.next.player.debug.REFRESH_LIBRARY" />
+                <action android:name="one.next.player.debug.ADD_REMOTE_SERVER" />
+                <action android:name="one.next.player.debug.DELETE_REMOTE_SERVER" />
             </intent-filter>
         </receiver>
     </application>

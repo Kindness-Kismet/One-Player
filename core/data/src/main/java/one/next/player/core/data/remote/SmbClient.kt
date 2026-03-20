@@ -13,7 +13,6 @@ import one.next.player.core.model.ServerProtocol
 
 class SmbClient @Inject constructor() {
 
-    // 列出 SMB 共享上的目录内容
     suspend fun listDirectory(
         server: RemoteServer,
         directoryPath: String,
@@ -22,13 +21,31 @@ class SmbClient @Inject constructor() {
             error("SmbClient only supports SMB protocol")
         }
 
-        val shareName = extractShareName(server.path)
-        val relativePath = extractRelativePath(server.path, directoryPath)
-
         val config = SmbConfig.builder()
             .withTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .withSoTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
+
+        val isServerPathRoot = server.path.removePrefix("/").removeSuffix("/").isBlank()
+        val isCurrentPathRoot = directoryPath.removePrefix("/").removeSuffix("/").isBlank()
+
+        // 根路径先展示共享列表，再进入具体共享
+        if (isServerPathRoot && isCurrentPathRoot) {
+            return@runCatching enumerateShares(server, config)
+        }
+
+        val shareName: String
+        val relativePath: String
+
+        if (isServerPathRoot) {
+            val trimmed = directoryPath.removePrefix("/").removeSuffix("/")
+            shareName = trimmed.substringBefore("/")
+            relativePath = trimmed.substringAfter("/", missingDelimiterValue = "")
+                .replace("/", "\\")
+        } else {
+            shareName = extractShareName(server.path)
+            relativePath = extractRelativePath(server.path, directoryPath)
+        }
 
         val client = SMBClient(config)
         val connection = client.connect(server.host, server.port ?: DEFAULT_PORT)
@@ -74,13 +91,35 @@ class SmbClient @Inject constructor() {
         const val DEFAULT_PORT = 445
         const val TIMEOUT_SECONDS = 15L
 
-        // 从 SMB 路径提取共享名
+        private fun enumerateShares(
+            server: RemoteServer,
+            config: SmbConfig,
+        ): List<RemoteFile> {
+            val auth = server.toSmbAuthContext()
+            val shares = SmbShareEnumerator.listShares(
+                host = server.host,
+                port = server.port ?: DEFAULT_PORT,
+                auth = auth,
+                config = config,
+            )
+            return shares
+                .filter { it.isDisk && !it.isHidden }
+                .map { share ->
+                    RemoteFile(
+                        name = share.name,
+                        path = "/${share.name}/",
+                        isDirectory = true,
+                        size = 0,
+                    )
+                }
+                .sortedBy { it.name }
+        }
+
         fun extractShareName(serverPath: String): String {
             val trimmed = serverPath.removePrefix("/").removeSuffix("/")
             return trimmed.substringBefore("/").ifBlank { trimmed }
         }
 
-        // 从完整路径中提取共享内的相对路径，返回 Windows 风格反斜杠路径
         fun extractRelativePath(serverPath: String, directoryPath: String): String {
             val shareName = extractShareName(serverPath)
             val normalizedServerPath = serverPath.removePrefix("/").removeSuffix("/")

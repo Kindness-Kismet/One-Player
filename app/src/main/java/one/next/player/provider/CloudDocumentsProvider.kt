@@ -28,6 +28,7 @@ import one.next.player.core.data.remote.SmbClient
 import one.next.player.core.data.remote.SmbClient.Companion.extractRelativePath
 import one.next.player.core.data.remote.SmbClient.Companion.extractShareName
 import one.next.player.core.data.remote.SmbClient.Companion.toSmbAuthContext
+import one.next.player.core.data.remote.SmbShareEnumerator
 import one.next.player.core.data.remote.WebDavClient
 import one.next.player.core.data.repository.RemoteServerRepository
 import one.next.player.core.model.RemoteFile
@@ -64,7 +65,7 @@ class CloudDocumentsProvider : DocumentsProvider() {
             add(DocumentsContract.Root.COLUMN_SUMMARY, buildRootSummary(servers.size))
             add(DocumentsContract.Root.COLUMN_FLAGS, ROOT_FLAGS)
             add(DocumentsContract.Root.COLUMN_ICON, android.R.drawable.ic_menu_upload)
-            add(DocumentsContract.Root.COLUMN_MIME_TYPES, VIDEO_MIME_TYPES)
+            add(DocumentsContract.Root.COLUMN_MIME_TYPES, ROOT_MIME_TYPES)
             add(DocumentsContract.Root.COLUMN_AVAILABLE_BYTES, -1)
         }
 
@@ -158,6 +159,29 @@ class CloudDocumentsProvider : DocumentsProvider() {
         val file = files.firstOrNull { it.path.removeSuffix("/") == parsed.path.removeSuffix("/") }
         if (file?.isDirectory == true) return DocumentsContract.Document.MIME_TYPE_DIR
         return resolveMimeType(fileName, file?.contentType)
+    }
+
+    override fun findDocumentPath(
+        parentDocumentId: String?,
+        childDocumentId: String,
+    ): DocumentsContract.Path? {
+        if (childDocumentId == ROOT_DOCUMENT_ID) {
+            return DocumentsContract.Path(ROOT_ID, listOf(ROOT_DOCUMENT_ID))
+        }
+
+        val parsed = parseDocumentId(childDocumentId)
+        val server = getServer(parsed.serverId) ?: return null
+        val path = mutableListOf(ROOT_DOCUMENT_ID, buildServerDocumentId(server.id))
+
+        if (parsed.path != "/") {
+            path += buildDocumentPathSegments(server, parsed.path)
+        }
+
+        if (parentDocumentId != null && parentDocumentId !in path) {
+            return null
+        }
+
+        return DocumentsContract.Path(ROOT_ID, path)
     }
 
     override fun querySearchDocuments(
@@ -265,12 +289,47 @@ class CloudDocumentsProvider : DocumentsProvider() {
     }
 
     private fun listSmbDirectory(server: RemoteServer, path: String): List<RemoteFile> = runCatching {
-        val shareName = extractShareName(server.path)
-        val relativePath = extractRelativePath(server.path, path)
         val config = SmbConfig.builder()
             .withTimeout(SmbClient.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .withSoTimeout(SmbClient.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
+
+        val isServerPathRoot = server.path.removePrefix("/").removeSuffix("/").isBlank()
+        val isCurrentPathRoot = path.removePrefix("/").removeSuffix("/").isBlank()
+
+        if (isServerPathRoot && isCurrentPathRoot) {
+            val shares = SmbShareEnumerator.listShares(
+                host = server.host,
+                port = server.port ?: SmbClient.DEFAULT_PORT,
+                auth = server.toSmbAuthContext(),
+                config = config,
+            )
+            return@runCatching shares
+                .filter { it.isDisk && !it.isHidden }
+                .map { share ->
+                    RemoteFile(
+                        name = share.name,
+                        path = "/${share.name}/",
+                        isDirectory = true,
+                        size = 0,
+                    )
+                }
+                .sortedBy { it.name }
+        }
+
+        val shareName: String
+        val relativePath: String
+
+        if (isServerPathRoot) {
+            val trimmed = path.removePrefix("/").removeSuffix("/")
+            shareName = trimmed.substringBefore("/")
+            relativePath = trimmed.substringAfter("/", missingDelimiterValue = "")
+                .replace("/", "\\")
+        } else {
+            shareName = extractShareName(server.path)
+            relativePath = extractRelativePath(server.path, path)
+        }
+
         val client = SMBClient(config)
         val connection = client.connect(server.host, server.port ?: SmbClient.DEFAULT_PORT)
         val session = connection.authenticate(server.toSmbAuthContext())
@@ -350,8 +409,21 @@ class CloudDocumentsProvider : DocumentsProvider() {
         path: String,
         signal: CancellationSignal?,
     ): ParcelFileDescriptor {
-        val shareName = extractShareName(server.path)
-        val relativePath = extractRelativePath(server.path, path)
+        val isServerPathRoot = server.path.removePrefix("/").removeSuffix("/").isBlank()
+
+        val shareName: String
+        val relativePath: String
+
+        if (isServerPathRoot) {
+            val trimmed = path.removePrefix("/").removeSuffix("/")
+            shareName = trimmed.substringBefore("/")
+            relativePath = trimmed.substringAfter("/", missingDelimiterValue = "")
+                .replace("/", "\\")
+        } else {
+            shareName = extractShareName(server.path)
+            relativePath = extractRelativePath(server.path, path)
+        }
+
         val config = SmbConfig.builder()
             .withTimeout(SmbClient.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .withSoTimeout(SmbClient.TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -444,6 +516,41 @@ class CloudDocumentsProvider : DocumentsProvider() {
         return if (parent.isBlank()) "/" else "$parent/"
     }
 
+    private fun buildDocumentPathSegments(
+        server: RemoteServer,
+        path: String,
+    ): List<String> {
+        val normalized = path.removePrefix("/").removeSuffix("/")
+        if (normalized.isBlank()) return emptyList()
+
+        val segments = normalized.split('/').filter { it.isNotBlank() }
+        val documentIds = mutableListOf<String>()
+        var currentPath = "/"
+
+        if (server.protocol == ServerProtocol.SMB && server.path.removePrefix("/").removeSuffix("/").isBlank()) {
+            for (segment in segments) {
+                currentPath = if (currentPath == "/") "/$segment/" else "$currentPath$segment/"
+                documentIds += buildDocumentId(server.id, currentPath)
+            }
+            return documentIds
+        }
+
+        val serverBasePath = server.path.ensureDirectoryPath()
+        val serverBaseSegments = serverBasePath.removePrefix("/").removeSuffix("/")
+            .split('/')
+            .filter { it.isNotBlank() }
+        var currentSegments = serverBaseSegments.toMutableList()
+        val relativeSegments = segments.drop(serverBaseSegments.size)
+
+        for (segment in relativeSegments) {
+            currentSegments += segment
+            currentPath = "/${currentSegments.joinToString("/")}/"
+            documentIds += buildDocumentId(server.id, currentPath)
+        }
+
+        return documentIds
+    }
+
     private fun resolveMimeType(
         name: String,
         declaredMimeType: String?,
@@ -455,7 +562,11 @@ class CloudDocumentsProvider : DocumentsProvider() {
 
         val extension = name.substringAfterLast('.', missingDelimiterValue = "").lowercase()
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-            ?: if (VIDEO_EXTENSIONS.contains(extension)) FALLBACK_VIDEO_MIME else FALLBACK_BINARY_MIME
+            ?: when {
+                VIDEO_EXTENSIONS.contains(extension) -> FALLBACK_VIDEO_MIME
+                SUBTITLE_EXTENSIONS.contains(extension) -> FALLBACK_SUBTITLE_MIME
+                else -> FALLBACK_BINARY_MIME
+            }
     }
 
     private fun String.ensureDirectoryPath(): String = if (endsWith('/')) this else "$this/"
@@ -473,7 +584,8 @@ class CloudDocumentsProvider : DocumentsProvider() {
         private const val READ_TIMEOUT_SECONDS = 30L
         private const val FALLBACK_VIDEO_MIME = "video/*"
         private const val FALLBACK_BINARY_MIME = "application/octet-stream"
-        private const val VIDEO_MIME_TYPES = "video/*\napplication/x-matroska\nvideo/mp4"
+        private const val FALLBACK_SUBTITLE_MIME = "application/x-subrip"
+        private const val ROOT_MIME_TYPES = "video/*\napplication/x-matroska\nvideo/mp4\napplication/x-subrip\ntext/vtt\ntext/x-ssa\ntext/x-ass\napplication/ass\napplication/ssa\ntext/plain"
 
         private const val ROOT_FLAGS =
             DocumentsContract.Root.FLAG_SUPPORTS_IS_CHILD or
@@ -519,6 +631,14 @@ class CloudDocumentsProvider : DocumentsProvider() {
             "ts",
             "webm",
             "wmv",
+        )
+
+        private val SUBTITLE_EXTENSIONS = setOf(
+            "ass",
+            "srt",
+            "ssa",
+            "sub",
+            "vtt",
         )
     }
 }
