@@ -21,8 +21,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,8 +74,6 @@ import one.next.player.feature.player.service.PlayerService
 import one.next.player.feature.player.service.addSubtitleTrack
 import one.next.player.feature.player.service.stopPlayerSession
 import one.next.player.feature.player.utils.PlayerApi
-
-val LocalUseMaterialYouControls = compositionLocalOf { false }
 
 @SuppressLint("UnsafeOptInUsageError")
 @AndroidEntryPoint
@@ -163,65 +159,63 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
 
-            CompositionLocalProvider(LocalUseMaterialYouControls provides (uiState.playerPreferences?.shouldUseMaterialYouControls == true)) {
-                OnePlayerTheme(shouldUseDarkTheme = true) {
-                    MediaPlayerScreen(
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                        },
-                        player = player,
-                        viewModel = viewModel,
-                        playerPreferences = uiState.playerPreferences ?: return@OnePlayerTheme,
-                        onSelectSubtitleClick = {
-                            lifecycleScope.launch {
-                                val uri = subtitleFileSuspendLauncher.launch(
-                                    OpenDocumentWithInitialUri.Input(
-                                        mimeTypes = arrayOf(
-                                            MimeTypes.APPLICATION_SUBRIP,
-                                            MimeTypes.APPLICATION_TTML,
-                                            MimeTypes.TEXT_VTT,
-                                            MimeTypes.TEXT_SSA,
-                                            MimeTypes.BASE_TYPE_APPLICATION + "/octet-stream",
-                                            MimeTypes.BASE_TYPE_TEXT + "/*",
-                                            MimeTypes.BASE_TYPE_AUDIO + "/aac",
-                                        ),
-                                        initialUri = intent.getParcelableExtra("initial_subtitle_directory_uri"),
+            OnePlayerTheme(shouldUseDarkTheme = true) {
+                MediaPlayerScreen(
+                    modifier = Modifier.semantics {
+                        testTagsAsResourceId = true
+                    },
+                    player = player,
+                    viewModel = viewModel,
+                    playerPreferences = uiState.playerPreferences ?: return@OnePlayerTheme,
+                    onSelectSubtitleClick = {
+                        lifecycleScope.launch {
+                            val uri = subtitleFileSuspendLauncher.launch(
+                                OpenDocumentWithInitialUri.Input(
+                                    mimeTypes = arrayOf(
+                                        MimeTypes.APPLICATION_SUBRIP,
+                                        MimeTypes.APPLICATION_TTML,
+                                        MimeTypes.TEXT_VTT,
+                                        MimeTypes.TEXT_SSA,
+                                        MimeTypes.BASE_TYPE_APPLICATION + "/octet-stream",
+                                        MimeTypes.BASE_TYPE_TEXT + "/*",
+                                        MimeTypes.BASE_TYPE_AUDIO + "/aac",
                                     ),
-                                ) ?: return@launch
-                                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                maybeInitControllerFuture()
-                                controllerFuture?.await()?.addSubtitleTrack(uri)
-                            }
-                        },
-                        onBackClick = { finishAndStopPlayerSession() },
-                        onPlayInBackgroundClick = {
-                            shouldPlayInBackground = true
-                            finish()
-                        },
-                        isTakingScreenshot = isTakingScreenshot,
-                        onScreenshotClick = screenshotClick@{
-                            if (isTakingScreenshot) return@screenshotClick
-                            lifecycleScope.launch {
-                                isTakingScreenshot = true
-                                try {
-                                    val messageResId = runCatching {
-                                        if (saveCurrentFrameScreenshot()) {
-                                            one.next.player.core.ui.R.string.screenshot_saved
-                                        } else {
-                                            one.next.player.core.ui.R.string.screenshot_failed
-                                        }
-                                    }.getOrElse {
-                                        Logger.error(TAG, "Failed to take screenshot", it)
+                                    initialUri = intent.getParcelableExtra("initial_subtitle_directory_uri"),
+                                ),
+                            ) ?: return@launch
+                            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            maybeInitControllerFuture()
+                            controllerFuture?.await()?.addSubtitleTrack(uri)
+                        }
+                    },
+                    onBackClick = { finishAndStopPlayerSession() },
+                    onPlayInBackgroundClick = {
+                        shouldPlayInBackground = true
+                        finish()
+                    },
+                    isTakingScreenshot = isTakingScreenshot,
+                    onScreenshotClick = screenshotClick@{
+                        if (isTakingScreenshot) return@screenshotClick
+                        lifecycleScope.launch {
+                            isTakingScreenshot = true
+                            try {
+                                val messageResId = runCatching {
+                                    if (saveCurrentFrameScreenshot()) {
+                                        one.next.player.core.ui.R.string.screenshot_saved
+                                    } else {
                                         one.next.player.core.ui.R.string.screenshot_failed
                                     }
-                                    Toast.makeText(this@PlayerActivity, messageResId, Toast.LENGTH_SHORT).show()
-                                } finally {
-                                    isTakingScreenshot = false
+                                }.getOrElse {
+                                    Logger.error(TAG, "Failed to take screenshot", it)
+                                    one.next.player.core.ui.R.string.screenshot_failed
                                 }
+                                Toast.makeText(this@PlayerActivity, messageResId, Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isTakingScreenshot = false
                             }
-                        },
-                    )
-                }
+                        }
+                    },
+                )
             }
         }
 

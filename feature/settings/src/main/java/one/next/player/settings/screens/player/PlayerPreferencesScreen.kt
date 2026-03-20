@@ -90,14 +90,6 @@ private fun PlayerPreferencesContent(
             Column(
                 verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
             ) {
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.material_you_controls),
-                    description = stringResource(id = R.string.material_you_controls_description),
-                    icon = NextIcons.Appearance,
-                    isChecked = uiState.preferences.shouldUseMaterialYouControls,
-                    onClick = { onEvent(PlayerPreferencesUiEvent.ToggleUseMaterialYouControls) },
-                    isFirstItem = true,
-                )
                 PreferenceSlider(
                     title = stringResource(R.string.controller_timeout),
                     description = stringResource(R.string.seconds, uiState.preferences.controllerAutoHideTimeout),
@@ -105,6 +97,7 @@ private fun PlayerPreferencesContent(
                     value = uiState.preferences.controllerAutoHideTimeout.toFloat(),
                     valueRange = 1.0f..60.0f,
                     onValueChange = { onEvent(PlayerPreferencesUiEvent.UpdateControlAutoHideTimeout(it.toInt())) },
+                    isFirstItem = true,
                     isLastItem = true,
                     trailingContent = {
                         FilledIconButton(onClick = { onEvent(PlayerPreferencesUiEvent.UpdateControlAutoHideTimeout(PlayerPreferences.DEFAULT_CONTROLLER_AUTO_HIDE_TIMEOUT)) }) {

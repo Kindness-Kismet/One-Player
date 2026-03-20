@@ -39,8 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -64,7 +62,6 @@ import one.next.player.core.model.VideoContentScale
 import one.next.player.core.ui.R
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.copy
-import one.next.player.feature.player.LocalUseMaterialYouControls
 import one.next.player.feature.player.buttons.LoopButton
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.buttons.ShuffleButton
@@ -164,7 +161,6 @@ fun ControlsBottomView(
         PlayerSeekbar(
             position = displayedPosition.toFloat(),
             duration = mediaPresentationState.duration.toFloat(),
-            isEnabled = !isCustomizingControls,
             onSeek = { onSeek(it.toLong()) },
             onSeekFinished = { onSeekEnd() },
         )
@@ -292,29 +288,17 @@ private fun PlayerSeekbar(
     modifier: Modifier = Modifier,
     position: Float,
     duration: Float,
-    isEnabled: Boolean,
     onSeek: (Float) -> Unit,
     onSeekFinished: () -> Unit,
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        if (LocalUseMaterialYouControls.current) {
-            MaterialYouSlider(
-                modifier = modifier.fillMaxWidth(),
-                value = position,
-                valueRange = 0f..duration,
-                isEnabled = isEnabled,
-                onValueChange = onSeek,
-                onValueChangeFinished = onSeekFinished,
-            )
-        } else {
-            SimpleSlider(
-                modifier = modifier.fillMaxWidth(),
-                value = position,
-                valueRange = 0f..duration,
-                onValueChange = onSeek,
-                onValueChangeFinished = onSeekFinished,
-            )
-        }
+        MaterialYouSlider(
+            modifier = modifier.fillMaxWidth(),
+            value = position,
+            valueRange = 0f..duration,
+            onValueChange = onSeek,
+            onValueChangeFinished = onSeekFinished,
+        )
     }
 }
 
@@ -324,7 +308,6 @@ private fun MaterialYouSlider(
     modifier: Modifier = Modifier,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
-    isEnabled: Boolean,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
 ) {
@@ -337,7 +320,6 @@ private fun MaterialYouSlider(
     Slider(
         value = value,
         valueRange = valueRange,
-        enabled = isEnabled,
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
@@ -425,49 +407,5 @@ private fun DrawScope.drawRoundedRect(
             addRoundRect(track)
         },
         color = color,
-    )
-}
-
-@kotlin.OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SimpleSlider(
-    modifier: Modifier = Modifier,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit,
-) {
-    Slider(
-        value = value,
-        valueRange = valueRange,
-        onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished,
-        modifier = modifier.height(20.dp).semantics { contentDescription = "slider_seek" },
-        thumb = {
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .shadow(4.dp, CircleShape)
-                    .background(Color.White),
-            )
-        },
-        track = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(Color.White.copy(0.5f)),
-            ) {
-                if (valueRange.endInclusive > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(value / valueRange.endInclusive)
-                            .height(4.dp)
-                            .background(MaterialTheme.colorScheme.primary),
-                    )
-                }
-            }
-        },
     )
 }

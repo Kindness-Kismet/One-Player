@@ -308,8 +308,6 @@
     <string name="reset_volume_gesture_sensitivity">重設音量手勢靈敏度</string>
     <string name="brightness_gesture_sensitivity">亮度手勢靈敏度</string>
     <string name="reset_brightness_gesture_sensitivity">重設亮度手勢靈敏度</string>
-    <string name="material_you_controls">Material You 控制</string>
-    <string name="material_you_controls_description">使用 Material You 樣式控制</string>
     <string name="ignore_nomedia_files">忽略 .nomedia 檔案</string>
     <string name="ignore_nomedia_files_desc">顯示包含 .nomedia 檔案的目錄及其子目錄中的影片。需要所有檔案存取權限。</string>
     <string name="app_language">應用程式語言</string>

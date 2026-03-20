@@ -11,18 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import one.next.player.core.ui.designsystem.NextIcons
-import one.next.player.feature.player.LocalUseMaterialYouControls
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -90,48 +83,22 @@ fun PlayerButton(
     val selectionBadgeSize = if (buttonSize >= 56.dp) 20.dp else 18.dp
     val selectionBadgeIconSize = if (buttonSize >= 56.dp) 13.dp else 12.dp
 
-    val iconButtonContent: @Composable () -> Unit = {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            content()
-        }
-    }
-
     val buttonWithBadge: @Composable () -> Unit = {
         Box(
             modifier = Modifier.size(buttonSize),
             contentAlignment = Alignment.Center,
         ) {
-            if (LocalUseMaterialYouControls.current) {
-                FilledTonalIconButton(
-                    onClick = {},
-                    enabled = isEnabled,
-                    modifier = Modifier.size(buttonSize),
-                    interactionSource = interactionSource,
-                    content = iconButtonContent,
-                )
-            } else {
-                CompositionLocalProvider(
-                    LocalContentColor provides Color.White,
-                    LocalRippleConfiguration provides RippleConfiguration(
-                        color = Color.White,
-                        rippleAlpha = RippleAlpha(
-                            pressedAlpha = 0.5f,
-                            focusedAlpha = 0.5f,
-                            draggedAlpha = 0.5f,
-                            hoveredAlpha = 0.5f,
-                        ),
-                    ),
+            FilledTonalIconButton(
+                onClick = {},
+                enabled = isEnabled,
+                modifier = Modifier.size(buttonSize),
+                interactionSource = interactionSource,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    IconButton(
-                        onClick = {},
-                        enabled = isEnabled,
-                        modifier = Modifier.size(buttonSize),
-                        interactionSource = interactionSource,
-                        content = iconButtonContent,
-                    )
+                    content()
                 }
             }
 

@@ -238,7 +238,6 @@ internal enum class SettingRow(
             R.string.high_contrast_dark_theme,
             R.string.app_language,
             R.string.app_language_description,
-            R.string.material_you_controls,
             R.string.show_cloud_tab,
         ),
     ),

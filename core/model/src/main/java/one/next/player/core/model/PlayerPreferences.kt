@@ -38,7 +38,6 @@ data class PlayerPreferences(
     val controlButtonsPosition: ControlButtonsPosition = ControlButtonsPosition.LEFT,
     val hiddenPlayerControls: Set<PlayerControl> = emptySet(),
     val shouldHidePlayerButtonsBackground: Boolean = false,
-    val shouldUseMaterialYouControls: Boolean = false,
 
     // 音频偏好
     val preferredAudioLanguage: String = "",
