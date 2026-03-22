@@ -1,5 +1,6 @@
 package one.next.player.feature.player.state
 
+import android.os.SystemClock
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
@@ -15,15 +16,28 @@ import androidx.compose.ui.unit.IntSize
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import one.next.player.core.model.DoubleTapGesture
+import one.next.player.feature.player.extensions.availableDurationMs
 import one.next.player.feature.player.extensions.canSeekCurrentMediaItem
 import one.next.player.feature.player.extensions.seekByRequestedOffset
 import one.next.player.feature.player.service.setTransientPlaybackSpeed
+
+internal fun resolveLongPressPreviewPosition(
+    startPositionMs: Long,
+    durationMs: Long,
+    elapsedSinceLongPressMs: Long,
+    longPressSpeed: Float,
+): Long {
+    val advancedPositionMs = startPositionMs + (elapsedSinceLongPressMs * longPressSpeed).roundToLong()
+    if (durationMs <= 0L) return advancedPositionMs.coerceAtLeast(0L)
+    return advancedPositionMs.coerceIn(0L, durationMs)
+}
 
 @UnstableApi
 @Composable
@@ -60,9 +74,15 @@ class TapGestureState(
 ) {
     var seekMillis by mutableLongStateOf(0L)
     var isLongPressGestureInAction by mutableStateOf(false)
+    var longPressStartPositionMs by mutableLongStateOf(0L)
+        private set
+    var longPressPreviewPositionMs by mutableLongStateOf(0L)
+        private set
 
     private var resetJob: Job? = null
     private var currentSpeed: Float = player.playbackParameters.speed
+    private var longPressStartedAtMs: Long = 0L
+    private var longPressPreviewJob: Job? = null
 
     fun handleDoubleTap(offset: Offset, size: IntSize) {
         if (!player.canSeekCurrentMediaItem()) return
@@ -125,14 +145,21 @@ class TapGestureState(
         if (isLongPressGestureInAction) return
 
         isLongPressGestureInAction = true
+        longPressStartedAtMs = SystemClock.elapsedRealtime()
+        longPressStartPositionMs = player.currentPosition.coerceAtLeast(0L)
+        longPressPreviewPositionMs = longPressStartPositionMs
         currentSpeed = player.playbackParameters.speed
         player.setPlaybackSpeedWithoutPersistence(longPressSpeed)
+        startLongPressPreviewUpdates()
     }
 
     fun handleOnLongPressRelease() {
         if (!isLongPressGestureInAction) return
 
         isLongPressGestureInAction = false
+        longPressPreviewJob?.cancel()
+        longPressPreviewJob = null
+        longPressPreviewPositionMs = player.currentPosition.coerceAtLeast(0L)
         player.setPlaybackSpeedWithoutPersistence(currentSpeed)
     }
 
@@ -148,6 +175,21 @@ class TapGestureState(
         resetJob = coroutineScope.launch {
             delay(750.milliseconds)
             seekMillis = 0L
+        }
+    }
+
+    private fun startLongPressPreviewUpdates() {
+        longPressPreviewJob?.cancel()
+        longPressPreviewJob = coroutineScope.launch {
+            while (isLongPressGestureInAction) {
+                longPressPreviewPositionMs = resolveLongPressPreviewPosition(
+                    startPositionMs = longPressStartPositionMs,
+                    durationMs = player.availableDurationMs(),
+                    elapsedSinceLongPressMs = SystemClock.elapsedRealtime() - longPressStartedAtMs,
+                    longPressSpeed = longPressSpeed,
+                )
+                delay(100.milliseconds)
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -53,6 +54,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import one.next.player.core.data.repository.ExternalSubtitleFontSource
 import one.next.player.core.model.ControlButtonsPosition
@@ -64,6 +67,7 @@ import one.next.player.feature.player.buttons.NextButton
 import one.next.player.feature.player.buttons.PlayPauseButton
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.buttons.PreviousButton
+import one.next.player.feature.player.extensions.formatted
 import one.next.player.feature.player.extensions.nameRes
 import one.next.player.feature.player.state.ControlsVisibilityState
 import one.next.player.feature.player.state.VerticalGesture
@@ -90,6 +94,26 @@ import one.next.player.feature.player.ui.controls.ControlsBottomView
 import one.next.player.feature.player.ui.controls.ControlsTopView
 
 val LocalControlsVisibilityState = compositionLocalOf<ControlsVisibilityState?> { null }
+
+internal data class LongPressOverlayUiState(
+    val speedText: String,
+    val positionText: String,
+)
+
+internal fun resolveLongPressOverlayUiState(
+    isLongPressGestureInAction: Boolean,
+    longPressSpeed: Float,
+    longPressPreviewPositionMs: Long,
+): LongPressOverlayUiState? {
+    if (!isLongPressGestureInAction) return null
+
+    val resolvedPositionMs = longPressPreviewPositionMs.coerceAtLeast(0L)
+
+    return LongPressOverlayUiState(
+        speedText = String.format(Locale.US, "%.1fx", longPressSpeed),
+        positionText = resolvedPositionMs.milliseconds.formatted(),
+    )
+}
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -153,6 +177,11 @@ fun MediaPlayerScreen(
         screenOrientation = playerPreferences.playerScreenOrientation,
     )
     val errorState = rememberErrorState(player = player)
+    val longPressOverlayUiState = resolveLongPressOverlayUiState(
+        isLongPressGestureInAction = tapGestureState.isLongPressGestureInAction,
+        longPressSpeed = tapGestureState.longPressSpeed,
+        longPressPreviewPositionMs = tapGestureState.longPressPreviewPositionMs,
+    )
 
     LaunchedEffect(pictureInPictureState.isInPictureInPictureMode) {
         if (pictureInPictureState.isInPictureInPictureMode) {
@@ -299,24 +328,22 @@ fun MediaPlayerScreen(
 
                 AnimatedVisibility(
                     modifier = Modifier
-                        .padding(top = 24.dp)
-                        .align(Alignment.TopCenter),
-                    visible = tapGestureState.isLongPressGestureInAction,
+                        .align(Alignment.BottomStart)
+                        .safeDrawingPadding()
+                        .padding(
+                            start = 24.dp,
+                            bottom = if (controlsVisibilityState.isControlsVisible) 96.dp else 24.dp,
+                        ),
+                    visible = longPressOverlayUiState != null,
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
-                    Surface(shape = CircleShape) {
-                        Row(
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 8.dp,
-                            ),
-                        ) {
-                            Text(
-                                text = stringResource(coreUiR.string.fast_playback_speed, tapGestureState.longPressSpeed),
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        }
+                    longPressOverlayUiState?.let { overlayUiState ->
+                        LongPressSpeedOverlay(
+                            modifier = Modifier.testTag("long_press_speed_overlay"),
+                            speedText = overlayUiState.speedText,
+                            positionText = overlayUiState.positionText,
+                        )
                     }
                 }
 
@@ -620,6 +647,40 @@ fun InfoView(
             color = Color.White,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+@Composable
+private fun LongPressSpeedOverlay(
+    speedText: String,
+    positionText: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = Color.Black.copy(alpha = 0.78f),
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = 12.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = speedText,
+                modifier = Modifier.testTag("long_press_speed_text"),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
+            Text(
+                text = positionText,
+                modifier = Modifier.testTag("long_press_position_text"),
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.86f),
+            )
+        }
     }
 }
 
