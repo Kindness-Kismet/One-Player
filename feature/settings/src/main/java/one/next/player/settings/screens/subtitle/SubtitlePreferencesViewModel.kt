@@ -1,5 +1,6 @@
 package one.next.player.settings.screens.subtitle
 
+import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,12 +11,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import one.next.player.core.data.repository.PreferencesRepository
+import one.next.player.core.data.repository.SubtitleFontRepository
 import one.next.player.core.model.Font
 import one.next.player.core.model.PlayerPreferences
 
 @HiltViewModel
 class SubtitlePreferencesViewModel @Inject constructor(
     private val preferencesRepository: PreferencesRepository,
+    private val subtitleFontRepository: SubtitleFontRepository,
 ) : ViewModel() {
 
     private val uiStateInternal = MutableStateFlow(
@@ -33,6 +36,16 @@ class SubtitlePreferencesViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            subtitleFontRepository.state.collect { state ->
+                uiStateInternal.update { currentState ->
+                    currentState.copy(
+                        externalFontName = state.displayName,
+                        isExternalFontAvailable = state.isAvailable,
+                    )
+                }
+            }
+        }
     }
 
     fun onEvent(event: SubtitlePreferencesUiEvent) {
@@ -47,6 +60,10 @@ class SubtitlePreferencesViewModel @Inject constructor(
             SubtitlePreferencesUiEvent.ToggleApplyEmbeddedStyles -> toggleApplyEmbeddedStyles()
             is SubtitlePreferencesUiEvent.UpdateSubtitleEncoding -> updateSubtitleEncoding(event.value)
             SubtitlePreferencesUiEvent.ToggleUseSystemCaptionStyle -> toggleUseSystemCaptionStyle()
+            SubtitlePreferencesUiEvent.ImportExternalSubtitleFont -> importExternalSubtitleFont()
+            is SubtitlePreferencesUiEvent.OnExternalSubtitleFontSelected -> onExternalSubtitleFontSelected(event.uri)
+            SubtitlePreferencesUiEvent.ClearExternalSubtitleFont -> clearExternalSubtitleFont()
+            SubtitlePreferencesUiEvent.ClearResultMessage -> clearResultMessage()
         }
     }
 
@@ -123,18 +140,64 @@ class SubtitlePreferencesViewModel @Inject constructor(
             preferencesRepository.updatePlayerPreferences { it.copy(shouldUseSystemCaptionStyle = !it.shouldUseSystemCaptionStyle) }
         }
     }
+
+    private fun importExternalSubtitleFont() {
+        uiStateInternal.update {
+            it.copy(pendingAction = SubtitlePreferencesPendingAction.OpenExternalSubtitleFontPicker)
+        }
+    }
+
+    private fun onExternalSubtitleFontSelected(uri: Uri?) {
+        uiStateInternal.update { it.copy(pendingAction = null) }
+        if (uri == null) return
+
+        viewModelScope.launch {
+            runCatching {
+                subtitleFontRepository.importFont(uri)
+            }.onSuccess {
+                uiStateInternal.update { it.copy(resultMessage = SubtitlePreferencesResultMessage.ImportSucceeded) }
+            }.onFailure {
+                uiStateInternal.update { it.copy(resultMessage = SubtitlePreferencesResultMessage.ImportFailed) }
+            }
+        }
+    }
+
+    private fun clearExternalSubtitleFont() {
+        viewModelScope.launch {
+            subtitleFontRepository.clearFont()
+            uiStateInternal.update { it.copy(resultMessage = SubtitlePreferencesResultMessage.ClearSucceeded) }
+        }
+    }
+
+    private fun clearResultMessage() {
+        uiStateInternal.update { it.copy(resultMessage = null) }
+    }
 }
 
 @Stable
 data class SubtitlePreferencesUiState(
     val showDialog: SubtitlePreferenceDialog? = null,
     val preferences: PlayerPreferences = PlayerPreferences(),
+    val externalFontName: String = "",
+    val isExternalFontAvailable: Boolean = false,
+    val pendingAction: SubtitlePreferencesPendingAction? = null,
+    val resultMessage: SubtitlePreferencesResultMessage? = null,
 )
 
 sealed interface SubtitlePreferenceDialog {
     data object SubtitleLanguageDialog : SubtitlePreferenceDialog
     data object SubtitleFontDialog : SubtitlePreferenceDialog
     data object SubtitleEncodingDialog : SubtitlePreferenceDialog
+}
+
+sealed interface SubtitlePreferencesPendingAction {
+    data object OpenExternalSubtitleFontPicker : SubtitlePreferencesPendingAction
+}
+
+sealed interface SubtitlePreferencesResultMessage {
+    data object ImportSucceeded : SubtitlePreferencesResultMessage
+    data object ImportFailed : SubtitlePreferencesResultMessage
+    data object ClearSucceeded : SubtitlePreferencesResultMessage
 }
 
 sealed interface SubtitlePreferencesUiEvent {
@@ -148,4 +211,8 @@ sealed interface SubtitlePreferencesUiEvent {
     data object ToggleApplyEmbeddedStyles : SubtitlePreferencesUiEvent
     data class UpdateSubtitleEncoding(val value: String) : SubtitlePreferencesUiEvent
     data object ToggleUseSystemCaptionStyle : SubtitlePreferencesUiEvent
+    data object ImportExternalSubtitleFont : SubtitlePreferencesUiEvent
+    data class OnExternalSubtitleFontSelected(val uri: Uri?) : SubtitlePreferencesUiEvent
+    data object ClearExternalSubtitleFont : SubtitlePreferencesUiEvent
+    data object ClearResultMessage : SubtitlePreferencesUiEvent
 }

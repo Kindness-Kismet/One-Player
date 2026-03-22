@@ -125,6 +125,17 @@
     <string name="sans_serif">Sans Serif</string>
     <string name="serif">Serif</string>
     <string name="subtitle_font">Subtitle font</string>
+    <string name="external_subtitle_font_import">Import external subtitle font</string>
+    <string name="external_subtitle_font_import_desc">Import one .ttf or .otf file for plain text subtitles</string>
+    <string name="external_subtitle_font_current">Current imported font</string>
+    <string name="external_subtitle_font_not_imported">Not imported</string>
+    <string name="external_subtitle_font_clear">Clear imported subtitle font</string>
+    <string name="external_subtitle_font_clear_desc">Remove the current imported subtitle font and use built-in fonts again</string>
+    <string name="external_subtitle_font_notice_title">External subtitle font notice</string>
+    <string name="external_subtitle_font_system_style_notice">Imported subtitle fonts do not take effect while system caption style is enabled</string>
+    <string name="external_subtitle_font_import_success">Subtitle font imported</string>
+    <string name="external_subtitle_font_import_failed">Failed to import subtitle font</string>
+    <string name="external_subtitle_font_clear_success">Imported subtitle font cleared</string>
     <string name="subtitle_text_bold">Bold subtitle text</string>
     <string name="subtitle_text_bold_desc">Use bold text for subtitle</string>
     <string name="subtitle_text_size">Subtitle text size</string>

@@ -87,6 +87,17 @@
     <string name="select_audio_track">選擇音軌</string>
     <string name="location">地點</string>
     <string name="subtitle_font">字幕字型</string>
+    <string name="external_subtitle_font_import">匯入外部字幕字型</string>
+    <string name="external_subtitle_font_import_desc">匯入一個用於一般文字字幕的 .ttf 或 .otf 字型檔</string>
+    <string name="external_subtitle_font_current">目前匯入字型</string>
+    <string name="external_subtitle_font_not_imported">未匯入</string>
+    <string name="external_subtitle_font_clear">清除匯入字幕字型</string>
+    <string name="external_subtitle_font_clear_desc">移除目前匯入字幕字型並恢復使用內建字型</string>
+    <string name="external_subtitle_font_notice_title">外部字幕字型提示</string>
+    <string name="external_subtitle_font_system_style_notice">啟用系統字幕樣式時，匯入的字幕字型不會生效</string>
+    <string name="external_subtitle_font_import_success">字幕字型匯入成功</string>
+    <string name="external_subtitle_font_import_failed">字幕字型匯入失敗</string>
+    <string name="external_subtitle_font_clear_success">已清除匯入字幕字型</string>
     <string name="preferred_subtitle_lang">優先的字幕語言</string>
     <string name="a_z">A-Z</string>
     <string name="unknown_error">發生了一個未知的錯誤</string>

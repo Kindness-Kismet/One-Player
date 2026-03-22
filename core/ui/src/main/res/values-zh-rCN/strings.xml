@@ -115,6 +115,17 @@
     <string name="subtitle_background">字幕背景</string>
     <string name="subtitle_background_desc">启用字幕文本背景</string>
     <string name="subtitle_font">字幕字体</string>
+    <string name="external_subtitle_font_import">导入外部字幕字体</string>
+    <string name="external_subtitle_font_import_desc">导入一个用于普通文本字幕的 .ttf 或 .otf 字体文件</string>
+    <string name="external_subtitle_font_current">当前导入字体</string>
+    <string name="external_subtitle_font_not_imported">未导入</string>
+    <string name="external_subtitle_font_clear">清除导入字幕字体</string>
+    <string name="external_subtitle_font_clear_desc">移除当前导入字幕字体并恢复使用内置字体</string>
+    <string name="external_subtitle_font_notice_title">外部字幕字体提示</string>
+    <string name="external_subtitle_font_system_style_notice">启用系统字幕样式时，导入的字幕字体不会生效</string>
+    <string name="external_subtitle_font_import_success">字幕字体导入成功</string>
+    <string name="external_subtitle_font_import_failed">字幕字体导入失败</string>
+    <string name="external_subtitle_font_clear_success">已清除导入字幕字体</string>
     <string name="default_name">默认</string>
     <string name="sans_serif">无衬线字体</string>
     <string name="subtitle_text_bold">粗体字幕文本</string>

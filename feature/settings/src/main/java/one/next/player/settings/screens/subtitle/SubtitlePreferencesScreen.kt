@@ -2,6 +2,9 @@ package one.next.player.settings.screens.subtitle
 
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.OpenDocument
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +21,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -71,6 +77,32 @@ private fun SubtitlePreferencesContent(
     val languages = remember { listOf(Pair("None", "")) + LocalesHelper.getAvailableLocales() }
     val charsetResource = stringArrayResource(id = R.array.charsets_list)
     val context = LocalContext.current
+    val importFontLauncher = rememberLauncherForActivityResult(
+        contract = OpenDocument(),
+    ) { uri ->
+        onEvent(SubtitlePreferencesUiEvent.OnExternalSubtitleFontSelected(uri))
+    }
+
+    LaunchedEffect(uiState.pendingAction) {
+        when (uiState.pendingAction) {
+            SubtitlePreferencesPendingAction.OpenExternalSubtitleFontPicker -> {
+                importFontLauncher.launch(arrayOf("font/*", "application/x-font-ttf", "application/x-font-otf"))
+            }
+            null -> Unit
+        }
+    }
+
+    LaunchedEffect(uiState.resultMessage) {
+        val message = when (uiState.resultMessage) {
+            SubtitlePreferencesResultMessage.ImportSucceeded -> context.getString(R.string.external_subtitle_font_import_success)
+            SubtitlePreferencesResultMessage.ImportFailed -> context.getString(R.string.external_subtitle_font_import_failed)
+            SubtitlePreferencesResultMessage.ClearSucceeded -> context.getString(R.string.external_subtitle_font_clear_success)
+            null -> null
+        } ?: return@LaunchedEffect
+
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        onEvent(SubtitlePreferencesUiEvent.ClearResultMessage)
+    }
 
     Scaffold(
         topBar = {
@@ -143,6 +175,31 @@ private fun SubtitlePreferencesContent(
                     isEnabled = uiState.preferences.shouldUseSystemCaptionStyle.not(),
                     onClick = { onEvent(SubtitlePreferencesUiEvent.ShowDialog(SubtitlePreferenceDialog.SubtitleFontDialog)) },
                 )
+                ClickablePreferenceItem(
+                    title = stringResource(id = R.string.external_subtitle_font_import),
+                    description = stringResource(id = R.string.external_subtitle_font_import_desc),
+                    icon = NextIcons.FileOpen,
+                    modifier = Modifier.semantics {
+                        contentDescription = "subtitle_import_external_font"
+                    },
+                    onClick = { onEvent(SubtitlePreferencesUiEvent.ImportExternalSubtitleFont) },
+                )
+                ClickablePreferenceItem(
+                    title = stringResource(id = R.string.external_subtitle_font_current),
+                    description = uiState.externalFontName.ifBlank { stringResource(id = R.string.external_subtitle_font_not_imported) },
+                    icon = NextIcons.Font,
+                    isEnabled = false,
+                )
+                ClickablePreferenceItem(
+                    title = stringResource(id = R.string.external_subtitle_font_clear),
+                    description = stringResource(id = R.string.external_subtitle_font_clear_desc),
+                    icon = NextIcons.DeleteSweep,
+                    modifier = Modifier.semantics {
+                        contentDescription = "subtitle_clear_external_font"
+                    },
+                    isEnabled = uiState.isExternalFontAvailable,
+                    onClick = { onEvent(SubtitlePreferencesUiEvent.ClearExternalSubtitleFont) },
+                )
                 PreferenceSwitch(
                     title = stringResource(id = R.string.subtitle_text_bold),
                     description = stringResource(id = R.string.subtitle_text_bold_desc),
@@ -187,8 +244,16 @@ private fun SubtitlePreferencesContent(
                     icon = NextIcons.Style,
                     isChecked = uiState.preferences.shouldApplyEmbeddedStyles,
                     onClick = { onEvent(SubtitlePreferencesUiEvent.ToggleApplyEmbeddedStyles) },
-                    isLastItem = true,
                 )
+                if (uiState.preferences.shouldUseSystemCaptionStyle) {
+                    ClickablePreferenceItem(
+                        title = stringResource(id = R.string.external_subtitle_font_notice_title),
+                        description = stringResource(id = R.string.external_subtitle_font_system_style_notice),
+                        icon = NextIcons.Info,
+                        isEnabled = false,
+                        isLastItem = true,
+                    )
+                }
             }
         }
 
