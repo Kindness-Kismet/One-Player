@@ -22,8 +22,8 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         applicationId = "one.next.player"
-        versionCode = 30
-        versionName = "1.0.29"
+        versionCode = 31
+        versionName = "1.0.30"
     }
 
     buildFeatures {
