@@ -61,6 +61,7 @@ import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.navigation.CloudRootRoute
 import one.next.player.navigation.MediaRootRoute
+import one.next.player.navigation.SETTINGS_ROUTE
 import one.next.player.navigation.cloudNavGraph
 import one.next.player.navigation.mediaNavGraph
 import one.next.player.navigation.settingsNavGraph
@@ -185,6 +186,9 @@ class MainActivity : AppCompatActivity() {
                     val mainNavController = rememberNavController()
                     val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
+                    val shouldShowBottomBar = currentDestination?.hierarchy?.none { destination ->
+                        destination.route == SETTINGS_ROUTE
+                    } != false
                     val topLevelTabs = TopLevelTab.entries.filter { tab ->
                         tab != TopLevelTab.CLOUD || preferences?.shouldShowCloudTab != false
                     }
@@ -194,47 +198,49 @@ class MainActivity : AppCompatActivity() {
                             testTagsAsResourceId = true
                         },
                         bottomBar = {
-                            NavigationBar {
-                                topLevelTabs.forEach { tab ->
-                                    val isSelected = currentDestination?.hierarchy?.any { destination ->
-                                        when (tab) {
-                                            TopLevelTab.LOCAL -> destination.hasRoute<MediaRootRoute>()
-                                            TopLevelTab.CLOUD -> destination.hasRoute<CloudRootRoute>()
-                                        }
-                                    } == true
-
-                                    NavigationBarItem(
-                                        selected = isSelected,
-                                        onClick = {
-                                            val startDestinationId = mainNavController.graph.findStartDestination().id
+                            if (shouldShowBottomBar) {
+                                NavigationBar {
+                                    topLevelTabs.forEach { tab ->
+                                        val isSelected = currentDestination?.hierarchy?.any { destination ->
                                             when (tab) {
-                                                TopLevelTab.LOCAL -> mainNavController.navigate(MediaRootRoute) {
-                                                    popUpTo(startDestinationId) { saveState = true }
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
-
-                                                TopLevelTab.CLOUD -> mainNavController.navigate(CloudRootRoute) {
-                                                    popUpTo(startDestinationId) { saveState = true }
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
+                                                TopLevelTab.LOCAL -> destination.hasRoute<MediaRootRoute>()
+                                                TopLevelTab.CLOUD -> destination.hasRoute<CloudRootRoute>()
                                             }
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = tab.icon,
-                                                contentDescription = stringResource(tab.labelResId),
-                                            )
-                                        },
-                                        modifier = Modifier.testTag(
-                                            when (tab) {
-                                                TopLevelTab.LOCAL -> "tab_local"
-                                                TopLevelTab.CLOUD -> "tab_cloud"
+                                        } == true
+
+                                        NavigationBarItem(
+                                            selected = isSelected,
+                                            onClick = {
+                                                val startDestinationId = mainNavController.graph.findStartDestination().id
+                                                when (tab) {
+                                                    TopLevelTab.LOCAL -> mainNavController.navigate(MediaRootRoute) {
+                                                        popUpTo(startDestinationId) { saveState = true }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+
+                                                    TopLevelTab.CLOUD -> mainNavController.navigate(CloudRootRoute) {
+                                                        popUpTo(startDestinationId) { saveState = true }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }
                                             },
-                                        ),
-                                        label = { Text(text = stringResource(tab.labelResId)) },
-                                    )
+                                            icon = {
+                                                Icon(
+                                                    imageVector = tab.icon,
+                                                    contentDescription = stringResource(tab.labelResId),
+                                                )
+                                            },
+                                            modifier = Modifier.testTag(
+                                                when (tab) {
+                                                    TopLevelTab.LOCAL -> "tab_local"
+                                                    TopLevelTab.CLOUD -> "tab_cloud"
+                                                },
+                                            ),
+                                            label = { Text(text = stringResource(tab.labelResId)) },
+                                        )
+                                    }
                                 }
                             }
                         },
