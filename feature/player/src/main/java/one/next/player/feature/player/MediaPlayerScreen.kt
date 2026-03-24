@@ -312,10 +312,16 @@ internal fun MediaPlayerScreen(
                     .fillMaxSize()
                     .background(Color.Black),
             ) {
-                val longPressOverlayTopPadding = pictureInPictureState.videoViewRect
-                    ?.top
-                    ?.let { with(LocalDensity.current) { it.toDp() } + 16.dp }
-                    ?: 24.dp
+                val displayCutoutTopPadding = WindowInsets.displayCutout
+                    .asPaddingValues()
+                    .calculateTopPadding()
+                val longPressOverlayTopPadding = maxOf(
+                    displayCutoutTopPadding,
+                    pictureInPictureState.videoViewRect
+                        ?.top
+                        ?.let { with(LocalDensity.current) { it.toDp() } }
+                        ?: 0.dp,
+                ) + 16.dp
                 PlayerContentFrame(
                     player = player,
                     pictureInPictureState = pictureInPictureState,
