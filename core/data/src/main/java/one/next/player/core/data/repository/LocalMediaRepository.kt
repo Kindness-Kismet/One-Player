@@ -2,9 +2,12 @@ package one.next.player.core.data.repository
 
 import android.net.Uri
 import androidx.core.net.toUri
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import one.next.player.core.common.extensions.canonicalPathOrSelf
+import one.next.player.core.common.extensions.toCanonicalFilePathOrNull
 import one.next.player.core.data.mappers.toFolder
 import one.next.player.core.data.mappers.toVideo
 import one.next.player.core.data.mappers.toVideoState
@@ -45,12 +48,19 @@ class LocalMediaRepository @Inject constructor(
 
     override fun getFoldersFlow(): Flow<List<Folder>> = directoryDao.getAllWithMedia().map { it.map(DirectoryWithMedia::toFolder) }
 
-    override suspend fun getVideoByUri(uri: String): Video? = mediumDao.getWithInfo(uri)?.toVideo()
+    override suspend fun getVideoByUri(uri: String): Video? = findMediumWithInfo(uri)?.toVideo()
 
-    override suspend fun getVideoState(uri: String): VideoState? = mediumStateDao.get(uri)?.toVideoState()
+    override suspend fun getVideoState(uri: String): VideoState? = mediumStateDao.get(resolveCanonicalMediaUri(uri))?.toVideoState()
+
+    override suspend fun getVideoState(uris: List<String>): VideoState? = mediumStateDao.getFirstByUris(
+        uris.map { candidateUri -> resolveCanonicalMediaUri(candidateUri) }.distinct(),
+    )?.toVideoState()
+
+    override suspend fun getCanonicalMediaUri(uri: String): String = resolveCanonicalMediaUri(uri)
 
     override suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -60,7 +70,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateMediumPosition(uri: String, position: Long) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
                 playbackPosition = position,
@@ -70,7 +81,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateMediumPlaybackSpeed(uri: String, playbackSpeed: Float) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -81,7 +93,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateMediumAudioTrack(uri: String, audioTrackIndex: Int) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -92,7 +105,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateMediumSubtitleTrack(uri: String, subtitleTrackIndex: Int) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -103,7 +117,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateMediumZoom(uri: String, zoom: Float) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -114,10 +129,18 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun addExternalSubtitleToMedium(uri: String, subtitleUri: Uri) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
         val currentExternalSubs = UriListConverter.fromStringToList(stateEntity.externalSubs)
-
-        if (currentExternalSubs.contains(subtitleUri)) return
+        val newSubtitleCanonicalPath = subtitleUri.toCanonicalFilePathOrNull()
+        val hasSameSubtitle = currentExternalSubs.any { existingSubtitleUri ->
+            when {
+                existingSubtitleUri == subtitleUri -> true
+                newSubtitleCanonicalPath == null -> false
+                else -> existingSubtitleUri.toCanonicalFilePathOrNull() == newSubtitleCanonicalPath
+            }
+        }
+        if (hasSameSubtitle) return
         val newExternalSubs = UriListConverter.fromListToString(urlList = currentExternalSubs + subtitleUri)
 
         mediumStateDao.upsert(
@@ -129,7 +152,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateExternalSubs(uri: String, externalSubs: List<Uri>) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
                 externalSubs = UriListConverter.fromListToString(externalSubs),
@@ -139,7 +163,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateSubtitleDelay(uri: String, delay: Long) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -150,7 +175,8 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun updateSubtitleSpeed(uri: String, speed: Float) {
-        val stateEntity = mediumStateDao.get(uri) ?: MediumStateEntity(uriString = uri)
+        val canonicalMediaUri = resolveCanonicalMediaUri(uri)
+        val stateEntity = mediumStateDao.get(canonicalMediaUri) ?: MediumStateEntity(uriString = canonicalMediaUri)
 
         mediumStateDao.upsert(
             mediumState = stateEntity.copy(
@@ -236,6 +262,29 @@ class LocalMediaRepository @Inject constructor(
             )
             mediaSynchronizer.refresh(restored.path)
         }
+    }
+
+    private suspend fun findMediumWithInfo(uri: String): MediumWithInfo? {
+        mediumDao.getWithInfo(uri)?.let { return it }
+        val path = uri.toPathOrNull() ?: return null
+        val canonicalPath = path.canonicalPathOrSelf()
+        return mediumDao.getByPath(canonicalPath)?.let { medium ->
+            mediumDao.getWithInfo(medium.uriString)
+        }
+    }
+
+    private suspend fun resolveCanonicalMediaUri(uri: String): String {
+        val medium = findMediumWithInfo(uri) ?: return uri
+        return medium.mediumEntity.uriString
+    }
+
+    private fun String.toPathOrNull(): String? {
+        val parsed = toUri()
+        val rawPath = when (parsed.scheme) {
+            "file" -> parsed.path
+            else -> null
+        } ?: return null
+        return File(rawPath).path
     }
 
     private fun MediumWithInfo.isMarkedInRecycleBin(): Boolean = mediumStateEntity?.isInRecycleBin == true

@@ -59,36 +59,10 @@ fun SubtitleView(
         modifier = modifier.fillMaxSize(),
         factory = { context ->
             SubtitleView(context).apply {
-                val captioningManager = getSystemService(context, CaptioningManager::class.java) ?: return@apply
-                when (subtitleFontPolicy) {
-                    SubtitleFontPolicy.Ass,
-                    SubtitleFontPolicy.SystemCaptionStyle,
-                    -> {
-                        val systemCaptionStyle = CaptionStyleCompat.createFromCaptionStyle(captioningManager.userStyle)
-                        setStyle(systemCaptionStyle)
-                    }
-
-                    SubtitleFontPolicy.ExternalOrFallback -> {
-                        val baseTypeface = runCatching {
-                            configuration.externalSubtitleFontSource
-                                ?.absolutePath
-                                ?.let(Typeface::createFromFile)
-                        }.getOrNull() ?: configuration.font.toTypeface()
-                        val userStyle = CaptionStyleCompat(
-                            android.graphics.Color.WHITE,
-                            android.graphics.Color.BLACK.takeIf { configuration.shouldShowBackground } ?: android.graphics.Color.TRANSPARENT,
-                            android.graphics.Color.TRANSPARENT,
-                            CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
-                            android.graphics.Color.BLACK,
-                            Typeface.create(
-                                baseTypeface,
-                                Typeface.BOLD.takeIf { configuration.shouldUseBoldText } ?: Typeface.NORMAL,
-                            ),
-                        )
-                        setStyle(userStyle)
-                        setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, configuration.textSize.toFloat())
-                    }
-                }
+                applySubtitleStyle(
+                    configuration = configuration,
+                    subtitleFontPolicy = subtitleFontPolicy,
+                )
                 setApplyEmbeddedStyles(configuration.shouldApplyEmbeddedStyles)
             }
         },
@@ -101,6 +75,12 @@ fun SubtitleView(
                 subtitleView.clearAssSupport()
                 subtitleView.setCues(cuesState.cues)
             }
+
+            subtitleView.applySubtitleStyle(
+                configuration = configuration,
+                subtitleFontPolicy = subtitleFontPolicy,
+            )
+            subtitleView.setApplyEmbeddedStyles(configuration.shouldApplyEmbeddedStyles)
 
             if (isInPictureInPictureMode) {
                 subtitleView.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION)
@@ -135,6 +115,43 @@ private fun SubtitleView.syncAssSupport(handler: AssHandler) {
 
 private fun SubtitleView.clearAssSupport() {
     findAssSupportView()?.let(::removeView)
+}
+
+private fun SubtitleView.applySubtitleStyle(
+    configuration: SubtitleConfiguration,
+    subtitleFontPolicy: SubtitleFontPolicy,
+) {
+    val context = context
+    val captioningManager = getSystemService(context, CaptioningManager::class.java) ?: return
+    when (subtitleFontPolicy) {
+        SubtitleFontPolicy.Ass,
+        SubtitleFontPolicy.SystemCaptionStyle,
+        -> {
+            val systemCaptionStyle = CaptionStyleCompat.createFromCaptionStyle(captioningManager.userStyle)
+            setStyle(systemCaptionStyle)
+        }
+
+        SubtitleFontPolicy.ExternalOrFallback -> {
+            val baseTypeface = runCatching {
+                configuration.externalSubtitleFontSource
+                    ?.absolutePath
+                    ?.let(Typeface::createFromFile)
+            }.getOrNull() ?: configuration.font.toTypeface()
+            val userStyle = CaptionStyleCompat(
+                android.graphics.Color.WHITE,
+                android.graphics.Color.BLACK.takeIf { configuration.shouldShowBackground } ?: android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+                CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
+                android.graphics.Color.BLACK,
+                Typeface.create(
+                    baseTypeface,
+                    Typeface.BOLD.takeIf { configuration.shouldUseBoldText } ?: Typeface.NORMAL,
+                ),
+            )
+            setStyle(userStyle)
+            setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, configuration.textSize.toFloat())
+        }
+    }
 }
 
 private fun SubtitleView.findAssSupportView(): AssMediaSubtitleView? = (0 until childCount).firstNotNullOfOrNull { index ->

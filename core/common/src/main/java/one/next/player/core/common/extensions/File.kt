@@ -1,5 +1,6 @@
 package one.next.player.core.common.extensions
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
@@ -24,11 +25,14 @@ suspend fun File.getLocalSubtitles(
     context: Context,
     excludeSubsList: List<Uri> = emptyList(),
 ): List<Uri> = withContext(Dispatchers.IO) {
-    val excludeSubsPathSet = excludeSubsList.mapNotNull { context.getPath(it) }.toSet()
+    val excludeSubsPathSet = excludeSubsList.mapNotNull { subtitleUri ->
+        subtitleUri.toCanonicalLocalPath(context)
+    }.toSet()
 
     getSubtitles().mapNotNull { file ->
-        if (file.path !in excludeSubsPathSet) {
-            file.toUri()
+        val canonicalPath = file.path.canonicalPathOrSelf()
+        if (canonicalPath !in excludeSubsPathSet) {
+            File(canonicalPath).toUri()
         } else {
             null
         }
@@ -68,6 +72,19 @@ fun File.deleteFiles() {
 fun String.canonicalPathOrSelf(): String = runCatching {
     File(this).canonicalPath
 }.getOrDefault(this)
+
+fun Uri.toCanonicalLocalPath(context: Context): String? {
+    val rawPath = when (scheme) {
+        ContentResolver.SCHEME_FILE -> path
+        else -> context.getPath(this)
+    } ?: return null
+    return rawPath.canonicalPathOrSelf()
+}
+
+fun Uri.toCanonicalFilePathOrNull(): String? {
+    if (scheme != ContentResolver.SCHEME_FILE) return null
+    return path?.canonicalPathOrSelf()
+}
 
 fun String.isInsideNoMediaDirectory(): Boolean = File(this).isInsideNoMediaDirectory()
 

@@ -41,9 +41,17 @@ class FakeMediaRepository : MediaRepository {
         },
     )
 
-    override suspend fun getVideoByUri(uri: String): Video? = videos.find { it.path == uri }
+    override suspend fun getVideoByUri(uri: String): Video? = videos.find { video ->
+        video.uriString == uri || video.path == uri
+    }
 
     override suspend fun getVideoState(uri: String): VideoState? = null
+
+    override suspend fun getVideoState(uris: List<String>): VideoState? = null
+
+    override suspend fun getCanonicalMediaUri(uri: String): String = videos.find { video ->
+        video.uriString == uri || video.path == uri
+    }?.uriString ?: uri
 
     override suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long) {
     }

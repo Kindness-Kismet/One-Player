@@ -23,6 +23,9 @@ interface MediumDao {
     @Query("SELECT * FROM media WHERE uri = :uri")
     suspend fun get(uri: String): MediumEntity?
 
+    @Query("SELECT * FROM media WHERE path = :path LIMIT 1")
+    suspend fun getByPath(path: String): MediumEntity?
+
     @Query("SELECT * FROM media WHERE uri = :uri")
     fun getAsFlow(uri: String): Flow<MediumEntity?>
 
