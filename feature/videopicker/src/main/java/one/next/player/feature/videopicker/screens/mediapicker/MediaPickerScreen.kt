@@ -7,11 +7,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,6 +28,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
@@ -55,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -106,6 +111,7 @@ fun MediaPickerRoute(
     onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
     onRecycleBinClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onCloudClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onNavigateUp: () -> Unit,
     onNavigateHome: () -> Unit,
@@ -121,6 +127,7 @@ fun MediaPickerRoute(
         onFolderClick = onFolderClick,
         onRecycleBinClick = onRecycleBinClick,
         onSearchClick = onSearchClick,
+        onCloudClick = onCloudClick,
         onSettingsClick = onSettingsClick,
         onEvent = viewModel::onEvent,
     )
@@ -147,6 +154,7 @@ internal fun MediaPickerScreen(
     onFolderClick: (String, MediaPickerScreenMode) -> Unit = { _, _ -> },
     onRecycleBinClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
+    onCloudClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onEvent: (MediaPickerUiEvent) -> Unit = {},
 ) {
@@ -160,6 +168,7 @@ internal fun MediaPickerScreen(
 
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
     var shouldShowQuickSettingsDialog by rememberSaveable { mutableStateOf(false) }
+    var shouldShowMainMenu by rememberSaveable { mutableStateOf(false) }
     var shouldShowUrlDialog by rememberSaveable { mutableStateOf(false) }
 
     var showRenameActionFor: Video? by rememberSaveable { mutableStateOf(null) }
@@ -276,17 +285,57 @@ internal fun MediaPickerScreen(
                                     )
                                 }
                             }
-                            IconButton(onClick = onSettingsClick) {
-                                Icon(
-                                    imageVector = NextIcons.Settings,
-                                    contentDescription = stringResource(id = R.string.settings),
-                                )
-                            }
-                            IconButton(onClick = { shouldShowQuickSettingsDialog = true }) {
+                            IconButton(
+                                onClick = { shouldShowQuickSettingsDialog = true },
+                                modifier = Modifier.testTag("btn_quick_settings"),
+                            ) {
                                 Icon(
                                     imageVector = NextIcons.DashBoard,
-                                    contentDescription = stringResource(id = R.string.menu),
+                                    contentDescription = stringResource(id = R.string.quick_settings),
                                 )
+                            }
+                            Box {
+                                IconButton(
+                                    onClick = { shouldShowMainMenu = true },
+                                    modifier = Modifier.testTag("btn_main_menu"),
+                                ) {
+                                    Icon(
+                                        imageVector = NextIcons.ExpandMore,
+                                        contentDescription = stringResource(id = R.string.menu),
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = shouldShowMainMenu,
+                                    onDismissRequest = { shouldShowMainMenu = false },
+                                    modifier = Modifier.testTag("menu_main_actions"),
+                                    shape = RoundedCornerShape(10.dp),
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 0.dp,
+                                    border = BorderStroke(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                                    ),
+                                ) {
+                                    MainMenuItem(
+                                        text = stringResource(id = R.string.cloud_servers),
+                                        icon = NextIcons.Cloud,
+                                        testTag = "item_main_menu_cloud",
+                                        onClick = {
+                                            shouldShowMainMenu = false
+                                            onCloudClick()
+                                        },
+                                    )
+                                    MainMenuItem(
+                                        text = stringResource(id = R.string.settings),
+                                        icon = NextIcons.Settings,
+                                        testTag = "item_main_menu_settings",
+                                        onClick = {
+                                            shouldShowMainMenu = false
+                                            onSettingsClick()
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -547,6 +596,36 @@ internal fun MediaPickerScreen(
             onCancel = { shouldShowDeleteVideosConfirmation = false },
         )
     }
+}
+
+@Composable
+private fun MainMenuItem(
+    text: String,
+    icon: ImageVector,
+    testTag: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        },
+        onClick = onClick,
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .testTag(testTag),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+    )
 }
 
 @Composable

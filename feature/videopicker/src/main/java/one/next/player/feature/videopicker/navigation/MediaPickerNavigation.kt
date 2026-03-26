@@ -63,6 +63,7 @@ fun NavGraphBuilder.mediaPickerScreen(
     onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
     onRecycleBinClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onCloudClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
     composable<MediaPickerRoute> {
@@ -74,6 +75,7 @@ fun NavGraphBuilder.mediaPickerScreen(
             onFolderClick = onFolderClick,
             onRecycleBinClick = onRecycleBinClick,
             onSearchClick = onSearchClick,
+            onCloudClick = onCloudClick,
             onSettingsClick = onSettingsClick,
         )
     }

@@ -376,8 +376,6 @@
     <string name="parent_directory">上级目录</string>
     <string name="retry">重试</string>
     <string name="search_settings">搜索设置…</string>
-    <string name="show_cloud_tab">显示云端标签</string>
-    <string name="show_cloud_tab_description">在底部导航栏显示云端入口</string>
     <string name="home_title_long_press_to_root">长按标题回到首页</string>
     <string name="home_title_long_press_to_root_description">长按标题栏可直接返回根目录</string>
     <string name="take_screenshot">截图</string>

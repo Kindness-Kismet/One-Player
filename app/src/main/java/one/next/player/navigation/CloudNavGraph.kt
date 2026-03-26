@@ -12,7 +12,6 @@ import one.next.player.feature.videopicker.navigation.CloudHomeRoute
 import one.next.player.feature.videopicker.navigation.cloudBrowseScreen
 import one.next.player.feature.videopicker.navigation.cloudHomeScreen
 import one.next.player.feature.videopicker.navigation.navigateToCloudBrowse
-import one.next.player.settings.navigation.navigateToSettings
 
 @Serializable
 data object CloudRootRoute
@@ -23,10 +22,10 @@ fun NavGraphBuilder.cloudNavGraph(
 ) {
     navigation<CloudRootRoute>(startDestination = CloudHomeRoute) {
         cloudHomeScreen(
+            onNavigateUp = navController::navigateUp,
             onServerClick = { serverId ->
                 navController.navigateToCloudBrowse(serverId)
             },
-            onSettingsClick = navController::navigateToSettings,
         )
 
         cloudBrowseScreen(

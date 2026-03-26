@@ -34,13 +34,13 @@ fun NavController.navigateToCloudBrowse(
 }
 
 fun NavGraphBuilder.cloudHomeScreen(
+    onNavigateUp: () -> Unit,
     onServerClick: (Long) -> Unit,
-    onSettingsClick: () -> Unit,
 ) {
     composable<CloudHomeRoute> {
         CloudHomeScreenRoute(
+            onNavigateUp = onNavigateUp,
             onServerClick = onServerClick,
-            onSettingsClick = onSettingsClick,
         )
     }
 }

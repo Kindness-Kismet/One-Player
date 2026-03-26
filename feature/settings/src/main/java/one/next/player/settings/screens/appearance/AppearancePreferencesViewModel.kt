@@ -41,7 +41,6 @@ class AppearancePreferencesViewModel @Inject constructor(
             is AppearancePreferencesEvent.UpdateThemeConfig -> updateThemeConfig(event.themeConfig)
             is AppearancePreferencesEvent.UpdateAppLanguage -> updateAppLanguage(event.languageTag)
             AppearancePreferencesEvent.ToggleUseDynamicColors -> toggleUseDynamicColors()
-            AppearancePreferencesEvent.ToggleShowCloudTab -> toggleShowCloudTab()
             AppearancePreferencesEvent.ToggleNavigateHomeOnTitleLongPress -> toggleNavigateHomeOnTitleLongPress()
         }
     }
@@ -87,14 +86,6 @@ class AppearancePreferencesViewModel @Inject constructor(
         }
     }
 
-    private fun toggleShowCloudTab() {
-        viewModelScope.launch {
-            preferencesRepository.updateApplicationPreferences {
-                it.copy(shouldShowCloudTab = !it.shouldShowCloudTab)
-            }
-        }
-    }
-
     private fun toggleNavigateHomeOnTitleLongPress() {
         viewModelScope.launch {
             preferencesRepository.updateApplicationPreferences {
@@ -118,7 +109,6 @@ sealed interface AppearancePreferencesEvent {
     data class UpdateThemeConfig(val themeConfig: ThemeConfig) : AppearancePreferencesEvent
     data class UpdateAppLanguage(val languageTag: String) : AppearancePreferencesEvent
     data object ToggleUseDynamicColors : AppearancePreferencesEvent
-    data object ToggleShowCloudTab : AppearancePreferencesEvent
     data object ToggleNavigateHomeOnTitleLongPress : AppearancePreferencesEvent
 }
 

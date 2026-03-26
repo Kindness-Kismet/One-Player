@@ -115,14 +115,6 @@ private fun AppearancePreferencesContent(
                     )
                 }
                 PreferenceSwitch(
-                    title = stringResource(id = R.string.show_cloud_tab),
-                    description = stringResource(id = R.string.show_cloud_tab_description),
-                    icon = NextIcons.Cloud,
-                    isChecked = uiState.preferences.shouldShowCloudTab,
-                    onClick = { onEvent(AppearancePreferencesEvent.ToggleShowCloudTab) },
-                    modifier = Modifier.testTag("appearance_show_cloud_tab"),
-                )
-                PreferenceSwitch(
                     title = stringResource(id = R.string.home_title_long_press_to_root),
                     description = stringResource(id = R.string.home_title_long_press_to_root_description),
                     icon = NextIcons.Title,

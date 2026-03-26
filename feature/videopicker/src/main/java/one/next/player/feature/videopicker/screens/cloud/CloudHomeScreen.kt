@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,15 +68,15 @@ import one.next.player.core.ui.extensions.withBottomFallback
 @Composable
 fun CloudHomeRoute(
     viewModel: CloudHomeViewModel = hiltViewModel(),
+    onNavigateUp: () -> Unit,
     onServerClick: (Long) -> Unit,
-    onSettingsClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CloudHomeScreen(
         uiState = uiState,
+        onNavigateUp = onNavigateUp,
         onServerClick = onServerClick,
-        onSettingsClick = onSettingsClick,
         onEvent = viewModel::onEvent,
     )
 }
@@ -84,8 +85,8 @@ fun CloudHomeRoute(
 @Composable
 internal fun CloudHomeScreen(
     uiState: CloudHomeUiState,
+    onNavigateUp: () -> Unit = {},
     onServerClick: (Long) -> Unit = {},
-    onSettingsClick: () -> Unit = {},
     onEvent: (CloudHomeEvent) -> Unit = {},
 ) {
     var shouldShowAddDialog by rememberSaveable { mutableStateOf(false) }
@@ -97,14 +98,15 @@ internal fun CloudHomeScreen(
             NextTopAppBar(
                 title = stringResource(R.string.cloud_servers),
                 fontWeight = FontWeight.Bold,
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
+                navigationIcon = {
+                    FilledTonalIconButton(onClick = onNavigateUp) {
                         Icon(
-                            imageVector = NextIcons.Settings,
-                            contentDescription = stringResource(R.string.settings),
+                            imageVector = NextIcons.ArrowBack,
+                            contentDescription = stringResource(id = R.string.navigate_up),
                         )
                     }
                 },
+                actions = {},
             )
         },
         floatingActionButton = {

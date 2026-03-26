@@ -374,8 +374,6 @@
     <string name="parent_directory">上層目錄</string>
     <string name="retry">重試</string>
     <string name="search_settings">搜尋設定…</string>
-    <string name="show_cloud_tab">顯示雲端分頁</string>
-    <string name="show_cloud_tab_description">在底部導覽列顯示雲端入口</string>
     <string name="home_title_long_press_to_root">長按標題回到首頁</string>
     <string name="home_title_long_press_to_root_description">長按標題列可直接返回根目錄</string>
     <string name="take_screenshot">截圖</string>

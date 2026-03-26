@@ -11,6 +11,7 @@ import one.next.player.feature.player.utils.PlayerApi
 import one.next.player.feature.videopicker.navigation.MediaPickerRoute
 import one.next.player.feature.videopicker.navigation.MediaPickerScreenMode
 import one.next.player.feature.videopicker.navigation.mediaPickerScreen
+import one.next.player.feature.videopicker.navigation.navigateToCloudHome
 import one.next.player.feature.videopicker.navigation.navigateToMediaPickerScreen
 import one.next.player.feature.videopicker.navigation.navigateToRecycleBinScreen
 import one.next.player.feature.videopicker.navigation.navigateToSearch
@@ -54,6 +55,7 @@ fun NavGraphBuilder.mediaNavGraph(
             },
             onRecycleBinClick = navController::navigateToRecycleBinScreen,
             onSearchClick = navController::navigateToSearch,
+            onCloudClick = navController::navigateToCloudHome,
         )
 
         searchScreen(

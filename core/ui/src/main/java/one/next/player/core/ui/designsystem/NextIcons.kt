@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.DeveloperBoard
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.DoubleArrow
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.FilterFrames
@@ -98,6 +99,7 @@ object NextIcons {
     val Delete = Icons.Rounded.Delete
     val DoubleTap = Icons.Rounded.DoubleArrow
     val Edit = Icons.Rounded.Edit
+    val ExpandMore = Icons.Rounded.ExpandMore
     val Fast = Icons.Rounded.FastForward
     val FileOpen = Icons.Rounded.FileOpen
     val Focus = Icons.Rounded.CenterFocusStrong

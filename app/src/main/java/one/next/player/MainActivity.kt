@@ -13,14 +13,8 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,9 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -38,11 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
@@ -55,13 +42,9 @@ import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ThemeConfig
-import one.next.player.core.ui.R
 import one.next.player.core.ui.composables.rememberRuntimePermissionState
-import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.theme.OnePlayerTheme
-import one.next.player.navigation.CloudRootRoute
 import one.next.player.navigation.MediaRootRoute
-import one.next.player.navigation.SETTINGS_ROUTE
 import one.next.player.navigation.cloudNavGraph
 import one.next.player.navigation.mediaNavGraph
 import one.next.player.navigation.settingsNavGraph
@@ -184,71 +167,18 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     val mainNavController = rememberNavController()
-                    val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-                    val shouldShowBottomBar = currentDestination?.hierarchy?.none { destination ->
-                        destination.route == SETTINGS_ROUTE
-                    } != false
-                    val topLevelTabs = TopLevelTab.entries.filter { tab ->
-                        tab != TopLevelTab.CLOUD || preferences?.shouldShowCloudTab != false
-                    }
 
-                    Scaffold(
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                        },
-                        bottomBar = {
-                            if (shouldShowBottomBar) {
-                                NavigationBar {
-                                    topLevelTabs.forEach { tab ->
-                                        val isSelected = currentDestination?.hierarchy?.any { destination ->
-                                            when (tab) {
-                                                TopLevelTab.LOCAL -> destination.hasRoute<MediaRootRoute>()
-                                                TopLevelTab.CLOUD -> destination.hasRoute<CloudRootRoute>()
-                                            }
-                                        } == true
-
-                                        NavigationBarItem(
-                                            selected = isSelected,
-                                            onClick = {
-                                                val startDestinationId = mainNavController.graph.findStartDestination().id
-                                                when (tab) {
-                                                    TopLevelTab.LOCAL -> mainNavController.navigate(MediaRootRoute) {
-                                                        popUpTo(startDestinationId) { saveState = true }
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                    }
-
-                                                    TopLevelTab.CLOUD -> mainNavController.navigate(CloudRootRoute) {
-                                                        popUpTo(startDestinationId) { saveState = true }
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                    }
-                                                }
-                                            },
-                                            icon = {
-                                                Icon(
-                                                    imageVector = tab.icon,
-                                                    contentDescription = stringResource(tab.labelResId),
-                                                )
-                                            },
-                                            modifier = Modifier.testTag(
-                                                when (tab) {
-                                                    TopLevelTab.LOCAL -> "tab_local"
-                                                    TopLevelTab.CLOUD -> "tab_cloud"
-                                                },
-                                            ),
-                                            label = { Text(text = stringResource(tab.labelResId)) },
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                    ) { innerPadding ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .semantics {
+                                testTagsAsResourceId = true
+                            },
+                        color = MaterialTheme.colorScheme.surface,
+                    ) {
                         NavHost(
                             navController = mainNavController,
                             startDestination = MediaRootRoute,
-                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                             enterTransition = {
                                 slideIntoContainer(
                                     towards = AnimatedContentTransitionScope.SlideDirection.Start,
@@ -374,20 +304,6 @@ private fun isSystemDarkTheme(configuration: Configuration): Boolean = (configur
 
 private val THEME_CONFIG_PATTERN = "\"themeConfig\"\\s*:\\s*\"([A-Z_]+)\"".toRegex()
 private val HIDE_IN_RECENTS_PATTERN = "\"shouldHideInRecents\"\\s*:\\s*(true|false)".toRegex()
-
-private enum class TopLevelTab(
-    val labelResId: Int,
-    val icon: ImageVector,
-) {
-    LOCAL(
-        labelResId = R.string.tab_local,
-        icon = NextIcons.Movie,
-    ),
-    CLOUD(
-        labelResId = R.string.tab_cloud,
-        icon = NextIcons.Cloud,
-    ),
-}
 
 @Composable
 fun shouldUseDarkTheme(

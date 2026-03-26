@@ -380,8 +380,6 @@
     <string name="parent_directory">Parent directory</string>
     <string name="retry">Retry</string>
     <string name="search_settings">Search settings…</string>
-    <string name="show_cloud_tab">Show cloud tab</string>
-    <string name="show_cloud_tab_description">Show cloud in the bottom navigation bar</string>
     <string name="home_title_long_press_to_root">Long press title to go home</string>
     <string name="home_title_long_press_to_root_description">Long press the title bar to navigate back to the root folder</string>
     <string name="take_screenshot">Take screenshot</string>

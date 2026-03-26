@@ -237,7 +237,6 @@ internal enum class SettingRow(
             R.string.dynamic_theme,
             R.string.app_language,
             R.string.app_language_description,
-            R.string.show_cloud_tab,
             R.string.home_title_long_press_to_root,
             R.string.home_title_long_press_to_root_description,
         ),
