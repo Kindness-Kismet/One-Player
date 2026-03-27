@@ -149,6 +149,7 @@ internal fun MediaPlayerScreen(
         doubleTapGesture = playerPreferences.doubleTapGesture,
         seekIncrementMillis = playerPreferences.seekIncrement.seconds.inWholeMilliseconds,
         shouldUseLongPressGesture = playerPreferences.shouldUseLongPressControls,
+        shouldUseLongPressVariableSpeed = playerPreferences.shouldUseLongPressVariableSpeed,
         longPressSpeed = playerPreferences.longPressControlsSpeed,
     )
     val seekGestureState = rememberSeekGestureState(
@@ -235,7 +236,7 @@ internal fun MediaPlayerScreen(
     val longPressOverlayUiState = resolveLongPressOverlayUiState(
         isLongPressGestureInAction = tapGestureState.isLongPressGestureInAction,
         isDebugLongPressOverlayVisible = playerPreferences.isDebugLongPressOverlayVisible,
-        longPressSpeed = tapGestureState.longPressSpeed,
+        longPressSpeed = tapGestureState.currentLongPressSpeed,
         shouldShowOverlay = shouldShowOverlay,
     )
 
@@ -245,7 +246,10 @@ internal fun MediaPlayerScreen(
         }
     }
 
-    LaunchedEffect(tapGestureState.isLongPressGestureInAction) {
+    LaunchedEffect(
+        tapGestureState.isLongPressGestureInAction,
+        tapGestureState.longPressSpeedChangeCount,
+    ) {
         if (!tapGestureState.isLongPressGestureInAction) {
             shouldShowOverlay = false
             return@LaunchedEffect

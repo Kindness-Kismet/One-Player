@@ -163,6 +163,8 @@
     <string name="fast_playback_speed">%.1fx speed</string>
     <string name="long_press_gesture">Long press gesture</string>
     <string name="long_press_gesture_desc">Long press to play at %.1fx speed</string>
+    <string name="long_press_variable_speed">Real-time long press speed</string>
+    <string name="long_press_variable_speed_desc">Swipe left or right while holding to adjust temporary speed</string>
     <string name="best_fit">Best fit</string>
     <string name="stretch">Stretch</string>
     <string name="crop">Crop</string>

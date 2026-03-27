@@ -27,8 +27,9 @@ data class PlayerPreferences(
     val isPanGestureEnabled: Boolean = false,
     val doubleTapGesture: DoubleTapGesture = DoubleTapGesture.BOTH,
     val shouldUseLongPressControls: Boolean = false,
+    val shouldUseLongPressVariableSpeed: Boolean = false,
     val isDebugLongPressOverlayVisible: Boolean = false,
-    val longPressControlsSpeed: Float = 2.0f,
+    val longPressControlsSpeed: Float = DEFAULT_LONG_PRESS_CONTROLS_SPEED,
     val seekIncrement: Int = DEFAULT_SEEK_INCREMENT,
     val seekSensitivity: Float = DEFAULT_SEEK_SENSITIVITY,
     val volumeGestureSensitivity: Float = DEFAULT_VOLUME_GESTURE_SENSITIVITY,
@@ -67,6 +68,9 @@ data class PlayerPreferences(
         const val DEFAULT_SEEK_SENSITIVITY = 0.50f
         const val DEFAULT_VOLUME_GESTURE_SENSITIVITY = 0.50f
         const val DEFAULT_BRIGHTNESS_GESTURE_SENSITIVITY = 0.50f
+        const val DEFAULT_LONG_PRESS_CONTROLS_SPEED = 2.0f
+        const val MIN_LONG_PRESS_CONTROLS_SPEED = 0.2f
+        const val MAX_LONG_PRESS_CONTROLS_SPEED = 4.0f
         const val DEFAULT_SUBTITLE_TEXT_SIZE = 20
         const val DEFAULT_CONTROLLER_AUTO_HIDE_TIMEOUT = 4
     }

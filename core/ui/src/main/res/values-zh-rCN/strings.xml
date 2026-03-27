@@ -172,6 +172,8 @@
     <string name="resolution">分辨率</string>
     <string name="long_press_gesture_desc">长按以 %.1f 倍速播放</string>
     <string name="long_press_gesture">长按手势</string>
+    <string name="long_press_variable_speed">长按实时变速</string>
+    <string name="long_press_variable_speed_desc">按住后左右滑动，临时调整播放速度</string>
     <string name="require_audio_focus">获取音频焦点</string>
     <string name="fast_playback_speed">%.1f 倍速</string>
     <string name="require_audio_focus_desc">此播放器播放视频时暂停其他播放器，反之亦然</string>

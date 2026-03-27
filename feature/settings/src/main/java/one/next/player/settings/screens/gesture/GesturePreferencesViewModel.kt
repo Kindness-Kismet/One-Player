@@ -39,6 +39,7 @@ class GesturePreferencesViewModel @Inject constructor(
             is GesturePreferencesUiEvent.ShowDialog -> showDialog(event.value)
             is GesturePreferencesUiEvent.UpdateDoubleTapGesture -> updateDoubleTapGesture(event.gesture)
             GesturePreferencesUiEvent.ToggleUseLongPressControls -> toggleUseLongPressControls()
+            GesturePreferencesUiEvent.ToggleUseLongPressVariableSpeed -> toggleUseLongPressVariableSpeed()
             GesturePreferencesUiEvent.ToggleDoubleTapGesture -> toggleDoubleTapGesture()
             GesturePreferencesUiEvent.ToggleEnableBrightnessSwipeGesture -> toggleEnableBrightnessSwipeGesture()
             GesturePreferencesUiEvent.ToggleEnableVolumeSwipeGesture -> toggleEnableVolumeSwipeGesture()
@@ -70,7 +71,22 @@ class GesturePreferencesViewModel @Inject constructor(
     private fun toggleUseLongPressControls() {
         viewModelScope.launch {
             preferencesRepository.updatePlayerPreferences {
-                it.copy(shouldUseLongPressControls = !it.shouldUseLongPressControls)
+                val shouldUseLongPressControls = !it.shouldUseLongPressControls
+                it.copy(
+                    shouldUseLongPressControls = shouldUseLongPressControls,
+                    shouldUseLongPressVariableSpeed = it.shouldUseLongPressVariableSpeed && shouldUseLongPressControls,
+                )
+            }
+        }
+    }
+
+    private fun toggleUseLongPressVariableSpeed() {
+        viewModelScope.launch {
+            preferencesRepository.updatePlayerPreferences {
+                if (!it.shouldUseLongPressControls) {
+                    return@updatePlayerPreferences it.copy(shouldUseLongPressVariableSpeed = false)
+                }
+                it.copy(shouldUseLongPressVariableSpeed = !it.shouldUseLongPressVariableSpeed)
             }
         }
     }
@@ -183,6 +199,7 @@ sealed interface GesturePreferencesUiEvent {
     data class ShowDialog(val value: GesturePreferenceDialog?) : GesturePreferencesUiEvent
     data class UpdateDoubleTapGesture(val gesture: DoubleTapGesture) : GesturePreferencesUiEvent
     data object ToggleUseLongPressControls : GesturePreferencesUiEvent
+    data object ToggleUseLongPressVariableSpeed : GesturePreferencesUiEvent
     data object ToggleDoubleTapGesture : GesturePreferencesUiEvent
     data object ToggleEnableBrightnessSwipeGesture : GesturePreferencesUiEvent
     data object ToggleEnableVolumeSwipeGesture : GesturePreferencesUiEvent

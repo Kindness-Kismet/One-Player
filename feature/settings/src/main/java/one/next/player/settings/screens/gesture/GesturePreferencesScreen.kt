@@ -209,6 +209,14 @@ private fun GesturePreferencesContent(
                     onChecked = { onEvent(GesturePreferencesUiEvent.ToggleUseLongPressControls) },
                     onClick = { onEvent(GesturePreferencesUiEvent.ShowDialog(GesturePreferenceDialog.LongPressControlsSpeedDialog)) },
                 )
+                PreferenceSwitch(
+                    title = stringResource(id = R.string.long_press_variable_speed),
+                    description = stringResource(id = R.string.long_press_variable_speed_desc),
+                    icon = NextIcons.SwipeHorizontal,
+                    isEnabled = uiState.preferences.shouldUseLongPressControls,
+                    isChecked = uiState.preferences.shouldUseLongPressVariableSpeed,
+                    onClick = { onEvent(GesturePreferencesUiEvent.ToggleUseLongPressVariableSpeed) },
+                )
                 PreferenceSlider(
                     title = stringResource(R.string.seek_increment),
                     description = stringResource(R.string.seconds, uiState.preferences.seekIncrement),
@@ -273,7 +281,7 @@ private fun GesturePreferencesContent(
                             Slider(
                                 value = longPressControlsSpeed,
                                 onValueChange = { longPressControlsSpeed = it.round(1) },
-                                valueRange = 0.2f..4.0f,
+                                valueRange = PlayerPreferences.MIN_LONG_PRESS_CONTROLS_SPEED..PlayerPreferences.MAX_LONG_PRESS_CONTROLS_SPEED,
                             )
                         },
                     )

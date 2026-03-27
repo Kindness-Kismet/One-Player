@@ -19,6 +19,8 @@
     <string name="remember_selections_description">記住每個檔案的音軌、字幕等選擇</string>
     <string name="landscape_reverse">橫向翻轉</string>
     <string name="long_press_gesture_desc">長按以 %.1fx 速度播放</string>
+    <string name="long_press_variable_speed">長按即時變速</string>
+    <string name="long_press_variable_speed_desc">按住後左右滑動，暫時調整播放速度</string>
     <string name="network_stream">網路串流</string>
     <string name="double_tap_description">選擇雙輕觸手勢作用</string>
     <string name="oldest">最舊</string>

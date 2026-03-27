@@ -5,6 +5,8 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,7 +22,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import one.next.player.core.common.extensions.round
 import one.next.player.core.model.DoubleTapGesture
+import one.next.player.core.model.PlayerPreferences
 import one.next.player.feature.player.extensions.canSeekCurrentMediaItem
 import one.next.player.feature.player.extensions.seekByRequestedOffset
 import one.next.player.feature.player.service.setTransientPlaybackSpeed
@@ -32,6 +36,7 @@ fun rememberTapGestureState(
     doubleTapGesture: DoubleTapGesture,
     seekIncrementMillis: Long,
     shouldUseLongPressGesture: Boolean,
+    shouldUseLongPressVariableSpeed: Boolean,
     longPressSpeed: Float,
 ): TapGestureState {
     val coroutineScope = rememberCoroutineScope()
@@ -40,6 +45,7 @@ fun rememberTapGestureState(
         doubleTapGesture,
         seekIncrementMillis,
         shouldUseLongPressGesture,
+        shouldUseLongPressVariableSpeed,
         longPressSpeed,
         coroutineScope,
     ) {
@@ -48,6 +54,7 @@ fun rememberTapGestureState(
             doubleTapGesture = doubleTapGesture,
             seekIncrementMillis = seekIncrementMillis,
             shouldUseLongPressGesture = shouldUseLongPressGesture,
+            shouldUseLongPressVariableSpeed = shouldUseLongPressVariableSpeed,
             longPressSpeed = longPressSpeed,
             coroutineScope = coroutineScope,
         )
@@ -60,16 +67,27 @@ class TapGestureState(
     private val player: Player,
     private val seekIncrementMillis: Long,
     private val shouldUseLongPressGesture: Boolean = true,
+    private val shouldUseLongPressVariableSpeed: Boolean = false,
     private val coroutineScope: CoroutineScope,
-    val longPressSpeed: Float = 2.0f,
+    val longPressSpeed: Float = PlayerPreferences.DEFAULT_LONG_PRESS_CONTROLS_SPEED,
     val doubleTapGesture: DoubleTapGesture,
     val interactionSource: MutableInteractionSource = MutableInteractionSource(),
 ) {
     var seekMillis by mutableLongStateOf(0L)
     var isLongPressGestureInAction by mutableStateOf(false)
+    var currentLongPressSpeed by mutableFloatStateOf(longPressSpeed)
+        private set
+
+    val canUseLongPressVariableSpeed: Boolean
+        get() = shouldUseLongPressVariableSpeed && isLongPressGestureInAction
+    var isLongPressGestureCaptured: Boolean = false
+        private set
+    var longPressSpeedChangeCount by mutableIntStateOf(0)
+        private set
 
     private var resetJob: Job? = null
-    private var currentSpeed: Float = player.playbackParameters.speed
+    private var originalPlaybackSpeed: Float = player.playbackParameters.speed
+    private var longPressDragAmount by mutableFloatStateOf(0f)
 
     fun handleDoubleTap(offset: Offset, size: IntSize) {
         if (!player.canSeekCurrentMediaItem()) return
@@ -131,16 +149,37 @@ class TapGestureState(
         if (!player.isPlaying) return
         if (isLongPressGestureInAction) return
 
+        isLongPressGestureCaptured = true
         isLongPressGestureInAction = true
-        currentSpeed = player.playbackParameters.speed
-        player.setPlaybackSpeedWithoutPersistence(longPressSpeed)
+        originalPlaybackSpeed = player.playbackParameters.speed
+        longPressDragAmount = 0f
+        currentLongPressSpeed = longPressSpeed
+        player.setPlaybackSpeedWithoutPersistence(currentLongPressSpeed)
+    }
+
+    fun handleLongPressHorizontalDrag(dragAmount: Float) {
+        if (!canUseLongPressVariableSpeed) return
+
+        longPressDragAmount += dragAmount
+        val resolvedSpeed = resolveLongPressVariableSpeed(
+            baseSpeed = longPressSpeed,
+            accumulatedDragAmount = longPressDragAmount,
+        )
+        if (resolvedSpeed == currentLongPressSpeed) return
+
+        currentLongPressSpeed = resolvedSpeed
+        longPressSpeedChangeCount += 1
+        player.setPlaybackSpeedWithoutPersistence(currentLongPressSpeed)
     }
 
     fun handleOnLongPressRelease() {
         if (!isLongPressGestureInAction) return
 
+        isLongPressGestureCaptured = false
         isLongPressGestureInAction = false
-        player.setPlaybackSpeedWithoutPersistence(currentSpeed)
+        longPressDragAmount = 0f
+        currentLongPressSpeed = longPressSpeed
+        player.setPlaybackSpeedWithoutPersistence(originalPlaybackSpeed)
     }
 
     private fun Player.setPlaybackSpeedWithoutPersistence(speed: Float) {
@@ -157,6 +196,19 @@ class TapGestureState(
             seekMillis = 0L
         }
     }
+}
+
+internal fun resolveLongPressVariableSpeed(
+    baseSpeed: Float,
+    accumulatedDragAmount: Float,
+    minSpeed: Float = PlayerPreferences.MIN_LONG_PRESS_CONTROLS_SPEED,
+    maxSpeed: Float = PlayerPreferences.MAX_LONG_PRESS_CONTROLS_SPEED,
+    pixelsPerStep: Float = 48f,
+): Float {
+    val speedDelta = (accumulatedDragAmount / pixelsPerStep) * 0.1f
+    return (baseSpeed + speedDelta)
+        .coerceIn(minSpeed, maxSpeed)
+        .round(1)
 }
 
 enum class DoubleTapAction {
