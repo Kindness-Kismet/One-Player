@@ -106,6 +106,9 @@ fun PlayerGestures(
                         onDragStart = {
                             if (tapGestureState.isLongPressGestureCaptured) return@detectCustomHorizontalDragGestures
                             seekGestureState.onDragStart(it)
+                            if (seekGestureState.isSeeking) {
+                                controlsVisibilityState.hideControls()
+                            }
                         },
                         onHorizontalDrag = { change, dragAmount ->
                             if (tapGestureState.isLongPressGestureCaptured) {

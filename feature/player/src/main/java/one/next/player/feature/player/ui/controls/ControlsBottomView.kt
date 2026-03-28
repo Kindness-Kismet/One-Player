@@ -62,6 +62,7 @@ import one.next.player.core.model.VideoContentScale
 import one.next.player.core.ui.R
 import one.next.player.core.ui.designsystem.NextIcons
 import one.next.player.core.ui.extensions.copy
+import one.next.player.feature.player.LocalControlsVisibilityState
 import one.next.player.feature.player.buttons.LoopButton
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.buttons.ShuffleButton
@@ -98,6 +99,7 @@ fun ControlsBottomView(
     onSeekEnd: () -> Unit,
 ) {
     val systemBarsPadding = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues()
+    val controlsVisibilityState = LocalControlsVisibilityState.current
     val displayedPosition = pendingSeekPosition ?: mediaPresentationState.position
     val displayedPendingPosition = (mediaPresentationState.duration - displayedPosition).coerceAtLeast(0L)
 
@@ -161,7 +163,10 @@ fun ControlsBottomView(
         PlayerSeekbar(
             position = displayedPosition.toFloat(),
             duration = mediaPresentationState.duration.toFloat(),
-            onSeek = { onSeek(it.toLong()) },
+            onSeek = {
+                controlsVisibilityState?.showControls()
+                onSeek(it.toLong())
+            },
             onSeekFinished = { onSeekEnd() },
         )
         Row(

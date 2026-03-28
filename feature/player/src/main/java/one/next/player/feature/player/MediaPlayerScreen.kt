@@ -195,13 +195,6 @@ internal fun MediaPlayerScreen(
         }
     }
 
-    // 拖动进度条时保持控件可见，结束后恢复自动隐藏
-    LaunchedEffect(seekGestureState.isSeeking) {
-        if (seekGestureState.isSeeking) {
-            controlsVisibilityState.showControls()
-        }
-    }
-
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         if (playerPreferences.shouldRememberPlayerBrightness) {
             brightnessState.setBrightness(playerPreferences.playerBrightness)
