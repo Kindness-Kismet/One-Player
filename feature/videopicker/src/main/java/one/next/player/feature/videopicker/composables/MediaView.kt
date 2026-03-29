@@ -53,7 +53,7 @@ fun MediaView(
     val haptic = LocalHapticFeedback.current
 
     val folderMinWidth = 90.dp
-    val videoMinWidth = 130.dp
+    val videoMinWidth = 160.dp
     BoxWithConstraints {
         val contentHorizontalPadding = when (preferences.mediaLayoutMode) {
             MediaLayoutMode.LIST -> 8.dp
