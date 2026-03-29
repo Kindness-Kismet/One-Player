@@ -35,6 +35,7 @@ universalChardet = "2.5.0"
 libassAndroid = "0.4.0"
 okhttp = "4.12.0"
 smbj = "0.14.0"
+versionCatalogUpdate = "1.1.0"
 
 
 [libraries]
@@ -102,6 +103,7 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+versionCatalogUpdate = { id = "nl.littlerobots.version-catalog-update", version.ref = "versionCatalogUpdate" }
 
 
 
