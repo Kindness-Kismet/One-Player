@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -329,6 +330,11 @@ internal fun MediaPickerScreen(
                                             selectVideoFileLauncher.launch("video/*")
                                         },
                                     )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                                        thickness = 1.dp,
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                                    )
                                     MainMenuItem(
                                         text = stringResource(id = R.string.cloud_servers),
                                         icon = NextIcons.Cloud,
@@ -347,8 +353,13 @@ internal fun MediaPickerScreen(
                                             onSettingsClick()
                                         },
                                     )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                                        thickness = 1.dp,
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                                    )
                                     MainMenuItem(
-                                        text = stringResource(id = R.string.exit_app),
+                                        text = stringResource(id = R.string.exit),
                                         icon = NextIcons.Close,
                                         testTag = "item_main_menu_exit_app",
                                         onClick = {

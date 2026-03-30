@@ -200,7 +200,6 @@
     <string name="rename_to">重新命名為</string>
     <string name="exit">退出</string>
     <string name="open_network_stream">開啟網路視訊串流</string>
-    <string name="exit_app">退出應用程式</string>
     <string name="play_next_video">播放下一個影片</string>
     <string name="mark_last_played_media">標記上次播放的媒體</string>
     <string name="mark_last_played_media_desc">標記首頁和每個資料夾中最後播放的媒體</string>
