@@ -9,6 +9,6 @@ data class SettingsBackup(
     val playerPreferences: PlayerPreferences = PlayerPreferences(),
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 }

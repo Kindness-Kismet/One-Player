@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,6 +39,7 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<ApplicationPreferences> = DataStoreFactory.create(
         serializer = ApplicationPreferencesSerializer,
+        corruptionHandler = ReplaceFileCorruptionHandler { ApplicationPreferences() },
         scope = CoroutineScope(scope.coroutineContext + ioDispatcher),
         produceFile = { context.dataStoreFile(APP_PREFERENCES_DATASTORE_FILE) },
     )
@@ -50,6 +52,7 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<PlayerPreferences> = DataStoreFactory.create(
         serializer = PlayerPreferencesSerializer,
+        corruptionHandler = ReplaceFileCorruptionHandler { PlayerPreferences() },
         scope = CoroutineScope(scope.coroutineContext + ioDispatcher),
         produceFile = { applicationContext.dataStoreFile(PLAYER_PREFERENCES_DATASTORE_FILE) },
     )
@@ -62,6 +65,7 @@ object DataStoreModule {
         @ApplicationScope scope: CoroutineScope,
     ): DataStore<SearchHistory> = DataStoreFactory.create(
         serializer = SearchHistorySerializer,
+        corruptionHandler = ReplaceFileCorruptionHandler { SearchHistory() },
         scope = CoroutineScope(scope.coroutineContext + ioDispatcher),
         produceFile = { applicationContext.dataStoreFile(SEARCH_HISTORY_DATASTORE_FILE) },
     )

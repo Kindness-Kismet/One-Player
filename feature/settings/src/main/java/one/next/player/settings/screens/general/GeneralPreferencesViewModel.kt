@@ -16,6 +16,7 @@ import one.next.player.core.common.Logger
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.data.repository.SettingsBackupManager
 import one.next.player.core.media.sync.MediaInfoSynchronizer
+import one.next.player.core.model.SettingsBackup
 
 @HiltViewModel
 class GeneralPreferencesViewModel @Inject constructor(
@@ -89,7 +90,9 @@ class GeneralPreferencesViewModel @Inject constructor(
                 val settingsBackup = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     settingsBackupManager.read(inputStream)
                 } ?: error("Unable to open input stream")
-                require(settingsBackup.version == 1) { "Unsupported backup version: ${settingsBackup.version}" }
+                require(settingsBackup.version == SettingsBackup.CURRENT_VERSION) {
+                    "Unsupported backup version: ${settingsBackup.version}"
+                }
                 preferencesRepository.importSettings(settingsBackup)
                 AppLanguageManager.applyToCurrent(settingsBackup.applicationPreferences.appLanguage)
             }.onSuccess {
