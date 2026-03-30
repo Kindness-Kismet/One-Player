@@ -64,6 +64,7 @@ fun NavGraphBuilder.mediaPickerScreen(
     onSearchClick: () -> Unit,
     onCloudClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onExitAppClick: () -> Unit,
 ) {
     composable<MediaPickerRoute> {
         MediaPickerRoute(
@@ -75,6 +76,7 @@ fun NavGraphBuilder.mediaPickerScreen(
             onSearchClick = onSearchClick,
             onCloudClick = onCloudClick,
             onSettingsClick = onSettingsClick,
+            onExitAppClick = onExitAppClick,
         )
     }
 }

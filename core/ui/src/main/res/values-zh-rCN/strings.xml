@@ -203,6 +203,7 @@
     <string name="play_next_video">播放下一个视频</string>
     <string name="open_local_video">打开本地视频</string>
     <string name="open_network_stream">打开网络串流</string>
+    <string name="exit_app">退出应用</string>
     <string name="mark_last_played_media">标记上次播放的媒体</string>
     <string name="mark_last_played_media_desc">标记主页和每个文件夹中上次播放的媒体</string>
     <string name="recycle_bin">回收站</string>

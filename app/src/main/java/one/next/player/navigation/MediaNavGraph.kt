@@ -6,7 +6,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.navigation
 import kotlinx.serialization.Serializable
+import one.next.player.MainActivity
 import one.next.player.feature.player.PlayerActivity
+import one.next.player.feature.player.service.PlayerService
 import one.next.player.feature.videopicker.navigation.MediaPickerRoute
 import one.next.player.feature.videopicker.navigation.MediaPickerScreenMode
 import one.next.player.feature.videopicker.navigation.mediaPickerScreen
@@ -47,6 +49,11 @@ fun NavGraphBuilder.mediaNavGraph(
             onRecycleBinClick = navController::navigateToRecycleBinScreen,
             onSearchClick = navController::navigateToSearch,
             onCloudClick = navController::navigateToCloudHome,
+            onExitAppClick = {
+                context.stopService(Intent(context, PlayerService::class.java))
+                navController.popBackStack(MediaPickerRoute(), inclusive = false)
+                (context as? MainActivity)?.finishAffinity()
+            },
         )
 
         searchScreen(

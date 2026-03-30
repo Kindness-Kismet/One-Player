@@ -34,8 +34,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,15 +42,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ToggleFloatingActionButton
-import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -113,6 +107,7 @@ fun MediaPickerRoute(
     onSearchClick: () -> Unit,
     onCloudClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onExitAppClick: () -> Unit,
     onNavigateUp: () -> Unit,
     onNavigateHome: () -> Unit,
 ) {
@@ -128,6 +123,7 @@ fun MediaPickerRoute(
         onSearchClick = onSearchClick,
         onCloudClick = onCloudClick,
         onSettingsClick = onSettingsClick,
+        onExitAppClick = onExitAppClick,
         onEvent = viewModel::onEvent,
     )
 }
@@ -154,6 +150,7 @@ internal fun MediaPickerScreen(
     onSearchClick: () -> Unit = {},
     onCloudClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onExitAppClick: () -> Unit = {},
     onEvent: (MediaPickerUiEvent) -> Unit = {},
 ) {
     val selectionManager = rememberSelectionManager()
@@ -164,7 +161,6 @@ internal fun MediaPickerScreen(
         onResult = { it?.let { onPlayVideo(it) } },
     )
 
-    var isFabExpanded by rememberSaveable { mutableStateOf(false) }
     var shouldShowQuickSettingsDialog by rememberSaveable { mutableStateOf(false) }
     var shouldShowMainMenu by rememberSaveable { mutableStateOf(false) }
     var shouldShowUrlDialog by rememberSaveable { mutableStateOf(false) }
@@ -316,6 +312,24 @@ internal fun MediaPickerScreen(
                                     ),
                                 ) {
                                     MainMenuItem(
+                                        text = stringResource(id = R.string.open_network_stream),
+                                        icon = NextIcons.Link,
+                                        testTag = "item_main_menu_network_stream",
+                                        onClick = {
+                                            shouldShowMainMenu = false
+                                            shouldShowUrlDialog = true
+                                        },
+                                    )
+                                    MainMenuItem(
+                                        text = stringResource(id = R.string.open_local_video),
+                                        icon = NextIcons.FileOpen,
+                                        testTag = "item_main_menu_local_video",
+                                        onClick = {
+                                            shouldShowMainMenu = false
+                                            selectVideoFileLauncher.launch("video/*")
+                                        },
+                                    )
+                                    MainMenuItem(
                                         text = stringResource(id = R.string.cloud_servers),
                                         icon = NextIcons.Cloud,
                                         testTag = "item_main_menu_cloud",
@@ -331,6 +345,15 @@ internal fun MediaPickerScreen(
                                         onClick = {
                                             shouldShowMainMenu = false
                                             onSettingsClick()
+                                        },
+                                    )
+                                    MainMenuItem(
+                                        text = stringResource(id = R.string.exit_app),
+                                        icon = NextIcons.Close,
+                                        testTag = "item_main_menu_exit_app",
+                                        onClick = {
+                                            shouldShowMainMenu = false
+                                            onExitAppClick()
                                         },
                                     )
                                 }
@@ -386,61 +409,6 @@ internal fun MediaPickerScreen(
                     selectionManager.exitSelectionMode()
                 },
             )
-        },
-        floatingActionButton = {
-            if (selectionManager.isInSelectionMode || isRecycleBinMode) return@Scaffold
-
-            FloatingActionButtonMenu(
-                expanded = isFabExpanded,
-                button = {
-                    ToggleFloatingActionButton(
-                        checked = isFabExpanded,
-                        onCheckedChange = { isFabExpanded = !isFabExpanded },
-                    ) {
-                        val icon by remember {
-                            derivedStateOf {
-                                if (checkedProgress > 0.5f) NextIcons.Close else NextIcons.Play
-                            }
-                        }
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.animateIcon(checkedProgress = { checkedProgress }),
-                        )
-                    }
-                },
-            ) {
-                FloatingActionButtonMenuItem(
-                    onClick = {
-                        isFabExpanded = false
-                        shouldShowUrlDialog = true
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = NextIcons.Link,
-                            contentDescription = null,
-                        )
-                    },
-                    text = {
-                        Text(text = stringResource(id = R.string.open_network_stream))
-                    },
-                )
-                FloatingActionButtonMenuItem(
-                    onClick = {
-                        isFabExpanded = false
-                        selectVideoFileLauncher.launch("video/*")
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = NextIcons.FileOpen,
-                            contentDescription = null,
-                        )
-                    },
-                    text = {
-                        Text(text = stringResource(id = R.string.open_local_video))
-                    },
-                )
-            }
         },
         contentWindowInsets = WindowInsets.displayCutout,
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -514,20 +482,10 @@ internal fun MediaPickerScreen(
         }
     }
 
-    LaunchedEffect(lazyGridState.isScrollInProgress) {
-        if (isFabExpanded && lazyGridState.isScrollInProgress) {
-            isFabExpanded = false
-        }
-    }
-
     LaunchedEffect(selectionManager.isInSelectionMode) {
         if (selectionManager.isInSelectionMode) {
-            isFabExpanded = false
+            shouldShowMainMenu = false
         }
-    }
-
-    BackHandler(enabled = isFabExpanded) {
-        isFabExpanded = false
     }
 
     BackHandler(enabled = selectionManager.isInSelectionMode) {
