@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -107,7 +108,6 @@ import one.next.player.feature.videopicker.state.rememberSelectionManager
 fun MediaPickerRoute(
     viewModel: MediaPickerViewModel = hiltViewModel(),
     onPlayVideo: (uri: Uri) -> Unit,
-    onPlayVideos: (uris: List<Uri>) -> Unit,
     onFolderClick: (folderPath: String, screenMode: MediaPickerScreenMode) -> Unit,
     onRecycleBinClick: () -> Unit,
     onSearchClick: () -> Unit,
@@ -121,7 +121,6 @@ fun MediaPickerRoute(
     MediaPickerScreen(
         uiState = uiState,
         onPlayVideo = onPlayVideo,
-        onPlayVideos = onPlayVideos,
         onNavigateUp = onNavigateUp,
         onNavigateHome = onNavigateHome,
         onFolderClick = onFolderClick,
@@ -150,7 +149,6 @@ internal fun MediaPickerScreen(
     onNavigateUp: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     onPlayVideo: (Uri) -> Unit = {},
-    onPlayVideos: (List<Uri>) -> Unit = {},
     onFolderClick: (String, MediaPickerScreenMode) -> Unit = { _, _ -> },
     onRecycleBinClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -351,11 +349,6 @@ internal fun MediaPickerScreen(
                 shouldShowRenameAction = selectionManager.isSingleVideoSelected && isLibraryMode,
                 shouldShowInfoAction = selectionManager.isSingleVideoSelected,
                 shouldShowExcludeAction = selectionManager.selectedFolders.isNotEmpty() && isLibraryMode,
-                onPlayAction = {
-                    val videoUris = selectionManager.allSelectedVideos.map { it.uriString.toUri() }
-                    onPlayVideos(videoUris)
-                    selectionManager.clearSelection()
-                },
                 onRenameAction = {
                     val selectedVideo = selectionManager.selectedVideos.firstOrNull() ?: return@SelectionActionsSheet
                     val video = (uiState.mediaDataState as? DataState.Success)?.value?.mediaList
@@ -707,7 +700,6 @@ private fun SelectionActionsSheet(
     shouldShowRenameAction: Boolean,
     shouldShowInfoAction: Boolean,
     shouldShowExcludeAction: Boolean,
-    onPlayAction: () -> Unit,
     onRestoreAction: () -> Unit,
     onRenameAction: () -> Unit,
     onInfoAction: () -> Unit,
@@ -720,92 +712,112 @@ private fun SelectionActionsSheet(
         enter = slideInVertically { it },
         exit = slideOutVertically { it },
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = 40.dp, vertical = 6.dp),
         ) {
-            SelectionActionItem(
-                imageVector = NextIcons.Play,
-                text = stringResource(id = R.string.play),
-                onClick = onPlayAction,
-            )
-            if (shouldShowRestoreAction) {
-                SelectionActionItem(
-                    imageVector = NextIcons.ArrowUpward,
-                    text = stringResource(id = R.string.restore),
-                    onClick = onRestoreAction,
-                )
-            }
-            if (shouldShowRenameAction) {
-                SelectionActionItem(
-                    imageVector = NextIcons.Edit,
-                    text = stringResource(id = R.string.rename),
-                    onClick = onRenameAction,
-                )
-            }
-            if (shouldShowInfoAction) {
-                SelectionActionItem(
-                    imageVector = NextIcons.Info,
-                    text = stringResource(id = R.string.info),
-                    onClick = onInfoAction,
-                )
-            }
-            SelectionActionItem(
-                imageVector = NextIcons.Share,
-                text = stringResource(id = R.string.share),
-                onClick = onShareAction,
-            )
-            if (shouldShowExcludeAction) {
-                SelectionActionItem(
-                    imageVector = NextIcons.FolderOff,
-                    text = stringResource(id = R.string.exclude),
-                    onClick = onExcludeAction,
-                )
-            }
-            SelectionActionItem(
-                imageVector = NextIcons.Delete,
-                text = stringResource(
-                    id = when (deleteAction) {
-                        MediaPickerDeleteAction.MoveToRecycleBin -> R.string.move_to_recycle_bin
-                        MediaPickerDeleteAction.PermanentlyDelete -> {
-                            if (shouldShowRestoreAction) {
-                                R.string.delete_permanently
-                            } else {
-                                R.string.delete
-                            }
-                        }
-                    },
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceBright.copy(alpha = 0.96f),
+                shape = RoundedCornerShape(999.dp),
+                shadowElevation = 2.dp,
+                tonalElevation = 0.dp,
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.05f),
                 ),
-                onClick = onDeleteAction,
-            )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (shouldShowRestoreAction) {
+                        SelectionActionItem(
+                            imageVector = NextIcons.ArrowUpward,
+                            text = stringResource(id = R.string.restore),
+                            onClick = onRestoreAction,
+                        )
+                    }
+                    if (shouldShowRenameAction) {
+                        SelectionActionItem(
+                            imageVector = NextIcons.Edit,
+                            text = stringResource(id = R.string.rename),
+                            onClick = onRenameAction,
+                        )
+                    }
+                    if (shouldShowInfoAction) {
+                        SelectionActionItem(
+                            imageVector = NextIcons.Info,
+                            text = stringResource(id = R.string.info),
+                            onClick = onInfoAction,
+                        )
+                    }
+                    SelectionActionItem(
+                        imageVector = NextIcons.Share,
+                        text = stringResource(id = R.string.share),
+                        onClick = onShareAction,
+                    )
+                    if (shouldShowExcludeAction) {
+                        SelectionActionItem(
+                            imageVector = NextIcons.FolderOff,
+                            text = stringResource(id = R.string.exclude),
+                            onClick = onExcludeAction,
+                        )
+                    }
+                    SelectionActionItem(
+                        imageVector = NextIcons.Delete,
+                        text = stringResource(
+                            id = when (deleteAction) {
+                                MediaPickerDeleteAction.MoveToRecycleBin -> R.string.move_to_recycle_bin
+                                MediaPickerDeleteAction.PermanentlyDelete -> {
+                                    if (shouldShowRestoreAction) {
+                                        R.string.delete_permanently
+                                    } else {
+                                        R.string.delete
+                                    }
+                                }
+                            },
+                        ),
+                        onClick = onDeleteAction,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun SelectionActionItem(
+private fun RowScope.SelectionActionItem(
     imageVector: ImageVector,
     text: String,
     onClick: () -> Unit,
 ) {
     Column(
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        FilledTonalIconButton(onClick = onClick) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = text,
-            )
-        }
+        Icon(
+            imageVector = imageVector,
+            contentDescription = text,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(18.dp),
+        )
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
+            maxLines = 1,
         )
     }
 }

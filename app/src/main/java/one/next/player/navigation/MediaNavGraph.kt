@@ -7,7 +7,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.navigation
 import kotlinx.serialization.Serializable
 import one.next.player.feature.player.PlayerActivity
-import one.next.player.feature.player.utils.PlayerApi
 import one.next.player.feature.videopicker.navigation.MediaPickerRoute
 import one.next.player.feature.videopicker.navigation.MediaPickerScreenMode
 import one.next.player.feature.videopicker.navigation.mediaPickerScreen
@@ -36,14 +35,6 @@ fun NavGraphBuilder.mediaNavGraph(
                 val intent = Intent(context, PlayerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     data = uri
-                }
-                context.startActivity(intent)
-            },
-            onPlayVideos = { uris ->
-                val intent = Intent(context, PlayerActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
-                    data = uris.first()
-                    putParcelableArrayListExtra(PlayerApi.API_PLAYLIST, ArrayList(uris))
                 }
                 context.startActivity(intent)
             },
