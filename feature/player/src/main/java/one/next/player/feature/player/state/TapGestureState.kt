@@ -145,9 +145,15 @@ class TapGestureState(
     }
 
     fun handleLongPress() {
-        if (!shouldUseLongPressGesture) return
-        if (!player.isPlaying) return
-        if (isLongPressGestureInAction) return
+        startTemporaryPlaybackSpeed(force = false)
+    }
+
+    fun handleKeyboardLongPress(): Boolean = startTemporaryPlaybackSpeed(force = true)
+
+    private fun startTemporaryPlaybackSpeed(force: Boolean): Boolean {
+        if (!force && !shouldUseLongPressGesture) return false
+        if (!player.isPlaying) return false
+        if (isLongPressGestureInAction) return false
 
         isLongPressGestureCaptured = true
         isLongPressGestureInAction = true
@@ -155,6 +161,7 @@ class TapGestureState(
         longPressDragAmount = 0f
         currentLongPressSpeed = longPressSpeed
         player.setPlaybackSpeedWithoutPersistence(currentLongPressSpeed)
+        return true
     }
 
     fun handleLongPressHorizontalDrag(dragAmount: Float) {

@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.provider.MediaStore
+import android.view.KeyEvent
 import android.view.PixelCopy
 import android.view.SurfaceView
 import android.view.View
@@ -165,6 +166,7 @@ class PlayerActivity : AppCompatActivity() {
     private var isPlaybackFinished = false
     private var shouldPlayInBackground: Boolean = false
     private var isIntentNew: Boolean = true
+    private var keyboardEventHandler: ((KeyEvent) -> Boolean)? = null
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
@@ -294,6 +296,9 @@ class PlayerActivity : AppCompatActivity() {
                             }
                         }
                     },
+                    onKeyboardEventHandlerChanged = { handler ->
+                        keyboardEventHandler = handler
+                    },
                 )
             }
         }
@@ -318,6 +323,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        keyboardEventHandler = null
         mediaController?.run {
             viewModel.shouldPlayWhenReady = playWhenReady
             removeListener(playbackStateListener)
@@ -339,6 +345,13 @@ class PlayerActivity : AppCompatActivity() {
             controllerFuture = null
         }
         super.onStop()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (keyboardEventHandler?.invoke(event) == true) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun maybeInitControllerFuture() {

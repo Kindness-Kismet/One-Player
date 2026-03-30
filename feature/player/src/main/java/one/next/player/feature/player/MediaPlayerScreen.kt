@@ -1,5 +1,6 @@
 package one.next.player.feature.player
 
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
@@ -34,13 +35,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,8 @@ import one.next.player.feature.player.buttons.PlayPauseButton
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.buttons.PreviousButton
 import one.next.player.feature.player.extensions.nameRes
+import one.next.player.feature.player.extensions.seekByRequestedOffset
+import one.next.player.feature.player.input.PlayerKeyboardController
 import one.next.player.feature.player.state.ControlsVisibilityState
 import one.next.player.feature.player.state.VerticalGesture
 import one.next.player.feature.player.state.rememberBrightnessState
@@ -132,6 +138,7 @@ internal fun MediaPlayerScreen(
     onPlayInBackgroundClick: () -> Unit,
     isTakingScreenshot: Boolean = false,
     onScreenshotClick: () -> Unit,
+    onKeyboardEventHandlerChanged: ((KeyEvent) -> Boolean) -> Unit = {},
 ) {
     val volumeState = rememberVolumeState(
         player = player,
@@ -226,6 +233,58 @@ internal fun MediaPlayerScreen(
     }
     var shouldShowOverlay by remember { mutableStateOf(false) }
     var longPressOverlayAnimationStep by remember { mutableIntStateOf(0) }
+    val keyboardInteractionEnabledState = rememberUpdatedState(
+        overlayView == null &&
+            !isCustomizingControls &&
+            !controlsVisibilityState.isControlsLocked,
+    )
+    val seekIncrementState = rememberUpdatedState(playerPreferences.seekIncrement.seconds.inWholeMilliseconds)
+    val currentPlayerState = rememberUpdatedState(player)
+    val currentTapGestureState = rememberUpdatedState(tapGestureState)
+    val currentControlsVisibilityState = rememberUpdatedState(controlsVisibilityState)
+    val currentVolumeState = rememberUpdatedState(volumeState)
+    val keyboardController = remember {
+        PlayerKeyboardController(
+            onSeekBackward = {
+                currentPlayerState.value.seekByRequestedOffset(-seekIncrementState.value)
+                currentControlsVisibilityState.value.showControls()
+            },
+            onSeekForward = {
+                currentPlayerState.value.seekByRequestedOffset(seekIncrementState.value)
+                currentControlsVisibilityState.value.showControls()
+            },
+            onIncreaseVolume = {
+                currentVolumeState.value.increaseVolume(shouldShowVolumePanel = true)
+                currentControlsVisibilityState.value.showControls()
+            },
+            onDecreaseVolume = {
+                currentVolumeState.value.decreaseVolume(shouldShowVolumePanel = true)
+                currentControlsVisibilityState.value.showControls()
+            },
+            onTogglePlayPause = {
+                if (currentPlayerState.value.isPlaying) {
+                    currentPlayerState.value.pause()
+                } else {
+                    currentPlayerState.value.play()
+                }
+                currentControlsVisibilityState.value.showControls()
+            },
+            onStartTemporarySpeed = {
+                val didStart = currentTapGestureState.value.handleKeyboardLongPress()
+                if (didStart) {
+                    currentControlsVisibilityState.value.hideControls()
+                }
+                didStart
+            },
+            onStopTemporarySpeed = {
+                currentTapGestureState.value.handleOnLongPressRelease()
+            },
+        )
+    }
+    val keyboardEventHandler: (KeyEvent) -> Boolean = keyboardHandler@{ event ->
+        if (!keyboardInteractionEnabledState.value) return@keyboardHandler false
+        keyboardController.handleKeyEvent(event)
+    }
     val longPressOverlayUiState = resolveLongPressOverlayUiState(
         isLongPressGestureInAction = tapGestureState.isLongPressGestureInAction,
         isDebugLongPressOverlayVisible = playerPreferences.isDebugLongPressOverlayVisible,
@@ -267,6 +326,16 @@ internal fun MediaPlayerScreen(
             delay(120)
             longPressOverlayAnimationStep = 3
             delay(320)
+        }
+    }
+
+    SideEffect {
+        onKeyboardEventHandlerChanged(keyboardEventHandler)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onKeyboardEventHandlerChanged { false }
         }
     }
 

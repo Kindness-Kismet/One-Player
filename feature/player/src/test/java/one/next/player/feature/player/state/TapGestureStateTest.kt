@@ -9,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import one.next.player.core.model.DoubleTapGesture
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TapGestureStateTest {
@@ -76,6 +77,27 @@ class TapGestureStateTest {
         assertFalse(gestureState.isLongPressGestureInAction)
         assertEquals(2.0f, gestureState.currentLongPressSpeed, 0.0f)
         assertEquals(1.25f, playerState.speed, 0.0f)
+    }
+
+    @Test
+    fun handleKeyboardLongPress_ignoresGestureToggleButStillStartsTemporarySpeed() {
+        val playerState = FakePlayerState(speed = 1.25f)
+        val gestureState = TapGestureState(
+            player = createFakePlayer(playerState),
+            seekIncrementMillis = 10_000L,
+            shouldUseLongPressGesture = false,
+            shouldUseLongPressVariableSpeed = false,
+            coroutineScope = CoroutineScope(SupervisorJob()),
+            longPressSpeed = 2.0f,
+            doubleTapGesture = DoubleTapGesture.BOTH,
+            interactionSource = MutableInteractionSource(),
+        )
+
+        val didStart = gestureState.handleKeyboardLongPress()
+
+        assertTrue(didStart)
+        assertTrue(gestureState.isLongPressGestureInAction)
+        assertEquals(2.0f, playerState.speed, 0.0f)
     }
 
     private fun createTapGestureState(
