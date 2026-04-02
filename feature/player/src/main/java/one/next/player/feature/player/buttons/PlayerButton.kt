@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -51,6 +52,7 @@ fun PlayerButton(
     shouldDimWhenUnselected: Boolean = label != null,
     shouldShowCustomizeFrame: Boolean = label != null,
     isInteractive: Boolean = true,
+    isOutlineOnly: Boolean = false,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -91,7 +93,11 @@ fun PlayerButton(
     val colorScheme = MaterialTheme.colorScheme
     val selectionBadgeBackgroundColor = colorScheme.primaryContainer
     val selectionBadgeInactiveColor = colorScheme.surfaceContainerHighest
-    val customizeBorderColor = colorScheme.primary.copy(alpha = 0.7f)
+    val customizeBorderColor = Color(0xFFFFEB3B)
+    val outlineBorderColor = colorScheme.primary.copy(alpha = 0.95f)
+    val outlineFillColor = colorScheme.primary.copy(alpha = 0.12f)
+    val customizeLabelColor = Color.White
+    val outlineLabelColor = colorScheme.primary.copy(alpha = 0.75f)
     val selectionBadgeSize = if (buttonSize >= 56.dp) 20.dp else 18.dp
     val selectionBadgeIconSize = if (buttonSize >= 56.dp) 13.dp else 12.dp
 
@@ -103,24 +109,50 @@ fun PlayerButton(
             FilledTonalIconButton(
                 onClick = {},
                 enabled = isEnabled,
-                modifier = Modifier.size(buttonSize),
+                modifier = Modifier
+                    .size(buttonSize)
+                    .then(
+                        if (isOutlineOnly) {
+                            Modifier.drawBehind {
+                                val strokeWidth = 1.5.dp.toPx()
+                                drawCircle(
+                                    color = outlineFillColor,
+                                    radius = size.minDimension / 2f,
+                                )
+                                drawCircle(
+                                    color = outlineBorderColor,
+                                    style = Stroke(
+                                        width = strokeWidth,
+                                        pathEffect = PathEffect.dashPathEffect(
+                                            intervals = floatArrayOf(12f, 12f),
+                                        ),
+                                    ),
+                                    radius = size.minDimension / 2f - (strokeWidth / 2f),
+                                )
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
                 interactionSource = interactionSource,
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary,
+                    containerColor = if (isOutlineOnly) colorScheme.surface.copy(alpha = 0f) else colorScheme.primary,
+                    contentColor = if (isOutlineOnly) colorScheme.primary else colorScheme.onPrimary,
                     disabledContainerColor = colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
                     disabledContentColor = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 ),
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    content()
+                if (!isOutlineOnly) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        content()
+                    }
                 }
             }
 
-            if (shouldShowSelectionBadge) {
+            if (shouldShowSelectionBadge && !isOutlineOnly) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -156,14 +188,14 @@ fun PlayerButton(
 
     Column(
         modifier = modifier
-            .alpha(if (shouldDimWhenUnselected && !isSelected) 0.5f else 1f)
+            .alpha(if (shouldDimWhenUnselected && !isSelected && !isOutlineOnly) 0.5f else 1f)
             .widthIn(min = buttonSize + 16.dp, max = 88.dp)
             .then(
                 if (shouldShowCustomizeFrame) {
                     Modifier.drawBehind {
                         val strokeWidth = 1.dp.toPx()
                         drawRoundRect(
-                            color = customizeBorderColor,
+                            color = if (isOutlineOnly) outlineBorderColor else customizeBorderColor,
                             style = Stroke(
                                 width = strokeWidth,
                                 pathEffect = PathEffect.dashPathEffect(
@@ -172,6 +204,12 @@ fun PlayerButton(
                             ),
                             cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx(), 16.dp.toPx()),
                         )
+                        if (isOutlineOnly) {
+                            drawRoundRect(
+                                color = outlineFillColor,
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx(), 16.dp.toPx()),
+                            )
+                        }
                     }
                 } else {
                     Modifier
@@ -185,7 +223,7 @@ fun PlayerButton(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = colorScheme.onSurface,
+            color = if (isOutlineOnly) outlineLabelColor else customizeLabelColor,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

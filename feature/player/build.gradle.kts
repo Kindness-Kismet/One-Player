@@ -56,7 +56,6 @@ dependencies {
 
     implementation(libs.coil.compose)
 
-    // 可拖拽排序列表依赖
     implementation(libs.reorderable)
 
     // Media3 依赖
@@ -83,6 +82,7 @@ dependencies {
     kspAndroidTest(libs.hilt.compiler)
 
     testImplementation(libs.junit4)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

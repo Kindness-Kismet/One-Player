@@ -18,6 +18,7 @@ import one.next.player.core.domain.GetSortedPlaylistUseCase
 import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.LoopMode
 import one.next.player.core.model.PlayerControl
+import one.next.player.core.model.PlayerControlsLayout
 import one.next.player.core.model.PlayerPreferences
 import one.next.player.core.model.Video
 import one.next.player.core.model.VideoContentScale
@@ -96,9 +97,17 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun updateHiddenPlayerControls(value: Set<PlayerControl>) {
+    fun updatePlayerControlsCustomization(
+        hiddenControls: Set<PlayerControl>,
+        layout: PlayerControlsLayout,
+    ) {
         viewModelScope.launch {
-            preferencesRepository.updatePlayerPreferences { it.copy(hiddenPlayerControls = value) }
+            preferencesRepository.updatePlayerPreferences {
+                it.copy(
+                    hiddenPlayerControls = hiddenControls,
+                    playerControlsLayout = layout,
+                )
+            }
         }
     }
 

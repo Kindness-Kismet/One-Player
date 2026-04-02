@@ -20,6 +20,7 @@ fun ShuffleButton(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     label: String? = null,
+    isOutlineOnly: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
     val state = rememberShuffleButtonState(player)
@@ -30,6 +31,7 @@ fun ShuffleButton(
         isEnabled = onClick != null || state.isEnabled,
         isSelected = isSelected,
         label = label,
+        isOutlineOnly = isOutlineOnly,
         onClick = {
             if (onClick != null) {
                 onClick()

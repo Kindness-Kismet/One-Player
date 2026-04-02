@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -50,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
@@ -69,8 +71,9 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import one.next.player.core.data.repository.ExternalSubtitleFontSource
-import one.next.player.core.model.ControlButtonsPosition
 import one.next.player.core.model.PlayerControl
+import one.next.player.core.model.PlayerControlZone
+import one.next.player.core.model.PlayerControlsLayout
 import one.next.player.core.model.PlayerPreferences
 import one.next.player.core.ui.R as coreUiR
 import one.next.player.core.ui.extensions.copy
@@ -104,11 +107,18 @@ import one.next.player.feature.player.ui.SubtitleConfiguration
 import one.next.player.feature.player.ui.VerticalProgressView
 import one.next.player.feature.player.ui.controls.ControlsBottomView
 import one.next.player.feature.player.ui.controls.ControlsTopView
+import one.next.player.feature.player.ui.controls.PlayerCustomizableControlButton
 
 val LocalControlsVisibilityState = compositionLocalOf<ControlsVisibilityState?> { null }
 
 internal data class LongPressOverlayUiState(
     val speedText: String,
+)
+
+internal data class DraggingPlayerControlUiState(
+    val control: PlayerControl,
+    val sourceBounds: Rect,
+    val dragOffset: Offset,
 )
 
 internal fun resolveLongPressOverlayUiState(
@@ -217,6 +227,9 @@ internal fun MediaPlayerScreen(
     var overlayView by remember { mutableStateOf<OverlayView?>(null) }
     var isCustomizingControls by remember { mutableStateOf(false) }
     var customizingHiddenPlayerControls by remember { mutableStateOf(playerPreferences.hiddenPlayerControls) }
+    var customizingPlayerControlsLayout by remember { mutableStateOf(playerPreferences.playerControlsLayout) }
+    var draggingPlayerControlUiState by remember { mutableStateOf<DraggingPlayerControlUiState?>(null) }
+    var previewPlayerControlsLayout by remember { mutableStateOf<PlayerControlsLayout?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val permanentlyVisibleControls = remember {
@@ -225,11 +238,24 @@ internal fun MediaPlayerScreen(
             PlayerControl.PREVIOUS,
             PlayerControl.PLAY_PAUSE,
             PlayerControl.NEXT,
+            PlayerControl.ROTATE,
         )
     }
     val hiddenPlayerControls = when (isCustomizingControls) {
         true -> customizingHiddenPlayerControls
         false -> playerPreferences.hiddenPlayerControls
+    }
+    val playerControlsLayout = when {
+        isCustomizingControls -> previewPlayerControlsLayout ?: customizingPlayerControlsLayout
+        else -> playerPreferences.playerControlsLayout
+    }
+    val controlsByZone = remember(playerControlsLayout) {
+        PlayerControlZone.entries.associateWith(playerControlsLayout::controlsIn)
+    }
+    val topRightControls = controlsByZone.getValue(PlayerControlZone.TOP_RIGHT)
+    val bottomLeftControls = controlsByZone.getValue(PlayerControlZone.BOTTOM_LEFT)
+    val visiblePlayerControls = remember(hiddenPlayerControls) {
+        PlayerControl.entries.toSet() - hiddenPlayerControls
     }
     var shouldShowOverlay by remember { mutableStateOf(false) }
     var longPressOverlayAnimationStep by remember { mutableIntStateOf(0) }
@@ -285,6 +311,8 @@ internal fun MediaPlayerScreen(
         if (!keyboardInteractionEnabledState.value) return@keyboardHandler false
         keyboardController.handleKeyEvent(event)
     }
+    val playerControlItemBounds = remember { mutableMapOf<PlayerControl, Rect>() }
+    val playerControlZoneBounds = remember { mutableMapOf<PlayerControlZone, Rect>() }
     val longPressOverlayUiState = resolveLongPressOverlayUiState(
         isLongPressGestureInAction = tapGestureState.isLongPressGestureInAction,
         isDebugLongPressOverlayVisible = playerPreferences.isDebugLongPressOverlayVisible,
@@ -292,9 +320,14 @@ internal fun MediaPlayerScreen(
         shouldShowOverlay = shouldShowOverlay,
     )
 
-    LaunchedEffect(playerPreferences.hiddenPlayerControls, isCustomizingControls) {
+    LaunchedEffect(
+        playerPreferences.hiddenPlayerControls,
+        playerPreferences.playerControlsLayout,
+        isCustomizingControls,
+    ) {
         if (!isCustomizingControls) {
             customizingHiddenPlayerControls = playerPreferences.hiddenPlayerControls - permanentlyVisibleControls
+            customizingPlayerControlsLayout = playerPreferences.playerControlsLayout
         }
     }
 
@@ -344,11 +377,7 @@ internal fun MediaPlayerScreen(
     fun isControlSelected(control: PlayerControl): Boolean = isCustomizingControls && control !in permanentlyVisibleControls && control !in hiddenPlayerControls
 
     fun toggleControlVisibility(control: PlayerControl) {
-        val currentHiddenPlayerControls = when (isCustomizingControls) {
-            true -> customizingHiddenPlayerControls
-            false -> playerPreferences.hiddenPlayerControls
-        }
-        val updatedControls = currentHiddenPlayerControls.toMutableSet().apply {
+        val updatedControls = hiddenPlayerControls.toMutableSet().apply {
             if (!add(control)) remove(control)
         }
         if (isCustomizingControls) {
@@ -356,20 +385,98 @@ internal fun MediaPlayerScreen(
             controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
         } else {
             controlsVisibilityState.showControls()
+            viewModel.updatePlayerControlsCustomization(
+                hiddenControls = updatedControls,
+                layout = playerPreferences.playerControlsLayout,
+            )
         }
-        viewModel.updateHiddenPlayerControls(updatedControls)
+    }
+
+    fun startDraggingControl(control: PlayerControl) {
+        if (!isCustomizingControls) return
+
+        val sourceBounds = playerControlItemBounds[control] ?: return
+        draggingPlayerControlUiState = DraggingPlayerControlUiState(
+            control = control,
+            sourceBounds = sourceBounds,
+            dragOffset = Offset.Zero,
+        )
+        previewPlayerControlsLayout = customizingPlayerControlsLayout
+        controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
+    }
+
+    fun moveDraggingControl(
+        control: PlayerControl,
+        dragOffset: Offset,
+    ) {
+        if (!isCustomizingControls) return
+        val draggingState = draggingPlayerControlUiState ?: return
+        if (draggingState.control != control) return
+
+        draggingPlayerControlUiState = draggingState.copy(dragOffset = dragOffset)
+        previewPlayerControlsLayout = customizingPlayerControlsLayout.previewReorder(
+            control = control,
+            dropPosition = draggingState.sourceBounds.center + dragOffset,
+            itemBounds = playerControlItemBounds,
+        )
+        controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
+    }
+
+    fun clearDraggingControl() {
+        draggingPlayerControlUiState = null
+        previewPlayerControlsLayout = null
+        controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
+    }
+
+    fun dropDraggedControl(
+        control: PlayerControl,
+        dragOffset: Offset,
+    ) {
+        if (!isCustomizingControls) return
+
+        val dropPosition = draggingPlayerControlUiState
+            ?.takeIf { it.control == control }
+            ?.sourceBounds
+            ?.center
+            ?.plus(dragOffset)
+        val updatedLayout = when (dropPosition) {
+            null -> customizingPlayerControlsLayout.dropDraggedControl(
+                control = control,
+                dragOffset = dragOffset,
+                itemBounds = playerControlItemBounds,
+                zoneBounds = playerControlZoneBounds,
+            )
+            else -> customizingPlayerControlsLayout.dropControl(
+                control = control,
+                dropPosition = dropPosition,
+                itemBounds = playerControlItemBounds,
+                zoneBounds = playerControlZoneBounds,
+            )
+        }
+        // 清除被拖控件的旧位置记录，避免 recomposition 时触发多余的 reflow 动画
+        playerControlItemBounds.remove(control)
+        customizingPlayerControlsLayout = updatedLayout
+        clearDraggingControl()
+        controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
     }
 
     fun enterControlCustomization() {
         player.pause()
         customizingHiddenPlayerControls = playerPreferences.hiddenPlayerControls - permanentlyVisibleControls
+        customizingPlayerControlsLayout = playerPreferences.playerControlsLayout
+        clearDraggingControl()
         isCustomizingControls = true
         controlsVisibilityState.showControls(duration = kotlin.time.Duration.INFINITE)
     }
 
     fun exitControlCustomization() {
+        clearDraggingControl()
         isCustomizingControls = false
         controlsVisibilityState.showControls()
+        viewModel.updatePlayerControlsCustomization(
+            hiddenControls = customizingHiddenPlayerControls,
+            layout = customizingPlayerControlsLayout,
+        )
     }
 
     CompositionLocalProvider(LocalControlsVisibilityState provides controlsVisibilityState) {
@@ -472,18 +579,23 @@ internal fun MediaPlayerScreen(
                             ) {
                                 ControlsTopView(
                                     title = metadataState.title ?: "",
+                                    player = player,
+                                    topRightControls = topRightControls,
+                                    visiblePlayerControls = visiblePlayerControls,
+                                    videoContentScale = videoZoomAndContentScaleState.videoContentScale,
+                                    isPipSupported = pictureInPictureState.isPipSupported,
+                                    isTakingScreenshot = isTakingScreenshot,
+                                    itemBounds = playerControlItemBounds,
+                                    zoneBounds = playerControlZoneBounds,
                                     isCustomizingControls = isCustomizingControls,
+                                    draggingControl = draggingPlayerControlUiState?.control,
+                                    onControlDropDragged = ::dropDraggedControl,
+                                    onControlDragStarted = ::startDraggingControl,
+                                    onControlDragMoved = ::moveDraggingControl,
+                                    onControlDragCancelled = { clearDraggingControl() },
                                     isBackVisible = isControlVisible(PlayerControl.BACK),
                                     isBackSelected = isControlSelected(PlayerControl.BACK),
                                     isBackInteractive = !isCustomizingControls,
-                                    isPlaylistVisible = isControlVisible(PlayerControl.PLAYLIST),
-                                    isPlaylistSelected = isControlSelected(PlayerControl.PLAYLIST),
-                                    isPlaybackSpeedVisible = isControlVisible(PlayerControl.PLAYBACK_SPEED),
-                                    isPlaybackSpeedSelected = isControlSelected(PlayerControl.PLAYBACK_SPEED),
-                                    isAudioVisible = isControlVisible(PlayerControl.AUDIO),
-                                    isAudioSelected = isControlSelected(PlayerControl.AUDIO),
-                                    isSubtitleVisible = isControlVisible(PlayerControl.SUBTITLE),
-                                    isSubtitleSelected = isControlSelected(PlayerControl.SUBTITLE),
                                     onAudioClick = {
                                         if (isCustomizingControls) {
                                             toggleControlVisibility(PlayerControl.AUDIO)
@@ -554,23 +666,23 @@ internal fun MediaPlayerScreen(
                                 ControlsBottomView(
                                     player = player,
                                     mediaPresentationState = mediaPresentationState,
-                                    controlsAlignment = when (playerPreferences.controlButtonsPosition) {
-                                        ControlButtonsPosition.LEFT -> Alignment.Start
-                                        ControlButtonsPosition.RIGHT -> Alignment.End
-                                    },
+                                    bottomLeftControls = bottomLeftControls,
                                     videoContentScale = videoZoomAndContentScaleState.videoContentScale,
                                     isPipSupported = pictureInPictureState.isPipSupported,
                                     pendingSeekPosition = seekGestureState.pendingSeekPosition,
+                                    itemBounds = playerControlItemBounds,
+                                    zoneBounds = playerControlZoneBounds,
                                     isCustomizingControls = isCustomizingControls,
-                                    visiblePlayerControls = PlayerControl.entries.toSet() - hiddenPlayerControls,
+                                    draggingControl = draggingPlayerControlUiState?.control,
+                                    onControlDropDragged = ::dropDraggedControl,
+                                    onControlDragStarted = ::startDraggingControl,
+                                    onControlDragMoved = ::moveDraggingControl,
+                                    onControlDragCancelled = { clearDraggingControl() },
+                                    visiblePlayerControls = visiblePlayerControls,
                                     onSeek = seekGestureState::onSeek,
                                     onSeekEnd = seekGestureState::onSeekEnd,
                                     onRotateClick = {
-                                        if (isCustomizingControls) {
-                                            toggleControlVisibility(PlayerControl.ROTATE)
-                                        } else {
-                                            rotationState.rotate()
-                                        }
+                                        rotationState.rotate()
                                     },
                                     onPlayInBackgroundClick = {
                                         if (isCustomizingControls) {
@@ -636,6 +748,42 @@ internal fun MediaPlayerScreen(
                             }
                         },
                     )
+
+                    draggingPlayerControlUiState?.let { draggingState ->
+                        Box(
+                            modifier = Modifier
+                                .offset {
+                                    androidx.compose.ui.unit.IntOffset(
+                                        x = (draggingState.sourceBounds.left + draggingState.dragOffset.x).toInt(),
+                                        y = (draggingState.sourceBounds.top + draggingState.dragOffset.y).toInt(),
+                                    )
+                                }
+                                .shadow(16.dp, RoundedCornerShape(16.dp)),
+                        ) {
+                            PlayerCustomizableControlButton(
+                                control = draggingState.control,
+                                player = player,
+                                videoContentScale = videoZoomAndContentScaleState.videoContentScale,
+                                isPipSupported = pictureInPictureState.isPipSupported,
+                                isCustomizingControls = true,
+                                visiblePlayerControls = visiblePlayerControls,
+                                onPlaylistClick = { },
+                                onPlaybackSpeedClick = { },
+                                onAudioClick = { },
+                                onSubtitleClick = { },
+                                onLockControlsClick = { },
+                                onVideoContentScaleClick = { },
+                                onVideoContentScaleLongClick = { },
+                                onPictureInPictureClick = { },
+                                onRotateClick = { },
+                                isTakingScreenshot = isTakingScreenshot,
+                                onScreenshotClick = { },
+                                onPlayInBackgroundClick = { },
+                                onLoopClick = { },
+                                onShuffleClick = { },
+                            )
+                        }
+                    }
                 }
 
                 val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
