@@ -1,6 +1,7 @@
 package one.next.player.feature.player.ui.controls
 
 import androidx.annotation.OptIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,8 +111,15 @@ fun ControlsTopView(
             modifier = Modifier.weight(1f),
         )
 
+        // 竖屏最多 4 个按钮可见，横屏最多 6 个，超出可滚动
+        val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        val maxVisibleCount = if (isLandscape) 6 else 4
+        val buttonSlotWidth = if (isCustomizingControls) 72.dp else 48.dp
+        val maxRowWidth = buttonSlotWidth * maxVisibleCount
+
         Row(
             modifier = Modifier
+                .widthIn(max = maxRowWidth)
                 .heightIn(min = 72.dp)
                 .then(
                     when (isCustomizingControls) {
@@ -118,7 +129,8 @@ fun ControlsTopView(
                         )
                         false -> Modifier
                     },
-                ),
+                )
+                .horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
