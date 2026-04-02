@@ -2,11 +2,11 @@ package one.next.player.core.data.repository
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.PlayerPreferences
 import one.next.player.core.model.SettingsBackup
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class SettingsBackupManagerTest {
 

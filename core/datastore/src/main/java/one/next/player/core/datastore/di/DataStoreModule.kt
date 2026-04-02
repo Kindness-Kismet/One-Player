@@ -3,8 +3,8 @@ package one.next.player.core.datastore.di
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.dataStoreFile
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.dataStoreFile
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

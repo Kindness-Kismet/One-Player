@@ -1,10 +1,20 @@
-- 调整媒体库右上角菜单，直接提供网络串流和本地视频入口
-- 新增退出应用菜单项，退出时会停止播放并关闭应用
+- 新增播放器控件拖拽自定义，支持长按拖动重新排列和跨区移动
+- 拖拽时显示浮动卡片和虚线占位符，松手后平滑归位
+- 右上区域竖屏最多显示 4 个按钮、横屏最多 6 个，超出可左右滚动
+- 屏幕旋转按钮固定在进度条旁，不参与自定义排列
+- 自定义模式下按钮框线改为亮黄色、标签改为白色
+- 新增键盘快捷键控制播放
+- 优化媒体库菜单分组显示
 
 <details>
 <summary>English Version</summary>
 
-- Update the media library top-right menu with direct actions for network streams and local videos
-- Add an exit app menu item that stops playback and closes the app
+- Add drag-and-drop customization for player controls with long-press reordering and cross-zone moves
+- Show floating card overlay and dashed placeholder during drag with smooth reflow animation
+- Limit top-right zone to 4 buttons in portrait and 6 in landscape with horizontal scroll
+- Pin the screen rotation button next to the seekbar, excluded from customization
+- Use bright yellow borders and white labels in customize mode
+- Add keyboard shortcuts for playback control
+- Improve media picker menu with grouped actions
 
 </details>
