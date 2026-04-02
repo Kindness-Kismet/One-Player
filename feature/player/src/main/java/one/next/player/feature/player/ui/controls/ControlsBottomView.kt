@@ -199,6 +199,7 @@ fun ControlsBottomView(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             bottomLeftControls.forEach { control ->
+                if (!isCustomizingControls && control !in visiblePlayerControls) return@forEach
                 key(control) {
                     AnimatedPlayerControlPlacement(
                         control = control,

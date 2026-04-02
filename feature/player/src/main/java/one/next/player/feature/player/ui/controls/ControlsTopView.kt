@@ -135,6 +135,7 @@ fun ControlsTopView(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             topRightControls.forEach { control ->
+                if (!isCustomizingControls && control !in visiblePlayerControls) return@forEach
                 key(control) {
                     AnimatedPlayerControlPlacement(
                         control = control,
