@@ -48,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -676,6 +677,12 @@ private fun SelectionActionsSheet(
     onDeleteAction: () -> Unit,
     onExcludeAction: () -> Unit,
 ) {
+    // 退出动画期间冻结按钮可见性，避免按钮先于操作栏消失
+    val frozenShowRestore = rememberUpdatedStateWhenVisible(shouldShowSelectionActionsSheet, shouldShowRestoreAction)
+    val frozenShowRename = rememberUpdatedStateWhenVisible(shouldShowSelectionActionsSheet, shouldShowRenameAction)
+    val frozenShowInfo = rememberUpdatedStateWhenVisible(shouldShowSelectionActionsSheet, shouldShowInfoAction)
+    val frozenShowExclude = rememberUpdatedStateWhenVisible(shouldShowSelectionActionsSheet, shouldShowExcludeAction)
+
     AnimatedVisibility(
         visible = shouldShowSelectionActionsSheet,
         enter = slideInVertically { it },
@@ -705,21 +712,21 @@ private fun SelectionActionsSheet(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (shouldShowRestoreAction) {
+                    if (frozenShowRestore) {
                         SelectionActionItem(
                             imageVector = NextIcons.ArrowUpward,
                             text = stringResource(id = R.string.restore),
                             onClick = onRestoreAction,
                         )
                     }
-                    if (shouldShowRenameAction) {
+                    if (frozenShowRename) {
                         SelectionActionItem(
                             imageVector = NextIcons.Edit,
                             text = stringResource(id = R.string.rename),
                             onClick = onRenameAction,
                         )
                     }
-                    if (shouldShowInfoAction) {
+                    if (frozenShowInfo) {
                         SelectionActionItem(
                             imageVector = NextIcons.Info,
                             text = stringResource(id = R.string.info),
@@ -731,7 +738,7 @@ private fun SelectionActionsSheet(
                         text = stringResource(id = R.string.share),
                         onClick = onShareAction,
                     )
-                    if (shouldShowExcludeAction) {
+                    if (frozenShowExclude) {
                         SelectionActionItem(
                             imageVector = NextIcons.FolderOff,
                             text = stringResource(id = R.string.exclude),
@@ -744,7 +751,7 @@ private fun SelectionActionsSheet(
                             id = when (deleteAction) {
                                 MediaPickerDeleteAction.MoveToRecycleBin -> R.string.move_to_recycle_bin
                                 MediaPickerDeleteAction.PermanentlyDelete -> {
-                                    if (shouldShowRestoreAction) {
+                                    if (frozenShowRestore) {
                                         R.string.delete_permanently
                                     } else {
                                         R.string.delete
@@ -895,4 +902,12 @@ private fun MediaPickerLoadingPreview() {
             )
         }
     }
+}
+
+// 仅在 visible=true 时跟踪 value，退出动画期间保持最后值
+@Composable
+private fun rememberUpdatedStateWhenVisible(isVisible: Boolean, value: Boolean): Boolean {
+    var frozen by remember { mutableStateOf(value) }
+    if (isVisible) frozen = value
+    return frozen
 }
