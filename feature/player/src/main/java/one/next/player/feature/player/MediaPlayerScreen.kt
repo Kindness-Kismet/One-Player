@@ -94,6 +94,7 @@ import one.next.player.feature.player.state.rememberMetadataState
 import one.next.player.feature.player.state.rememberPictureInPictureState
 import one.next.player.feature.player.state.rememberRotationState
 import one.next.player.feature.player.state.rememberSeekGestureState
+import one.next.player.feature.player.state.rememberSleepTimerState
 import one.next.player.feature.player.state.rememberTapGestureState
 import one.next.player.feature.player.state.rememberVideoZoomAndContentScaleState
 import one.next.player.feature.player.state.rememberVolumeAndBrightnessGestureState
@@ -103,6 +104,7 @@ import one.next.player.feature.player.state.seekToPositionFormated
 import one.next.player.feature.player.ui.DoubleTapIndicator
 import one.next.player.feature.player.ui.OverlayShowView
 import one.next.player.feature.player.ui.OverlayView
+import one.next.player.feature.player.ui.SleepTimerDialog
 import one.next.player.feature.player.ui.SubtitleConfiguration
 import one.next.player.feature.player.ui.VerticalProgressView
 import one.next.player.feature.player.ui.controls.ControlsBottomView
@@ -232,6 +234,7 @@ internal fun MediaPlayerScreen(
     var previewPlayerControlsLayout by remember { mutableStateOf<PlayerControlsLayout?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val sleepTimerState = rememberSleepTimerState(player = player)
     val permanentlyVisibleControls = remember {
         setOf(
             PlayerControl.BACK,
@@ -258,6 +261,7 @@ internal fun MediaPlayerScreen(
         PlayerControl.entries.toSet() - hiddenPlayerControls
     }
     var shouldShowOverlay by remember { mutableStateOf(false) }
+    var isSleepTimerDialogShown by remember { mutableStateOf(false) }
     var longPressOverlayAnimationStep by remember { mutableIntStateOf(0) }
     val keyboardInteractionEnabledState = rememberUpdatedState(
         overlayView == null &&
@@ -633,6 +637,15 @@ internal fun MediaPlayerScreen(
                                             onBackClick()
                                         }
                                     },
+                                    onSleepTimerClick = {
+                                        if (isCustomizingControls) {
+                                            toggleControlVisibility(PlayerControl.SLEEP_TIMER)
+                                        } else {
+                                            controlsVisibilityState.hideControls()
+                                            isSleepTimerDialogShown = true
+                                        }
+                                    },
+                                    sleepTimerState = sleepTimerState,
                                 )
                             }
                         },
@@ -712,6 +725,15 @@ internal fun MediaPlayerScreen(
                                     onShuffleClick = {
                                         toggleControlVisibility(PlayerControl.SHUFFLE)
                                     }.takeIf { isCustomizingControls },
+                                    onSleepTimerClick = {
+                                        if (isCustomizingControls) {
+                                            toggleControlVisibility(PlayerControl.SLEEP_TIMER)
+                                        } else {
+                                            controlsVisibilityState.hideControls()
+                                            isSleepTimerDialogShown = true
+                                        }
+                                    },
+                                    sleepTimerState = sleepTimerState,
                                     onLockControlsClick = {
                                         if (isCustomizingControls) {
                                             toggleControlVisibility(PlayerControl.LOCK)
@@ -781,6 +803,7 @@ internal fun MediaPlayerScreen(
                                 onPlayInBackgroundClick = { },
                                 onLoopClick = { },
                                 onShuffleClick = { },
+                                onSleepTimerClick = { },
                             )
                         }
                     }
@@ -831,6 +854,13 @@ internal fun MediaPlayerScreen(
                 onVideoContentScaleChanged = { videoZoomAndContentScaleState.onVideoContentScaleChanged(it) },
             )
         }
+    }
+
+    if (isSleepTimerDialogShown) {
+        SleepTimerDialog(
+            sleepTimerState = sleepTimerState,
+            onDismiss = { isSleepTimerDialogShown = false },
+        )
     }
 
     errorState.error?.let { error ->

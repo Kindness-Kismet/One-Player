@@ -18,6 +18,7 @@ import one.next.player.feature.player.buttons.LoopButton
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.buttons.ShuffleButton
 import one.next.player.feature.player.extensions.drawableRes
+import one.next.player.feature.player.state.SleepTimerState
 
 @Composable
 internal fun PlayerCustomizableControlButton(
@@ -44,6 +45,8 @@ internal fun PlayerCustomizableControlButton(
     onPlayInBackgroundClick: () -> Unit,
     onLoopClick: (() -> Unit)? = null,
     onShuffleClick: (() -> Unit)? = null,
+    onSleepTimerClick: (() -> Unit)? = null,
+    sleepTimerState: SleepTimerState? = null,
 ) {
     if (!isCustomizingControls && control !in visiblePlayerControls) return
     if (!isCustomizingControls && control == PlayerControl.PIP && !isPipSupported) return
@@ -220,6 +223,26 @@ internal fun PlayerCustomizableControlButton(
             )
         }
 
+        PlayerControl.SLEEP_TIMER -> {
+            val isSleepTimerActive = sleepTimerState?.isActive == true
+            PlayerButton(
+                modifier = buttonModifier,
+                isSelected = isSelected,
+                label = label,
+                isOutlineOnly = isPlaceholder,
+                onClick = {
+                    onSleepTimerClick?.invoke()
+                },
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (isSleepTimerActive) R.drawable.ic_sleep_timer_on else R.drawable.ic_sleep_timer,
+                    ),
+                    contentDescription = "btn_sleep_timer",
+                )
+            }
+        }
+
         PlayerControl.ROTATE -> {
             PlayerButton(
                 modifier = buttonModifier,
@@ -256,6 +279,7 @@ private fun PlayerControl.label(): String = when (this) {
     PlayerControl.BACKGROUND_PLAY -> stringResource(R.string.background_play)
     PlayerControl.LOOP -> stringResource(R.string.loop_mode)
     PlayerControl.SHUFFLE -> stringResource(R.string.shuffle)
+    PlayerControl.SLEEP_TIMER -> stringResource(R.string.sleep_timer)
     PlayerControl.ROTATE -> stringResource(R.string.screen_rotation)
     PlayerControl.BACK,
     PlayerControl.PREVIOUS,

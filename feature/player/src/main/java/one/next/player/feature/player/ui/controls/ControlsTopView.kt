@@ -39,6 +39,7 @@ import one.next.player.feature.player.AnimatedPlayerControlPlacement
 import one.next.player.feature.player.buttons.PlayerButton
 import one.next.player.feature.player.playerControlDragSource
 import one.next.player.feature.player.playerControlZoneTarget
+import one.next.player.feature.player.state.SleepTimerState
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -75,6 +76,8 @@ fun ControlsTopView(
     onPlayInBackgroundClick: () -> Unit = {},
     onLoopClick: (() -> Unit)? = null,
     onShuffleClick: (() -> Unit)? = null,
+    onSleepTimerClick: (() -> Unit)? = null,
+    sleepTimerState: SleepTimerState? = null,
     onBackClick: () -> Unit,
 ) {
     val systemBarsPadding = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues()
@@ -172,6 +175,8 @@ fun ControlsTopView(
                             onPlayInBackgroundClick = onPlayInBackgroundClick,
                             onLoopClick = onLoopClick,
                             onShuffleClick = onShuffleClick,
+                            onSleepTimerClick = onSleepTimerClick,
+                            sleepTimerState = sleepTimerState,
                         )
                     }
                 }

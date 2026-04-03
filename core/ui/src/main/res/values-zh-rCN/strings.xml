@@ -264,6 +264,10 @@
     <string name="crash_screen_restart">重启应用</string>
     <string name="crash_screen_logcat">日志：</string>
     <string name="shuffle">随机播放</string>
+    <string name="sleep_timer">睡眠定时</string>
+    <string name="sleep_timer_off">关闭</string>
+    <string name="sleep_timer_minutes">%d 分钟</string>
+    <string name="sleep_timer_remaining">剩余</string>
     <string name="reset_seek_increment">重置跳转增量</string>
     <string name="reset_controller_timeout">重置控制器超时</string>
     <string name="pan_gesture">平移手势</string>

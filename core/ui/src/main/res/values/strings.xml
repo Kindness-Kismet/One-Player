@@ -278,6 +278,10 @@
     <string name="brightness_gesture_sensitivity">Brightness gesture sensitivity</string>
     <string name="reset_brightness_gesture_sensitivity">Reset brightness gesture sensitivity</string>
     <string name="shuffle">Shuffle</string>
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_timer_off">Off</string>
+    <string name="sleep_timer_minutes">%d min</string>
+    <string name="sleep_timer_remaining">Remaining</string>
     <string name="crash_screen_title">Oops</string>
     <string name="crash_screen_subtitle">Looks like %s experienced an unexpected error. Consider sharing the crash logs in a GitHub issue.</string>
     <string name="crash_screen_logs_title">Crash logs:</string>

@@ -95,5 +95,6 @@ enum class PlayerControl {
     BACKGROUND_PLAY,
     LOOP,
     SHUFFLE,
+    SLEEP_TIMER,
     ROTATE,
 }

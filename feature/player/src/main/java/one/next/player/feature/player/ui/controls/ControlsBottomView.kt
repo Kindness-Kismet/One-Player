@@ -70,6 +70,7 @@ import one.next.player.feature.player.extensions.noRippleClickable
 import one.next.player.feature.player.playerControlDragSource
 import one.next.player.feature.player.playerControlZoneTarget
 import one.next.player.feature.player.state.MediaPresentationState
+import one.next.player.feature.player.state.SleepTimerState
 import one.next.player.feature.player.state.durationFormatted
 
 @OptIn(UnstableApi::class)
@@ -95,6 +96,8 @@ fun ControlsBottomView(
     onCustomizeControlsClick: () -> Unit,
     onLoopClick: (() -> Unit)? = null,
     onShuffleClick: (() -> Unit)? = null,
+    onSleepTimerClick: (() -> Unit)? = null,
+    sleepTimerState: SleepTimerState? = null,
     isCustomizingControls: Boolean,
     draggingControl: PlayerControl? = null,
     onControlDropDragged: (PlayerControl, Offset) -> Unit = { _, _ -> },
@@ -236,6 +239,8 @@ fun ControlsBottomView(
                             onPlayInBackgroundClick = onPlayInBackgroundClick,
                             onLoopClick = onLoopClick,
                             onShuffleClick = onShuffleClick,
+                            onSleepTimerClick = onSleepTimerClick,
+                            sleepTimerState = sleepTimerState,
                         )
                     }
                 }
