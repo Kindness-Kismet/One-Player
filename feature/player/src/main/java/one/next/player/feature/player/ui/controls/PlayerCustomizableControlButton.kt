@@ -3,11 +3,14 @@ package one.next.player.feature.player.ui.controls
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import one.next.player.core.model.PlayerControl
@@ -234,12 +237,20 @@ internal fun PlayerCustomizableControlButton(
                     onSleepTimerClick?.invoke()
                 },
             ) {
-                Icon(
-                    painter = painterResource(
-                        if (isSleepTimerActive) R.drawable.ic_sleep_timer_on else R.drawable.ic_sleep_timer,
-                    ),
-                    contentDescription = "btn_sleep_timer",
-                )
+                if (isSleepTimerActive) {
+                    val remainingMin = ((sleepTimerState!!.remainingMillis + 59_999) / 60_000).toInt()
+                    Text(
+                        text = "$remainingMin",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_sleep_timer),
+                        contentDescription = "btn_sleep_timer",
+                    )
+                }
             }
         }
 
