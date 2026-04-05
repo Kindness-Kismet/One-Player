@@ -410,7 +410,7 @@ internal fun MediaPickerScreen(
                         MediaService.shouldAskSystemForDeleteConfirmation()
                     ) {
                         onEvent(MediaPickerUiEvent.PermanentlyDeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
-                        selectionManager.clearSelection()
+                        selectionManager.exitSelectionMode()
                     } else {
                         shouldShowDeleteVideosConfirmation = true
                     }
@@ -553,7 +553,7 @@ internal fun MediaPickerScreen(
                         onEvent(MediaPickerUiEvent.PermanentlyDeleteVideos(selectionManager.allSelectedVideos.map { it.uriString }))
                     }
                 }
-                selectionManager.clearSelection()
+                selectionManager.exitSelectionMode()
                 shouldShowDeleteVideosConfirmation = false
             },
             onCancel = { shouldShowDeleteVideosConfirmation = false },

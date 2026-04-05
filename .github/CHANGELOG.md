@@ -1,12 +1,8 @@
-- 将睡眠定时器图标从月亮替换为计时器样式
-- 睡眠定时器激活时按钮直接显示剩余分钟数
-- 修复长按选中后按返回键时底部操作栏按钮先于栏体消失的问题
+- 删除选中文件后，在已选数量变为 0 时自动退出多选状态
 
 <details>
 <summary>English Version</summary>
 
-- Replace sleep timer moon icon with a timer-style icon
-- Show remaining minutes on the sleep timer button when active
-- Fix selection action bar buttons disappearing before the bar during exit animation
+- Exit selection mode automatically after deleting selected files when the selection count becomes 0
 
 </details>
