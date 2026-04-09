@@ -1,8 +1,8 @@
-- 修复 WebDAV 远程播放状态使用 stable key 存储与恢复
+- 修复外部字幕加载时在后台线程访问 Player 导致的闪退
 
 <details>
 <summary>English Version</summary>
 
-- Fix WebDAV remote playback state persistence and restore with a stable key
+- Fix crash caused by accessing Player from a background thread while loading external subtitles
 
 </details>

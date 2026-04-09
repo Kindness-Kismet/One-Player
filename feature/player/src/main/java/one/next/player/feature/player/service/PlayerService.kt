@@ -1873,13 +1873,15 @@ class PlayerService : MediaSessionService() {
         null
     }
 
-    // 在播放列表中按 mediaId 查找对应的 Player、索引和 MediaItem
-    private fun findMediaItemInSession(mediaId: String): Triple<Player, Int, MediaItem>? {
-        val player = mediaSession?.player ?: return null
+    // 在主线程播放列表中按 mediaId 查找对应的 Player、索引和 MediaItem
+    private suspend fun findMediaItemInSession(mediaId: String): Triple<Player, Int, MediaItem>? = withContext(
+        Dispatchers.Main.immediate,
+    ) {
+        val player = mediaSession?.player ?: return@withContext null
         val index = (0 until player.mediaItemCount).firstOrNull {
             player.getMediaItemAt(it).mediaId == mediaId
-        } ?: return null
-        return Triple(player, index, player.getMediaItemAt(index))
+        } ?: return@withContext null
+        Triple(player, index, player.getMediaItemAt(index))
     }
 
     private fun loadArtworkInBackground(mediaItems: List<MediaItem>) {
