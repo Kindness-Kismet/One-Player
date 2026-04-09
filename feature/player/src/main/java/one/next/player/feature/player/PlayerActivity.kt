@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -261,7 +262,11 @@ class PlayerActivity : AppCompatActivity() {
                                         MimeTypes.BASE_TYPE_TEXT + "/*",
                                         MimeTypes.BASE_TYPE_AUDIO + "/aac",
                                     ),
-                                    initialUri = intent.getParcelableExtra("initial_subtitle_directory_uri"),
+                                    initialUri = IntentCompat.getParcelableExtra(
+                                        intent,
+                                        "initial_subtitle_directory_uri",
+                                        Uri::class.java,
+                                    ),
                                 ),
                             ) ?: return@launch
                             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -44,7 +44,7 @@ class WebDavClient @Inject constructor() {
             error("WebDAV PROPFIND failed: HTTP ${response.code}")
         }
 
-        val body = response.body ?: error("Empty response body")
+        val body = response.body
         val files = parsePropfindResponse(body.byteStream(), normalizedPath)
         response.close()
         files

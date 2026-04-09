@@ -1,10 +1,10 @@
 [versions]
-android-compileSdk = "36"
-android-targetSdk = "36"
+android-compileSdk = "37"
+android-targetSdk = "37"
 android-minSdk = "30"
 android-jvm = "17"
 aboutlibraries = "14.0.0-b03"
-androidGradlePlugin = "9.1.0"
+androidGradlePlugin = "9.2.0-alpha07"
 androidMaterial = "1.13.0"
 androidxActivity = "1.13.0"
 androidxAppCompat = "1.7.1"

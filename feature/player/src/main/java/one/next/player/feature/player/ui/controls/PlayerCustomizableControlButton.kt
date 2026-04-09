@@ -238,7 +238,8 @@ internal fun PlayerCustomizableControlButton(
                 },
             ) {
                 if (isSleepTimerActive) {
-                    val remainingMin = ((sleepTimerState!!.remainingMillis + 59_999) / 60_000).toInt()
+                    val remainingMillis = sleepTimerState?.remainingMillis ?: return@PlayerButton
+                    val remainingMin = ((remainingMillis + 59_999) / 60_000).toInt()
                     Text(
                         text = "$remainingMin",
                         style = MaterialTheme.typography.labelSmall,

@@ -375,10 +375,7 @@ class CloudDocumentsProvider : DocumentsProvider() {
             requestBuilder.header(key, value)
         }
         val response = httpClient.newCall(requestBuilder.build()).execute()
-        val body = response.body ?: run {
-            response.close()
-            throw FileNotFoundException("Empty response body")
-        }
+        val body = response.body
         if (!response.isSuccessful) {
             body.close()
             response.close()
