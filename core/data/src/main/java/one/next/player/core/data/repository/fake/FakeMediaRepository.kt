@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import one.next.player.core.data.models.VideoState
 import one.next.player.core.data.repository.MediaRepository
+import one.next.player.core.data.repository.isRemotePlaybackStateKey
 import one.next.player.core.model.Folder
 import one.next.player.core.model.Video
 
@@ -49,9 +50,12 @@ class FakeMediaRepository : MediaRepository {
 
     override suspend fun getVideoState(uris: List<String>): VideoState? = null
 
-    override suspend fun getCanonicalMediaUri(uri: String): String = videos.find { video ->
-        video.uriString == uri || video.path == uri
-    }?.uriString ?: uri
+    override suspend fun getCanonicalMediaUri(uri: String): String {
+        if (uri.isRemotePlaybackStateKey()) return uri
+        return videos.find { video ->
+            video.uriString == uri || video.path == uri
+        }?.uriString ?: uri
+    }
 
     override suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long) {
     }

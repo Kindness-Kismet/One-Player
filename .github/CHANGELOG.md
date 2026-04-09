@@ -1,8 +1,8 @@
-- 删除选中文件后，在已选数量变为 0 时自动退出多选状态
+- 修复 WebDAV 远程播放状态使用 stable key 存储与恢复
 
 <details>
 <summary>English Version</summary>
 
-- Exit selection mode automatically after deleting selected files when the selection count becomes 0
+- Fix WebDAV remote playback state persistence and restore with a stable key
 
 </details>

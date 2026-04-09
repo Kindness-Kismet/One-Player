@@ -152,11 +152,14 @@ class CloudBrowseViewModel @Inject constructor(
         return "${server.id}|${Uri.encode(_uiState.value.currentPath)}"
     }
 
-    fun buildAuthHeaders(): Map<String, String> {
+    fun buildAuthHeaders(file: RemoteFile): Map<String, String> {
         val server = _uiState.value.server ?: return emptyMap()
         return when (server.protocol) {
             ServerProtocol.WEBDAV -> buildMap {
                 putAll(webDavClient.buildAuthHeaders(server))
+                put("_remote_server_id", server.id.toString())
+                put("_remote_file_path", file.path)
+                put("_remote_protocol", "webdav")
                 if (server.username.isNotBlank()) {
                     put("_webdav_username", server.username)
                     put("_webdav_password", server.password)

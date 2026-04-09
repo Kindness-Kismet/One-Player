@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import one.next.player.core.data.repository.ExternalSubtitleFontSource
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.data.repository.SubtitleFontRepository
+import one.next.player.core.data.repository.buildRemotePlaybackStateKey
 import one.next.player.core.domain.GetSortedPlaylistUseCase
 import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.LoopMode
@@ -22,6 +24,9 @@ import one.next.player.core.model.PlayerControlsLayout
 import one.next.player.core.model.PlayerPreferences
 import one.next.player.core.model.Video
 import one.next.player.core.model.VideoContentScale
+import one.next.player.feature.player.extensions.remoteFilePath
+import one.next.player.feature.player.extensions.remoteProtocol
+import one.next.player.feature.player.extensions.remoteServerId
 import one.next.player.feature.player.state.SubtitleOptionsEvent
 import one.next.player.feature.player.state.VideoZoomEvent
 
@@ -117,7 +122,7 @@ class PlayerViewModel @Inject constructor(
                 updateVideoContentScale(event.contentScale)
             }
             is VideoZoomEvent.ZoomChanged -> {
-                updateVideoZoom(event.mediaItem.mediaId, event.zoom)
+                updateVideoZoom(event.mediaItem.resolvePlaybackStateUri(), event.zoom)
             }
         }
     }
@@ -125,10 +130,10 @@ class PlayerViewModel @Inject constructor(
     fun onSubtitleOptionEvent(event: SubtitleOptionsEvent) {
         when (event) {
             is SubtitleOptionsEvent.DelayChanged -> {
-                updateSubtitleDelay(event.mediaItem.mediaId, event.delay)
+                updateSubtitleDelay(event.mediaItem.resolvePlaybackStateUri(), event.delay)
             }
             is SubtitleOptionsEvent.SpeedChanged -> {
-                updateSubtitleSpeed(event.mediaItem.mediaId, event.speed)
+                updateSubtitleSpeed(event.mediaItem.resolvePlaybackStateUri(), event.speed)
             }
         }
     }
@@ -144,6 +149,12 @@ class PlayerViewModel @Inject constructor(
             mediaRepository.updateSubtitleSpeed(uri, speed)
         }
     }
+
+    private fun MediaItem.resolvePlaybackStateUri(): String = buildRemotePlaybackStateKey(
+        remoteProtocol = mediaMetadata.remoteProtocol,
+        remoteServerId = mediaMetadata.remoteServerId,
+        remoteFilePath = mediaMetadata.remoteFilePath,
+    ) ?: mediaId
 }
 
 @Stable

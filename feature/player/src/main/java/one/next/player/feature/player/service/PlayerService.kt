@@ -101,6 +101,9 @@ import one.next.player.core.data.remote.SmbClient
 import one.next.player.core.data.remote.WebDavClient
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.PreferencesRepository
+import one.next.player.core.data.repository.buildPlaybackStateCandidates
+import one.next.player.core.data.repository.buildRemotePlaybackStateKey
+import one.next.player.core.data.repository.isRemotePlaybackStateKey
 import one.next.player.core.model.DecoderPriority
 import one.next.player.core.model.LoopMode
 import one.next.player.core.model.PlayerPreferences
@@ -123,6 +126,9 @@ import one.next.player.feature.player.extensions.getSubtitleMime
 import one.next.player.feature.player.extensions.isApproximateSeekEnabled
 import one.next.player.feature.player.extensions.playbackSpeed
 import one.next.player.feature.player.extensions.positionMs
+import one.next.player.feature.player.extensions.remoteFilePath
+import one.next.player.feature.player.extensions.remoteProtocol
+import one.next.player.feature.player.extensions.remoteServerId
 import one.next.player.feature.player.extensions.requestHeaders
 import one.next.player.feature.player.extensions.setExtras
 import one.next.player.feature.player.extensions.setIsScrubbingModeEnabled
@@ -363,9 +369,9 @@ class PlayerService : MediaSessionService() {
                         mediaItemToUpdate.copy(positionMs = updatedPosition),
                     )
                     serviceScope.launch {
-                        val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = oldMediaItem.mediaId)
+                        val playbackStateUri = oldMediaItem.resolvePlaybackStateUri()
                         mediaRepository.updateMediumPosition(
-                            uri = canonicalMediaUri,
+                            uri = playbackStateUri,
                             position = updatedPosition,
                         )
                     }
@@ -375,9 +381,9 @@ class PlayerService : MediaSessionService() {
                     serviceScope.launch {
                         val durationMs = oldMediaItem.mediaMetadata.durationMs
                         val isAtEnd = durationMs != null && oldPosition.positionMs >= durationMs - 1000
-                        val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = oldMediaItem.mediaId)
+                        val playbackStateUri = oldMediaItem.resolvePlaybackStateUri()
                         mediaRepository.updateMediumPosition(
-                            uri = canonicalMediaUri,
+                            uri = playbackStateUri,
                             position = if (isAtEnd) C.TIME_UNSET else oldPosition.positionMs,
                         )
                     }
@@ -449,16 +455,16 @@ class PlayerService : MediaSessionService() {
             val subtitleTrackIndex = player.getManuallySelectedTrackIndex(C.TRACK_TYPE_TEXT)
 
             serviceScope.launch {
-                val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = currentMediaItem.mediaId)
+                val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                 if (audioTrackIndex != null) {
                     mediaRepository.updateMediumAudioTrack(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         audioTrackIndex = audioTrackIndex,
                     )
                 }
                 if (subtitleTrackIndex != null) {
                     mediaRepository.updateMediumSubtitleTrack(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         subtitleTrackIndex = subtitleTrackIndex,
                     )
                 }
@@ -491,11 +497,11 @@ class PlayerService : MediaSessionService() {
 
             if (playbackState == Player.STATE_READY) {
                 val player = mediaSession?.player ?: return
-                val mediaId = player.currentMediaItem?.mediaId ?: return
+                val currentMediaItem = player.currentMediaItem ?: return
                 serviceScope.launch {
-                    val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = mediaId)
+                    val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                     mediaRepository.updateMediumLastPlayedTime(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         lastPlayedTime = System.currentTimeMillis(),
                     )
                 }
@@ -551,10 +557,10 @@ class PlayerService : MediaSessionService() {
             super.onIsPlayingChanged(isPlaying)
             mediaSession?.run {
                 serviceScope.launch {
-                    val mediaId = player.currentMediaItem?.mediaId ?: return@launch
-                    val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = mediaId)
+                    val currentMediaItem = player.currentMediaItem ?: return@launch
+                    val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                     mediaRepository.updateMediumPosition(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         position = player.currentPosition,
                     )
                 }
@@ -949,13 +955,13 @@ class PlayerService : MediaSessionService() {
                         uri = subtitleUri,
                         subtitleEncoding = playerPreferences.subtitleTextEncoding,
                     )
-                    val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = currentMediaItem.mediaId)
+                    val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                     mediaRepository.updateMediumPosition(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         position = player.currentPosition,
                     )
                     mediaRepository.addExternalSubtitleToMedium(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         subtitleUri = subtitleUri,
                     )
                     player.addAdditionalSubtitleConfiguration(newSubConfiguration)
@@ -1004,9 +1010,9 @@ class PlayerService : MediaSessionService() {
 
                     player.setPlaybackSpeed(playbackSpeed)
                     serviceScope.launch {
-                        val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = currentMediaItem.mediaId)
+                        val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                         mediaRepository.updateMediumPlaybackSpeed(
-                            uri = canonicalMediaUri,
+                            uri = playbackStateUri,
                             playbackSpeed = playbackSpeed,
                         )
                     }
@@ -1085,10 +1091,10 @@ class PlayerService : MediaSessionService() {
                 CustomCommands.STOP_PLAYER_SESSION -> {
                     mediaSession?.run {
                         serviceScope.launch {
-                            val mediaId = player.currentMediaItem?.mediaId ?: return@launch
-                            val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = mediaId)
+                            val currentMediaItem = player.currentMediaItem ?: return@launch
+                            val playbackStateUri = currentMediaItem.resolvePlaybackStateUri()
                             mediaRepository.updateMediumPosition(
-                                uri = canonicalMediaUri,
+                                uri = playbackStateUri,
                                 position = player.currentPosition,
                             )
                         }
@@ -1243,10 +1249,23 @@ class PlayerService : MediaSessionService() {
         mediaItems.map { mediaItem ->
             async {
                 val uri = mediaItem.mediaId.toUri()
-                val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = mediaItem.mediaId)
-                val video = mediaRepository.getVideoByUri(uri = canonicalMediaUri)
-                val videoState = mediaRepository.getVideoState(
-                    uris = listOf(mediaItem.mediaId, canonicalMediaUri).distinct(),
+                val playbackStateUri = mediaItem.resolvePlaybackStateUri()
+                val playbackStateCandidates = mediaItem.playbackStateCandidates()
+                val primaryVideoState = mediaRepository.getVideoState(uri = playbackStateUri)
+                val fallbackVideoState = playbackStateCandidates
+                    .firstOrNull { candidate -> candidate != playbackStateUri }
+                    ?.let { fallbackUri ->
+                        mediaRepository.getVideoState(uri = fallbackUri)
+                    }
+                migrateFallbackStateToPlaybackStateUri(
+                    playbackStateUri = playbackStateUri,
+                    primaryVideoState = primaryVideoState,
+                    fallbackVideoState = fallbackVideoState,
+                )
+                val video = mediaRepository.getVideoByUri(uri = playbackStateUri)
+                val videoState = mergeVideoState(
+                    primaryVideoState = primaryVideoState,
+                    fallbackVideoState = fallbackVideoState,
                 )
 
                 val externalSubs = videoState?.externalSubs ?: emptyList()
@@ -1261,11 +1280,25 @@ class PlayerService : MediaSessionService() {
                 }
                 if (validExternalSubs.size != externalSubs.size) {
                     mediaRepository.updateExternalSubs(
-                        uri = canonicalMediaUri,
+                        uri = playbackStateUri,
                         externalSubs = validExternalSubs,
                     )
                 }
                 val existingSubConfigurations = mediaItem.localConfiguration?.subtitleConfigurations ?: emptyList()
+                val restoredSubConfigurations = validExternalSubs.map { subtitleUri ->
+                    if (subtitleUri.scheme == "smb") {
+                        buildDirectSubtitleConfiguration(subtitleUri)
+                    } else {
+                        uriToSubtitleConfiguration(
+                            uri = subtitleUri,
+                            subtitleEncoding = playerPreferences.subtitleTextEncoding,
+                        )
+                    }
+                }
+                val mergedSubConfigurations = mergeSubtitleConfigurations(
+                    existing = existingSubConfigurations,
+                    incoming = restoredSubConfigurations,
+                )
 
                 // 先写入占位封面，后台再异步加载真实封面
                 val artworkUri = getDefaultArtworkUri()
@@ -1281,6 +1314,60 @@ class PlayerService : MediaSessionService() {
                 val subtitleTrackIndex = mediaItem.mediaMetadata.subtitleTrackIndex ?: videoState?.subtitleTrackIndex
                 val subtitleDelay = mediaItem.mediaMetadata.subtitleDelayMilliseconds ?: videoState?.subtitleDelayMilliseconds
                 val subtitleSpeed = mediaItem.mediaMetadata.subtitleSpeed ?: videoState?.subtitleSpeed
+                if (primaryVideoState != null && fallbackVideoState != null) {
+                    positionMs?.takeIf { primaryVideoState.position == null }?.let { position ->
+                        mediaRepository.updateMediumPosition(
+                            uri = playbackStateUri,
+                            position = position,
+                        )
+                    }
+                    playbackSpeed?.takeIf { primaryVideoState.playbackSpeed == null }?.let { speed ->
+                        mediaRepository.updateMediumPlaybackSpeed(
+                            uri = playbackStateUri,
+                            playbackSpeed = speed,
+                        )
+                    }
+                    audioTrackIndex?.takeIf { primaryVideoState.audioTrackIndex == null }?.let { index ->
+                        mediaRepository.updateMediumAudioTrack(
+                            uri = playbackStateUri,
+                            audioTrackIndex = index,
+                        )
+                    }
+                    subtitleTrackIndex?.takeIf { primaryVideoState.subtitleTrackIndex == null }?.let { index ->
+                        mediaRepository.updateMediumSubtitleTrack(
+                            uri = playbackStateUri,
+                            subtitleTrackIndex = index,
+                        )
+                    }
+                    if (primaryVideoState.externalSubs.isEmpty() && validExternalSubs.isNotEmpty()) {
+                        mediaRepository.updateExternalSubs(
+                            uri = playbackStateUri,
+                            externalSubs = validExternalSubs,
+                        )
+                    }
+                    subtitleDelay?.takeIf { primaryVideoState.subtitleDelayMilliseconds == 0L }?.let { delay ->
+                        mediaRepository.updateSubtitleDelay(
+                            uri = playbackStateUri,
+                            delay = delay,
+                        )
+                    }
+                    subtitleSpeed?.takeIf { kotlin.math.abs(primaryVideoState.subtitleSpeed - 1f) <= 0.001f }?.let { speed ->
+                        if (kotlin.math.abs(speed - 1f) > 0.001f) {
+                            mediaRepository.updateSubtitleSpeed(
+                                uri = playbackStateUri,
+                                speed = speed,
+                            )
+                        }
+                    }
+                    videoScale?.takeIf { kotlin.math.abs(primaryVideoState.videoScale - 1f) <= 0.001f }?.let { scale ->
+                        if (kotlin.math.abs(scale - 1f) > 0.001f) {
+                            mediaRepository.updateMediumZoom(
+                                uri = playbackStateUri,
+                                zoom = scale,
+                            )
+                        }
+                    }
+                }
                 // MediaStore 返回的宽高已考虑 rotation，用于预设屏幕方向
                 val videoWidth = video?.width
                 val videoHeight = video?.height
@@ -1289,7 +1376,7 @@ class PlayerService : MediaSessionService() {
                 val isApproximateSeekEnabled = isLocalUri && mediaPath?.endsWith(".mkv", ignoreCase = true) == true
 
                 mediaItem.buildUpon().apply {
-                    setSubtitleConfigurations(existingSubConfigurations)
+                    setSubtitleConfigurations(mergedSubConfigurations)
                     setMediaMetadata(
                         MediaMetadata.Builder().apply {
                             setTitle(title)
@@ -1307,6 +1394,9 @@ class PlayerService : MediaSessionService() {
                                 videoHeight = videoHeight,
                                 isApproximateSeekEnabled = isApproximateSeekEnabled,
                                 requestHeaders = mediaItem.mediaMetadata.requestHeaders,
+                                remoteServerId = mediaItem.mediaMetadata.remoteServerId,
+                                remoteFilePath = mediaItem.mediaMetadata.remoteFilePath,
+                                remoteProtocol = mediaItem.mediaMetadata.remoteProtocol,
                             )
                         }.build(),
                     )
@@ -1326,6 +1416,101 @@ class PlayerService : MediaSessionService() {
         duration?.takeIf { it > 0L }
     } catch (_: Exception) {
         null
+    }
+
+    private suspend fun migrateFallbackStateToPlaybackStateUri(
+        playbackStateUri: String,
+        primaryVideoState: one.next.player.core.data.models.VideoState?,
+        fallbackVideoState: one.next.player.core.data.models.VideoState?,
+    ) {
+        if (fallbackVideoState == null) return
+        if (fallbackVideoState.path == playbackStateUri) return
+        if (fallbackVideoState.path.isRemotePlaybackStateKey()) return
+
+        if (primaryVideoState?.position == null) {
+            fallbackVideoState.position?.let { position ->
+                mediaRepository.updateMediumPosition(
+                    uri = playbackStateUri,
+                    position = position,
+                )
+            }
+        }
+        if (primaryVideoState?.playbackSpeed == null) {
+            fallbackVideoState.playbackSpeed?.let { speed ->
+                mediaRepository.updateMediumPlaybackSpeed(
+                    uri = playbackStateUri,
+                    playbackSpeed = speed,
+                )
+            }
+        }
+        if (primaryVideoState?.audioTrackIndex == null) {
+            fallbackVideoState.audioTrackIndex?.let { audioTrackIndex ->
+                mediaRepository.updateMediumAudioTrack(
+                    uri = playbackStateUri,
+                    audioTrackIndex = audioTrackIndex,
+                )
+            }
+        }
+        if (primaryVideoState?.subtitleTrackIndex == null) {
+            fallbackVideoState.subtitleTrackIndex?.let { subtitleTrackIndex ->
+                mediaRepository.updateMediumSubtitleTrack(
+                    uri = playbackStateUri,
+                    subtitleTrackIndex = subtitleTrackIndex,
+                )
+            }
+        }
+        if (primaryVideoState?.externalSubs.isNullOrEmpty() && fallbackVideoState.externalSubs.isNotEmpty()) {
+            mediaRepository.updateExternalSubs(
+                uri = playbackStateUri,
+                externalSubs = fallbackVideoState.externalSubs,
+            )
+        }
+        if ((primaryVideoState?.subtitleDelayMilliseconds ?: 0L) == 0L && fallbackVideoState.subtitleDelayMilliseconds != 0L) {
+            mediaRepository.updateSubtitleDelay(
+                uri = playbackStateUri,
+                delay = fallbackVideoState.subtitleDelayMilliseconds,
+            )
+        }
+        if (
+            kotlin.math.abs((primaryVideoState?.subtitleSpeed ?: 1f) - 1f) <= 0.001f &&
+            kotlin.math.abs(fallbackVideoState.subtitleSpeed - 1f) > 0.001f
+        ) {
+            mediaRepository.updateSubtitleSpeed(
+                uri = playbackStateUri,
+                speed = fallbackVideoState.subtitleSpeed,
+            )
+        }
+        if (
+            kotlin.math.abs((primaryVideoState?.videoScale ?: 1f) - 1f) <= 0.001f &&
+            kotlin.math.abs(fallbackVideoState.videoScale - 1f) > 0.001f
+        ) {
+            mediaRepository.updateMediumZoom(
+                uri = playbackStateUri,
+                zoom = fallbackVideoState.videoScale,
+            )
+        }
+    }
+
+    private fun mergeVideoState(
+        primaryVideoState: one.next.player.core.data.models.VideoState?,
+        fallbackVideoState: one.next.player.core.data.models.VideoState?,
+    ): one.next.player.core.data.models.VideoState? {
+        if (primaryVideoState == null) return fallbackVideoState
+        if (fallbackVideoState == null) return primaryVideoState
+
+        return primaryVideoState.copy(
+            position = primaryVideoState.position ?: fallbackVideoState.position,
+            audioTrackIndex = primaryVideoState.audioTrackIndex ?: fallbackVideoState.audioTrackIndex,
+            subtitleTrackIndex = primaryVideoState.subtitleTrackIndex ?: fallbackVideoState.subtitleTrackIndex,
+            playbackSpeed = primaryVideoState.playbackSpeed ?: fallbackVideoState.playbackSpeed,
+            externalSubs = primaryVideoState.externalSubs.ifEmpty { fallbackVideoState.externalSubs },
+            videoScale = primaryVideoState.videoScale.takeUnless { kotlin.math.abs(it - 1f) <= 0.001f }
+                ?: fallbackVideoState.videoScale,
+            subtitleDelayMilliseconds = primaryVideoState.subtitleDelayMilliseconds.takeUnless { it == 0L }
+                ?: fallbackVideoState.subtitleDelayMilliseconds,
+            subtitleSpeed = primaryVideoState.subtitleSpeed.takeUnless { kotlin.math.abs(it - 1f) <= 0.001f }
+                ?: fallbackVideoState.subtitleSpeed,
+        )
     }
 
     private fun createMediaSource(mediaItem: MediaItem): MediaSource {
@@ -1443,14 +1628,29 @@ class PlayerService : MediaSessionService() {
         player.prepare()
         player.playWhenReady = shouldPlayWhenReady
         serviceScope.launch {
-            val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = currentItem.mediaId)
+            val playbackStateUri = currentItem.resolvePlaybackStateUri()
             mediaRepository.updateMediumPosition(
-                uri = canonicalMediaUri,
+                uri = playbackStateUri,
                 position = targetPosition,
             )
         }
         return SessionResult(SessionResult.RESULT_SUCCESS)
     }
+
+    private fun MediaItem.playbackStateCandidates(): List<String> = buildPlaybackStateCandidates(
+        originalUri = mediaId,
+        remoteProtocol = mediaMetadata.remoteProtocol,
+        remoteServerId = mediaMetadata.remoteServerId,
+        remoteFilePath = mediaMetadata.remoteFilePath,
+    )
+
+    private suspend fun MediaItem.resolvePlaybackStateUri(): String = mediaRepository.getCanonicalMediaUri(
+        uri = buildRemotePlaybackStateKey(
+            remoteProtocol = mediaMetadata.remoteProtocol,
+            remoteServerId = mediaMetadata.remoteServerId,
+            remoteFilePath = mediaMetadata.remoteFilePath,
+        ) ?: mediaId,
+    )
 
     private fun requestSeekForCurrentItem(targetPositionMs: Long): SessionResult {
         val player = mediaSession?.player as? ExoPlayer ?: return SessionResult(SessionError.ERROR_BAD_VALUE)
@@ -1740,10 +1940,14 @@ class PlayerService : MediaSessionService() {
         requestHeaders: Map<String, String>,
     ): List<MediaItem.SubtitleConfiguration> {
         val uri = mediaId.toUri()
-        val canonicalMediaUri = mediaRepository.getCanonicalMediaUri(uri = mediaId)
-        val video = mediaRepository.getVideoByUri(uri = canonicalMediaUri)
+        val currentMediaItem = findMediaItemInSession(mediaId)?.third
+        val playbackStateUri = currentMediaItem?.resolvePlaybackStateUri()
+            ?: mediaRepository.getCanonicalMediaUri(uri = mediaId)
+        val playbackStateCandidates = currentMediaItem?.playbackStateCandidates()
+            ?: listOf(mediaId, playbackStateUri).distinct()
+        val video = mediaRepository.getVideoByUri(uri = playbackStateUri)
         val videoState = mediaRepository.getVideoState(
-            uris = listOf(mediaId, canonicalMediaUri).distinct(),
+            uris = playbackStateCandidates,
         )
         val dbExternalSubs = videoState?.externalSubs ?: emptyList()
 

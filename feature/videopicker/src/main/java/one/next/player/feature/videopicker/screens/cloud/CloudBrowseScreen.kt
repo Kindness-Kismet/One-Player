@@ -59,7 +59,7 @@ fun CloudBrowseRoute(
         onEvent = viewModel::onEvent,
         onFileClick = { file ->
             val url = viewModel.buildPlayUrl(file) ?: return@CloudBrowseScreen
-            val headers = viewModel.buildAuthHeaders()
+            val headers = viewModel.buildAuthHeaders(file)
             val initialSubtitleDirectoryUri = viewModel.buildCurrentDirectoryDocumentId()
                 ?.let { documentId ->
                     DocumentsContract.buildDocumentUri("${context.packageName}.documents", documentId)

@@ -52,9 +52,14 @@ class LocalMediaRepository @Inject constructor(
 
     override suspend fun getVideoState(uri: String): VideoState? = mediumStateDao.get(resolveCanonicalMediaUri(uri))?.toVideoState()
 
-    override suspend fun getVideoState(uris: List<String>): VideoState? = mediumStateDao.getFirstByUris(
-        uris.map { candidateUri -> resolveCanonicalMediaUri(candidateUri) }.distinct(),
-    )?.toVideoState()
+    override suspend fun getVideoState(uris: List<String>): VideoState? {
+        val canonicalUris = uris.map { candidateUri -> resolveCanonicalMediaUri(candidateUri) }.distinct()
+        if (canonicalUris.isEmpty()) return null
+        val stateByUri = mediumStateDao.getAll(canonicalUris).associateBy(MediumStateEntity::uriString)
+        return canonicalUris.firstNotNullOfOrNull { canonicalUri ->
+            stateByUri[canonicalUri]?.toVideoState()
+        }
+    }
 
     override suspend fun getCanonicalMediaUri(uri: String): String = resolveCanonicalMediaUri(uri)
 
@@ -274,6 +279,7 @@ class LocalMediaRepository @Inject constructor(
     }
 
     private suspend fun resolveCanonicalMediaUri(uri: String): String {
+        if (uri.isRemotePlaybackStateKey()) return uri
         val medium = findMediumWithInfo(uri) ?: return uri
         return medium.mediumEntity.uriString
     }

@@ -16,6 +16,9 @@ private const val MEDIA_METADATA_VIDEO_HEIGHT_KEY = "media_metadata_video_height
 private const val MEDIA_METADATA_VIDEO_ROTATION_KEY = "media_metadata_video_rotation"
 private const val MEDIA_METADATA_APPROXIMATE_SEEK_ENABLED_KEY = "media_metadata_approximate_seek_enabled"
 private const val MEDIA_METADATA_REQUEST_HEADERS_PREFIX = "media_metadata_request_header_"
+private const val MEDIA_METADATA_REMOTE_SERVER_ID_KEY = "media_metadata_remote_server_id"
+private const val MEDIA_METADATA_REMOTE_FILE_PATH_KEY = "media_metadata_remote_file_path"
+private const val MEDIA_METADATA_REMOTE_PROTOCOL_KEY = "media_metadata_remote_protocol"
 
 private fun Bundle.setExtras(
     positionMs: Long?,
@@ -29,6 +32,9 @@ private fun Bundle.setExtras(
     videoHeight: Int? = null,
     videoRotation: Int? = null,
     isApproximateSeekEnabled: Boolean? = null,
+    remoteServerId: Long? = null,
+    remoteFilePath: String? = null,
+    remoteProtocol: String? = null,
 ) = apply {
     positionMs?.let { putLong(MEDIA_METADATA_POSITION_KEY, it) }
     videoScale?.let { putFloat(MEDIA_METADATA_VIDEO_ZOOM_KEY, it) }
@@ -41,6 +47,9 @@ private fun Bundle.setExtras(
     videoHeight?.let { putInt(MEDIA_METADATA_VIDEO_HEIGHT_KEY, it) }
     videoRotation?.let { putInt(MEDIA_METADATA_VIDEO_ROTATION_KEY, it) }
     isApproximateSeekEnabled?.let { putBoolean(MEDIA_METADATA_APPROXIMATE_SEEK_ENABLED_KEY, it) }
+    remoteServerId?.let { putLong(MEDIA_METADATA_REMOTE_SERVER_ID_KEY, it) }
+    remoteFilePath?.let { putString(MEDIA_METADATA_REMOTE_FILE_PATH_KEY, it) }
+    remoteProtocol?.let { putString(MEDIA_METADATA_REMOTE_PROTOCOL_KEY, it) }
 }
 
 fun MediaMetadata.Builder.setExtras(
@@ -56,6 +65,9 @@ fun MediaMetadata.Builder.setExtras(
     videoRotation: Int? = null,
     isApproximateSeekEnabled: Boolean? = null,
     requestHeaders: Map<String, String> = emptyMap(),
+    remoteServerId: Long? = null,
+    remoteFilePath: String? = null,
+    remoteProtocol: String? = null,
 ): MediaMetadata.Builder = setExtras(
     Bundle().setExtras(
         positionMs = positionMs,
@@ -69,6 +81,9 @@ fun MediaMetadata.Builder.setExtras(
         videoHeight = videoHeight,
         videoRotation = videoRotation,
         isApproximateSeekEnabled = isApproximateSeekEnabled,
+        remoteServerId = remoteServerId,
+        remoteFilePath = remoteFilePath,
+        remoteProtocol = remoteProtocol,
     ).apply {
         requestHeaders.forEach { (key, value) ->
             putString("$MEDIA_METADATA_REQUEST_HEADERS_PREFIX$key", value)
@@ -148,6 +163,20 @@ val MediaMetadata.requestHeaders: Map<String, String>
         ?.filterValues { it.isNotEmpty() }
         ?: emptyMap()
 
+val MediaMetadata.remoteServerId: Long?
+    get() = extras?.run {
+        getLong(MEDIA_METADATA_REMOTE_SERVER_ID_KEY)
+            .takeIf { containsKey(MEDIA_METADATA_REMOTE_SERVER_ID_KEY) }
+    }
+
+val MediaMetadata.remoteFilePath: String?
+    get() = extras?.getString(MEDIA_METADATA_REMOTE_FILE_PATH_KEY)
+        ?.takeIf(String::isNotBlank)
+
+val MediaMetadata.remoteProtocol: String?
+    get() = extras?.getString(MEDIA_METADATA_REMOTE_PROTOCOL_KEY)
+        ?.takeIf(String::isNotBlank)
+
 fun MediaItem.copy(
     positionMs: Long? = this.mediaMetadata.positionMs,
     durationMs: Long? = this.mediaMetadata.durationMs,
@@ -162,6 +191,9 @@ fun MediaItem.copy(
     videoRotation: Int? = this.mediaMetadata.videoRotation,
     isApproximateSeekEnabled: Boolean? = this.mediaMetadata.isApproximateSeekEnabled,
     requestHeaders: Map<String, String> = this.mediaMetadata.requestHeaders,
+    remoteServerId: Long? = this.mediaMetadata.remoteServerId,
+    remoteFilePath: String? = this.mediaMetadata.remoteFilePath,
+    remoteProtocol: String? = this.mediaMetadata.remoteProtocol,
 ): MediaItem = buildUpon().setMediaMetadata(
     mediaMetadata.buildUpon()
         .setDurationMs(durationMs)
@@ -178,6 +210,9 @@ fun MediaItem.copy(
                 videoHeight = videoHeight,
                 videoRotation = videoRotation,
                 isApproximateSeekEnabled = isApproximateSeekEnabled,
+                remoteServerId = remoteServerId,
+                remoteFilePath = remoteFilePath,
+                remoteProtocol = remoteProtocol,
             ).apply {
                 requestHeaders.forEach { (key, value) ->
                     putString("$MEDIA_METADATA_REQUEST_HEADERS_PREFIX$key", value)

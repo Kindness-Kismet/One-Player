@@ -434,6 +434,9 @@ class PlayerActivity : AppCompatActivity() {
                             setExtras(
                                 positionMs = playerApi.position?.toLong(),
                                 requestHeaders = requestHeaders,
+                                remoteServerId = requestHeaders["_remote_server_id"]?.toLongOrNull(),
+                                remoteFilePath = requestHeaders["_remote_file_path"],
+                                remoteProtocol = requestHeaders["_remote_protocol"],
                             )
                         }.build(),
                     )
