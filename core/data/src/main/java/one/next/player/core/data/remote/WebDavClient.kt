@@ -66,8 +66,15 @@ class WebDavClient @Inject constructor() {
     }
 
     private fun buildBaseUrl(server: RemoteServer): String {
+        val host = server.host.trim()
+        if (host.startsWith("http://") || host.startsWith("https://")) {
+            val base = host.removeSuffix("/")
+            val port = server.port ?: return base
+            if (base.substringAfter("://").contains(':')) return base
+            return "$base:$port"
+        }
         val port = server.port?.let { ":$it" } ?: ""
-        return "http://${server.host}$port"
+        return "http://$host$port"
     }
 
     private fun buildClient(server: RemoteServer): OkHttpClient {

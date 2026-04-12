@@ -1,8 +1,8 @@
-- 适配 Android SDK 37
+- 支持通过 HTTPS 连接 WebDAV 服务器
 
 <details>
 <summary>English Version</summary>
 
-- Adapt app for Android SDK 37
+- Support connecting to WebDAV servers via HTTPS
 
 </details>
