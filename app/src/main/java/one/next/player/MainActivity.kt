@@ -13,8 +13,11 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,11 +25,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
@@ -42,6 +48,7 @@ import one.next.player.core.common.storagePermission
 import one.next.player.core.media.services.MediaService
 import one.next.player.core.media.sync.MediaSynchronizer
 import one.next.player.core.model.ThemeConfig
+import one.next.player.core.ui.R as UiR
 import one.next.player.core.ui.composables.rememberRuntimePermissionState
 import one.next.player.core.ui.theme.OnePlayerTheme
 import one.next.player.navigation.MediaRootRoute
@@ -132,6 +139,8 @@ class MainActivity : AppCompatActivity() {
                 shouldUseDarkTheme = shouldUseDarkTheme,
                 shouldUseDynamicColor = shouldUseDynamicTheming(uiState = uiState),
             ) {
+                StartupUpdateDialog(viewModel = viewModel)
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface,
@@ -323,4 +332,39 @@ fun shouldUseDynamicTheming(
 ): Boolean = when (uiState) {
     MainActivityUiState.Loading -> false
     is MainActivityUiState.Success -> uiState.preferences.shouldUseDynamicColors
+}
+
+@Composable
+private fun StartupUpdateDialog(viewModel: MainViewModel) {
+    val updateInfo by viewModel.updateInfo.collectAsStateWithLifecycle()
+    val info = updateInfo ?: return
+
+    val uriHandler = LocalUriHandler.current
+
+    AlertDialog(
+        onDismissRequest = { viewModel.dismissUpdate() },
+        title = { Text(text = stringResource(UiR.string.update_dialog_title)) },
+        text = { Text(text = stringResource(UiR.string.update_dialog_message, info.latestVersion)) },
+        confirmButton = {
+            Button(
+                onClick = {
+                    viewModel.dismissUpdate()
+                    try {
+                        uriHandler.openUri(info.releaseUrl)
+                    } catch (_: Exception) {
+                        // 忽略
+                    }
+                },
+            ) {
+                Text(text = stringResource(UiR.string.update_dialog_confirm))
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { viewModel.dismissUpdate() },
+            ) {
+                Text(text = stringResource(UiR.string.not_now))
+            }
+        },
+    )
 }
