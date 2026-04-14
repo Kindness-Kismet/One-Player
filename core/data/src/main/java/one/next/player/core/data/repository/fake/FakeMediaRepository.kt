@@ -3,6 +3,7 @@ package one.next.player.core.data.repository.fake
 import android.net.Uri
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import one.next.player.core.data.models.RemotePlaybackInfo
 import one.next.player.core.data.models.VideoState
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.isRemotePlaybackStateKey
@@ -56,6 +57,8 @@ class FakeMediaRepository : MediaRepository {
             video.uriString == uri || video.path == uri
         }?.uriString ?: uri
     }
+
+    override suspend fun getRemotePlaybackStates(stateKeys: List<String>): Map<String, RemotePlaybackInfo> = emptyMap()
 
     override suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long) {
     }

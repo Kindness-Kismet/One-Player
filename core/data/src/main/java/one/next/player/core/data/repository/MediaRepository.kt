@@ -2,6 +2,7 @@ package one.next.player.core.data.repository
 
 import android.net.Uri
 import kotlinx.coroutines.flow.Flow
+import one.next.player.core.data.models.RemotePlaybackInfo
 import one.next.player.core.data.models.VideoState
 import one.next.player.core.model.Folder
 import one.next.player.core.model.Video
@@ -16,6 +17,7 @@ interface MediaRepository {
     suspend fun getVideoState(uri: String): VideoState?
     suspend fun getVideoState(uris: List<String>): VideoState?
     suspend fun getCanonicalMediaUri(uri: String): String
+    suspend fun getRemotePlaybackStates(stateKeys: List<String>): Map<String, RemotePlaybackInfo>
 
     suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long)
     suspend fun updateMediumPosition(uri: String, position: Long)

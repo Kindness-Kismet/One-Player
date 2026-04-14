@@ -30,7 +30,7 @@ fun NavGraphBuilder.cloudNavGraph(
 
         cloudBrowseScreen(
             onNavigateUp = navController::navigateUp,
-            onPlayVideo = { uri, headers, initialSubtitleDirectoryUri ->
+            onPlayVideo = { uri, headers, initialSubtitleDirectoryUri, playlist ->
                 val intent = Intent(context, PlayerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     data = uri
@@ -41,6 +41,9 @@ fun NavGraphBuilder.cloudNavGraph(
                         putExtra("headers", headerBundle)
                     }
                     putExtra("initial_subtitle_directory_uri", initialSubtitleDirectoryUri)
+                    if (playlist.size > 1) {
+                        putParcelableArrayListExtra("video_list", ArrayList(playlist))
+                    }
                 }
                 context.startActivity(intent)
             },

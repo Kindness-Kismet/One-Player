@@ -11,6 +11,7 @@ import one.next.player.core.common.extensions.toCanonicalFilePathOrNull
 import one.next.player.core.data.mappers.toFolder
 import one.next.player.core.data.mappers.toVideo
 import one.next.player.core.data.mappers.toVideoState
+import one.next.player.core.data.models.RemotePlaybackInfo
 import one.next.player.core.data.models.VideoState
 import one.next.player.core.database.converter.UriListConverter
 import one.next.player.core.database.dao.DirectoryDao
@@ -62,6 +63,16 @@ class LocalMediaRepository @Inject constructor(
     }
 
     override suspend fun getCanonicalMediaUri(uri: String): String = resolveCanonicalMediaUri(uri)
+
+    override suspend fun getRemotePlaybackStates(stateKeys: List<String>): Map<String, RemotePlaybackInfo> {
+        if (stateKeys.isEmpty()) return emptyMap()
+        return mediumStateDao.getAll(stateKeys).associate { entity ->
+            entity.uriString to RemotePlaybackInfo(
+                playbackPosition = entity.playbackPosition,
+                lastPlayedTime = entity.lastPlayedTime,
+            )
+        }
+    }
 
     override suspend fun updateMediumLastPlayedTime(uri: String, lastPlayedTime: Long) {
         val canonicalMediaUri = resolveCanonicalMediaUri(uri)

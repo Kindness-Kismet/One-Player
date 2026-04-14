@@ -47,7 +47,7 @@ fun NavGraphBuilder.cloudHomeScreen(
 
 fun NavGraphBuilder.cloudBrowseScreen(
     onNavigateUp: () -> Unit,
-    onPlayVideo: (uri: Uri, headers: Map<String, String>, initialSubtitleDirectoryUri: Uri?) -> Unit,
+    onPlayVideo: (uri: Uri, headers: Map<String, String>, initialSubtitleDirectoryUri: Uri?, playlist: List<Uri>) -> Unit,
 ) {
     composable<CloudBrowseRoute> {
         CloudBrowseScreenRoute(

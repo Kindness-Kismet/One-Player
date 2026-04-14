@@ -428,23 +428,35 @@ class PlayerActivity : AppCompatActivity() {
 
         val mediaItemIndexToPlay = playbackPlaylist.currentIndex
 
-        val mediaItems = playlist.mapIndexed { index, uri ->
+        val mediaItems = playlist.mapIndexed { index, uriString ->
             MediaItem.Builder().apply {
-                setUri(uri)
-                setMediaId(uri)
-                if (index == mediaItemIndexToPlay) {
+                setUri(uriString)
+                setMediaId(uriString)
+                val isCurrentItem = index == mediaItemIndexToPlay
+                val remoteServerId = requestHeaders["_remote_server_id"]?.toLongOrNull()
+                val remoteProtocol = requestHeaders["_remote_protocol"]
+                // 远端播放列表中的每个 MediaItem 都需要认证头和远端元数据
+                val hasRemoteMetadata = remoteServerId != null && remoteProtocol != null
+                if (isCurrentItem || hasRemoteMetadata) {
+                    val filePath = if (isCurrentItem) {
+                        requestHeaders["_remote_file_path"]
+                    } else {
+                        Uri.parse(uriString).encodedPath
+                    }
                     setMediaMetadata(
                         MediaMetadata.Builder().apply {
-                            setTitle(playerApi.title)
+                            if (isCurrentItem) setTitle(playerApi.title)
                             setExtras(
-                                positionMs = playerApi.position?.toLong(),
+                                positionMs = if (isCurrentItem) playerApi.position?.toLong() else null,
                                 requestHeaders = requestHeaders,
-                                remoteServerId = requestHeaders["_remote_server_id"]?.toLongOrNull(),
-                                remoteFilePath = requestHeaders["_remote_file_path"],
-                                remoteProtocol = requestHeaders["_remote_protocol"],
+                                remoteServerId = remoteServerId,
+                                remoteFilePath = filePath,
+                                remoteProtocol = remoteProtocol,
                             )
                         }.build(),
                     )
+                }
+                if (isCurrentItem) {
                     val apiSubs = playerApi.getSubs().map { subtitle ->
                         uriToSubtitleConfiguration(
                             uri = subtitle.uri,
