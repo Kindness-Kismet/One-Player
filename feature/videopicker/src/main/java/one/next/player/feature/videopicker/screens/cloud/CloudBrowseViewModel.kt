@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.net.URLDecoder
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,25 +62,42 @@ class CloudBrowseViewModel @Inject constructor(
                 return@launch
             }
             val startPath = initialPath.takeIf { it != "/" || server.path == "/" } ?: server.path
-            _uiState.update { it.copy(server = server, currentPath = startPath) }
+            _uiState.update {
+                it.copy(
+                    server = server,
+                    currentPath = startPath,
+                    isAtRoot = isAtServerRoot(startPath, server.path),
+                )
+            }
             loadCurrentDirectory()
         }
     }
 
     private fun navigateTo(path: String) {
-        _uiState.update { it.copy(currentPath = path, playbackStates = emptyMap()) }
+        val serverPath = _uiState.value.server?.path ?: "/"
+        _uiState.update {
+            it.copy(
+                currentPath = path,
+                isAtRoot = isAtServerRoot(path, serverPath),
+                playbackStates = emptyMap(),
+            )
+        }
         loadCurrentDirectory()
     }
 
     private fun navigateUp() {
         val current = _uiState.value.currentPath
         val server = _uiState.value.server ?: return
-        val rootPath = server.path.ensureTrailingSlash()
 
-        if (current.removeSuffix("/") == rootPath.removeSuffix("/")) return
+        if (isAtServerRoot(current, server.path)) return
 
         val parent = current.removeSuffix("/").substringBeforeLast('/').ensureTrailingSlash()
-        _uiState.update { it.copy(currentPath = parent) }
+        _uiState.update {
+            it.copy(
+                currentPath = parent,
+                isAtRoot = isAtServerRoot(parent, server.path),
+            )
+        }
         loadCurrentDirectory()
     }
 
@@ -239,6 +257,13 @@ class CloudBrowseViewModel @Inject constructor(
 
     private fun String.ensureTrailingSlash(): String = if (endsWith("/")) this else "$this/"
 
+    // PROPFIND href 可能是 URL 编码的，server.path 是用户输入的原始文本
+    private fun isAtServerRoot(currentPath: String, serverPath: String): Boolean {
+        val decodedCurrent = URLDecoder.decode(currentPath.removeSuffix("/"), "UTF-8")
+        val decodedRoot = URLDecoder.decode(serverPath.removeSuffix("/"), "UTF-8")
+        return decodedCurrent == decodedRoot
+    }
+
     companion object {
         private val BROWSABLE_VIDEO_EXTENSIONS = setOf(
             "3gp",
@@ -264,6 +289,7 @@ data class CloudBrowseUiState(
     val files: List<RemoteFile> = emptyList(),
     val isLoading: Boolean = false,
     val isError: Boolean = false,
+    val isAtRoot: Boolean = true,
     val errorMessage: String = "",
     val playbackStates: Map<String, RemotePlaybackInfo> = emptyMap(),
 )

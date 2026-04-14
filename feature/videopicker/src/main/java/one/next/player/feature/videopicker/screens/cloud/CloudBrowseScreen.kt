@@ -94,12 +94,8 @@ internal fun CloudBrowseScreen(
         ?: uiState.server?.host
         ?: stringResource(R.string.browsing)
 
-    val isAtRoot = uiState.server?.let { server ->
-        uiState.currentPath.removeSuffix("/") == server.path.removeSuffix("/")
-    } ?: true
-
     // 出错时直接允许返回上级页面，不再反复重试 PROPFIND
-    BackHandler(enabled = !isAtRoot && !uiState.isError) {
+    BackHandler(enabled = !uiState.isAtRoot && !uiState.isError) {
         onEvent(CloudBrowseEvent.NavigateUp)
     }
 
@@ -109,7 +105,7 @@ internal fun CloudBrowseScreen(
                 title = serverName,
                 navigationIcon = {
                     FilledTonalIconButton(onClick = {
-                        if (isAtRoot || uiState.isError) {
+                        if (uiState.isAtRoot || uiState.isError) {
                             onNavigateUp()
                         } else {
                             onEvent(CloudBrowseEvent.NavigateUp)
