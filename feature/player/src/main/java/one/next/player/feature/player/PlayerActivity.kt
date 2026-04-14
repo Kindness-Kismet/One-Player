@@ -441,7 +441,7 @@ class PlayerActivity : AppCompatActivity() {
                     val filePath = if (isCurrentItem) {
                         requestHeaders["_remote_file_path"]
                     } else {
-                        Uri.parse(uriString).encodedPath
+                        Uri.parse(uriString).path
                     }
                     setMediaMetadata(
                         MediaMetadata.Builder().apply {

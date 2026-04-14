@@ -67,7 +67,7 @@ class CloudBrowseViewModel @Inject constructor(
     }
 
     private fun navigateTo(path: String) {
-        _uiState.update { it.copy(currentPath = path) }
+        _uiState.update { it.copy(currentPath = path, playbackStates = emptyMap()) }
         loadCurrentDirectory()
     }
 

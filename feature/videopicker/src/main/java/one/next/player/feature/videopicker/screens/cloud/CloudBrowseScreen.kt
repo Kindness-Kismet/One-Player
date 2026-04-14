@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -179,8 +179,10 @@ internal fun CloudBrowseScreen(
                             contentPadding = contentPadding,
                             verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
                         ) {
-                            items(uiState.files, key = { it.path }) { file ->
-                                val index = uiState.files.indexOf(file)
+                            itemsIndexed(
+                                uiState.files,
+                                key = { _, file -> file.path },
+                            ) { index, file ->
                                 val playbackInfo = uiState.playbackStates[file.path]
                                 val isRecentlyPlayed = !file.isDirectory && file.path == mostRecentFilePath
                                 val hasBeenPlayed = playbackInfo != null && playbackInfo.playbackPosition > 0
