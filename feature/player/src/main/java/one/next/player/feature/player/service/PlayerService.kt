@@ -30,7 +30,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -90,6 +90,7 @@ import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import one.next.player.core.common.Logger
 import one.next.player.core.common.extensions.deleteFiles
 import one.next.player.core.common.extensions.getFilenameFromUri
@@ -309,6 +310,15 @@ class PlayerService : MediaSessionService() {
             pendingStartupPreciseResumeToken = null
             isMediaItemReady = false
             isPendingExternalSubAutoSelect = false
+            if (mediaItem != null) {
+                serviceScope.launch {
+                    val playbackStateUri = mediaItem.resolvePlaybackStateUri()
+                    mediaRepository.updateMediumLastPlayedTime(
+                        uri = playbackStateUri,
+                        lastPlayedTime = System.currentTimeMillis(),
+                    )
+                }
+            }
             mediaItem?.mediaMetadata?.let { metadata ->
                 mediaSession?.player?.run {
                     setPlaybackSpeed(metadata.playbackSpeed ?: playerPreferences.defaultPlaybackSpeed)
@@ -1577,10 +1587,12 @@ class PlayerService : MediaSessionService() {
             return DefaultDataSource.Factory(applicationContext)
         }
 
-        val httpFactory = DefaultHttpDataSource.Factory().apply {
-            setAllowCrossProtocolRedirects(true)
-            setDefaultRequestProperties(httpHeaders)
-        }
+        val okHttpClient = OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+        val httpFactory = OkHttpDataSource.Factory(okHttpClient)
+            .setDefaultRequestProperties(httpHeaders)
         return DefaultDataSource.Factory(applicationContext, httpFactory)
     }
 

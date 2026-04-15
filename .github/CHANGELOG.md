@@ -1,10 +1,10 @@
-- 修复 WebDAV 浏览含特殊字符路径时返回上级目录异常的问题
-- 修复应用启动时不自动检查更新的问题，更新弹窗现在会在启动时显示
+- 修复自动播放或手动切集后高亮仍停留在初始点击视频的问题
+- 修复移动云盘等 302 重定向策略下播放电视剧失败的问题
 
 <details>
 <summary>English Version</summary>
 
-- Fix navigating up in WebDAV browser failing for paths with URL-encoded special characters
-- Fix app update check only triggering on About page; update dialog now shows on app startup
+- Fix recently played highlight not updating when auto-advancing or manually switching episodes
+- Fix playback failure with 302 redirect strategy on certain cloud drives (e.g. Mobile Cloud)
 
 </details>
