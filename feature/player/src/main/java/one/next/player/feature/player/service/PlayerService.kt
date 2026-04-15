@@ -321,7 +321,8 @@ class PlayerService : MediaSessionService() {
             }
             mediaItem?.mediaMetadata?.let { metadata ->
                 mediaSession?.player?.run {
-                    setPlaybackSpeed(metadata.playbackSpeed ?: playerPreferences.defaultPlaybackSpeed)
+                    // 列表内跳转时继承当前倍速，而非回退到全局默认值
+                    setPlaybackSpeed(metadata.playbackSpeed ?: playbackParameters.speed)
                     playerSpecificSubtitleDelayMilliseconds = metadata.subtitleDelayMilliseconds ?: 0L
                     playerSpecificSubtitleSpeed = metadata.subtitleSpeed ?: 1f
                 }
