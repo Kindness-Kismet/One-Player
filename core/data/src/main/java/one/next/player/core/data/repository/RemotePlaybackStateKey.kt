@@ -1,5 +1,7 @@
 package one.next.player.core.data.repository
 
+import java.net.URLDecoder
+
 private const val REMOTE_PLAYBACK_STATE_PREFIX = "oneplayer://remote"
 private const val WEBDAV_PROTOCOL = "webdav"
 
@@ -33,7 +35,8 @@ fun String.isRemotePlaybackStateKey(): Boolean = startsWith("$REMOTE_PLAYBACK_ST
 private fun String?.normalizeRemotePlaybackPath(): String? {
     val raw = this?.trim().orEmpty()
     if (raw.isBlank()) return null
-    val normalized = raw
+    val decoded = URLDecoder.decode(raw, "UTF-8")
+    val normalized = decoded
         .replace(Regex("/+"), "/")
         .removeSuffix("/")
         .takeIf { it.isNotBlank() && it != "/" }
