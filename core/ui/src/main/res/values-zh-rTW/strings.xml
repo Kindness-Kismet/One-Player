@@ -203,6 +203,8 @@
     <string name="play_next_video">播放下一個影片</string>
     <string name="mark_last_played_media">標記上次播放的媒體</string>
     <string name="mark_last_played_media_desc">標記首頁和每個資料夾中最後播放的媒體</string>
+    <string name="restore_last_played_media_in_folders">記住資料夾中的上次播放位置</string>
+    <string name="restore_last_played_media_in_folders_desc">重新進入本機或 WebDAV 資料夾時，自動定位到該資料夾裡最後實際播放的媒體</string>
     <string name="recycle_bin">回收站</string>
     <string name="recycle_bin_desc">保留已刪除項目，直到您永久移除它們。啟用後會在首頁頂部列顯示回收站入口</string>
     <string name="open_local_video">開啟本機影片</string>

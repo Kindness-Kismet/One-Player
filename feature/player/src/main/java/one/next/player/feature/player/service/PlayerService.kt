@@ -103,6 +103,7 @@ import one.next.player.core.data.remote.WebDavClient
 import one.next.player.core.data.repository.MediaRepository
 import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.data.repository.buildPlaybackStateCandidates
+import one.next.player.core.data.repository.buildRemoteFolderPlaybackAnchorKey
 import one.next.player.core.data.repository.buildRemotePlaybackStateKey
 import one.next.player.core.data.repository.isRemotePlaybackStateKey
 import one.next.player.core.model.DecoderPriority
@@ -125,8 +126,10 @@ import one.next.player.feature.player.extensions.copy
 import one.next.player.feature.player.extensions.getManuallySelectedTrackIndex
 import one.next.player.feature.player.extensions.getSubtitleMime
 import one.next.player.feature.player.extensions.isApproximateSeekEnabled
+import one.next.player.feature.player.extensions.localParentPath
 import one.next.player.feature.player.extensions.playbackSpeed
 import one.next.player.feature.player.extensions.positionMs
+import one.next.player.feature.player.extensions.remoteDirectoryPath
 import one.next.player.feature.player.extensions.remoteFilePath
 import one.next.player.feature.player.extensions.remoteProtocol
 import one.next.player.feature.player.extensions.remoteServerId
@@ -199,6 +202,44 @@ class PlayerService : MediaSessionService() {
 
     private val playerPreferences: PlayerPreferences
         get() = preferencesRepository.playerPreferences.value
+
+    private fun updateFolderPlaybackAnchor(mediaItem: MediaItem) {
+        val preferences = preferencesRepository.applicationPreferences.value
+        if (!preferences.shouldRestoreLastPlayedMediaInFolders) return
+
+        serviceScope.launch {
+            val playbackStateUri = mediaItem.resolvePlaybackStateUri()
+            val localParentPath = mediaItem.mediaMetadata.localParentPath
+                ?: mediaRepository.getVideoByUri(playbackStateUri)?.parentPath
+                    ?.takeIf { it.isNotBlank() }
+            val remoteAnchorKey = buildRemoteFolderPlaybackAnchorKey(
+                remoteProtocol = mediaItem.mediaMetadata.remoteProtocol,
+                remoteServerId = mediaItem.mediaMetadata.remoteServerId,
+                directoryPath = mediaItem.mediaMetadata.remoteDirectoryPath,
+            )
+
+            preferencesRepository.updateApplicationPreferences { currentPreferences ->
+                var updatedPreferences = currentPreferences
+
+                if (!localParentPath.isNullOrBlank()) {
+                    updatedPreferences = updatedPreferences.copy(
+                        localFolderLastPlayedMediaUris = updatedPreferences.localFolderLastPlayedMediaUris +
+                            (localParentPath to playbackStateUri),
+                    )
+                }
+
+                if (remoteAnchorKey != null) {
+                    val remoteFilePath = mediaItem.mediaMetadata.remoteFilePath ?: return@updateApplicationPreferences updatedPreferences
+                    updatedPreferences = updatedPreferences.copy(
+                        remoteFolderLastPlayedMediaPaths = updatedPreferences.remoteFolderLastPlayedMediaPaths +
+                            (remoteAnchorKey to remoteFilePath),
+                    )
+                }
+
+                updatedPreferences
+            }
+        }
+    }
 
     private val customCommands = CustomCommands.asSessionCommands()
 
@@ -516,6 +557,7 @@ class PlayerService : MediaSessionService() {
                         lastPlayedTime = System.currentTimeMillis(),
                     )
                 }
+                updateFolderPlaybackAnchor(currentMediaItem)
             }
         }
 

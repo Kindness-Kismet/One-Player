@@ -134,6 +134,15 @@ private fun MediaLibraryPreferencesContent(
                     isFirstItem = true,
                     isLastItem = false,
                 )
+                PreferenceSwitch(
+                    title = stringResource(id = R.string.restore_last_played_media_in_folders),
+                    description = stringResource(id = R.string.restore_last_played_media_in_folders_desc),
+                    icon = NextIcons.History,
+                    isChecked = preferences.shouldRestoreLastPlayedMediaInFolders,
+                    onClick = { onEvent(MediaLibraryPreferencesUiEvent.ToggleRestoreLastPlayedMediaInFolders) },
+                    isFirstItem = false,
+                    isLastItem = false,
+                )
                 ClickablePreferenceItem(
                     title = stringResource(id = R.string.all_files_access_title),
                     description = stringResource(id = R.string.media_library_all_files_access_desc),

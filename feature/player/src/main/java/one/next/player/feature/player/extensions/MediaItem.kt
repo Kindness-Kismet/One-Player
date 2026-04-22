@@ -19,6 +19,8 @@ private const val MEDIA_METADATA_REQUEST_HEADERS_PREFIX = "media_metadata_reques
 private const val MEDIA_METADATA_REMOTE_SERVER_ID_KEY = "media_metadata_remote_server_id"
 private const val MEDIA_METADATA_REMOTE_FILE_PATH_KEY = "media_metadata_remote_file_path"
 private const val MEDIA_METADATA_REMOTE_PROTOCOL_KEY = "media_metadata_remote_protocol"
+private const val MEDIA_METADATA_LOCAL_PARENT_PATH_KEY = "media_metadata_local_parent_path"
+private const val MEDIA_METADATA_REMOTE_DIRECTORY_PATH_KEY = "media_metadata_remote_directory_path"
 
 private fun Bundle.setExtras(
     positionMs: Long?,
@@ -35,6 +37,8 @@ private fun Bundle.setExtras(
     remoteServerId: Long? = null,
     remoteFilePath: String? = null,
     remoteProtocol: String? = null,
+    localParentPath: String? = null,
+    remoteDirectoryPath: String? = null,
 ) = apply {
     positionMs?.let { putLong(MEDIA_METADATA_POSITION_KEY, it) }
     videoScale?.let { putFloat(MEDIA_METADATA_VIDEO_ZOOM_KEY, it) }
@@ -50,6 +54,8 @@ private fun Bundle.setExtras(
     remoteServerId?.let { putLong(MEDIA_METADATA_REMOTE_SERVER_ID_KEY, it) }
     remoteFilePath?.let { putString(MEDIA_METADATA_REMOTE_FILE_PATH_KEY, it) }
     remoteProtocol?.let { putString(MEDIA_METADATA_REMOTE_PROTOCOL_KEY, it) }
+    localParentPath?.let { putString(MEDIA_METADATA_LOCAL_PARENT_PATH_KEY, it) }
+    remoteDirectoryPath?.let { putString(MEDIA_METADATA_REMOTE_DIRECTORY_PATH_KEY, it) }
 }
 
 fun MediaMetadata.Builder.setExtras(
@@ -68,6 +74,8 @@ fun MediaMetadata.Builder.setExtras(
     remoteServerId: Long? = null,
     remoteFilePath: String? = null,
     remoteProtocol: String? = null,
+    localParentPath: String? = null,
+    remoteDirectoryPath: String? = null,
 ): MediaMetadata.Builder = setExtras(
     Bundle().setExtras(
         positionMs = positionMs,
@@ -84,6 +92,8 @@ fun MediaMetadata.Builder.setExtras(
         remoteServerId = remoteServerId,
         remoteFilePath = remoteFilePath,
         remoteProtocol = remoteProtocol,
+        localParentPath = localParentPath,
+        remoteDirectoryPath = remoteDirectoryPath,
     ).apply {
         requestHeaders.forEach { (key, value) ->
             putString("$MEDIA_METADATA_REQUEST_HEADERS_PREFIX$key", value)
@@ -177,6 +187,14 @@ val MediaMetadata.remoteProtocol: String?
     get() = extras?.getString(MEDIA_METADATA_REMOTE_PROTOCOL_KEY)
         ?.takeIf(String::isNotBlank)
 
+val MediaMetadata.localParentPath: String?
+    get() = extras?.getString(MEDIA_METADATA_LOCAL_PARENT_PATH_KEY)
+        ?.takeIf(String::isNotBlank)
+
+val MediaMetadata.remoteDirectoryPath: String?
+    get() = extras?.getString(MEDIA_METADATA_REMOTE_DIRECTORY_PATH_KEY)
+        ?.takeIf(String::isNotBlank)
+
 fun MediaItem.copy(
     positionMs: Long? = this.mediaMetadata.positionMs,
     durationMs: Long? = this.mediaMetadata.durationMs,
@@ -194,6 +212,8 @@ fun MediaItem.copy(
     remoteServerId: Long? = this.mediaMetadata.remoteServerId,
     remoteFilePath: String? = this.mediaMetadata.remoteFilePath,
     remoteProtocol: String? = this.mediaMetadata.remoteProtocol,
+    localParentPath: String? = this.mediaMetadata.localParentPath,
+    remoteDirectoryPath: String? = this.mediaMetadata.remoteDirectoryPath,
 ): MediaItem = buildUpon().setMediaMetadata(
     mediaMetadata.buildUpon()
         .setDurationMs(durationMs)
@@ -213,6 +233,8 @@ fun MediaItem.copy(
                 remoteServerId = remoteServerId,
                 remoteFilePath = remoteFilePath,
                 remoteProtocol = remoteProtocol,
+                localParentPath = localParentPath,
+                remoteDirectoryPath = remoteDirectoryPath,
             ).apply {
                 requestHeaders.forEach { (key, value) ->
                     putString("$MEDIA_METADATA_REQUEST_HEADERS_PREFIX$key", value)

@@ -30,6 +30,9 @@ fun NavGraphBuilder.cloudNavGraph(
 
         cloudBrowseScreen(
             onNavigateUp = navController::navigateUp,
+            onDirectoryClick = { serverId, path ->
+                navController.navigateToCloudBrowse(serverId = serverId, initialPath = path)
+            },
             onPlayVideo = { uri, headers, initialSubtitleDirectoryUri, playlist ->
                 val intent = Intent(context, PlayerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW

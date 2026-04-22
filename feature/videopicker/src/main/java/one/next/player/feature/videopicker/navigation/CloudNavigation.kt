@@ -30,7 +30,8 @@ fun NavController.navigateToCloudBrowse(
     initialPath: String = "/",
     navOptions: NavOptions? = null,
 ) {
-    this.navigate(CloudBrowseRoute(serverId = serverId, initialPath = initialPath), navOptions)
+    val encodedInitialPath = Uri.encode(initialPath)
+    this.navigate(CloudBrowseRoute(serverId = serverId, initialPath = encodedInitialPath), navOptions)
 }
 
 fun NavGraphBuilder.cloudHomeScreen(
@@ -47,11 +48,13 @@ fun NavGraphBuilder.cloudHomeScreen(
 
 fun NavGraphBuilder.cloudBrowseScreen(
     onNavigateUp: () -> Unit,
+    onDirectoryClick: (serverId: Long, path: String) -> Unit,
     onPlayVideo: (uri: Uri, headers: Map<String, String>, initialSubtitleDirectoryUri: Uri?, playlist: List<Uri>) -> Unit,
 ) {
     composable<CloudBrowseRoute> {
         CloudBrowseScreenRoute(
             onNavigateUp = onNavigateUp,
+            onDirectoryClick = onDirectoryClick,
             onPlayVideo = onPlayVideo,
         )
     }

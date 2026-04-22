@@ -208,6 +208,8 @@
     <string name="rename_to">Rename to</string>
     <string name="mark_last_played_media">Mark last played media</string>
     <string name="mark_last_played_media_desc">Mark last played media in home and in each folder</string>
+    <string name="restore_last_played_media_in_folders">Restore last played position in folders</string>
+    <string name="restore_last_played_media_in_folders_desc">When reopening a local or WebDAV folder, jump to the last media you actually played in that folder</string>
     <string name="recycle_bin">Recycle bin</string>
     <string name="recycle_bin_desc">Keep deleted items available until you remove them permanently. When enabled, the recycle bin entry appears in the home top bar.</string>
     <string name="open_local_video">Open local video</string>

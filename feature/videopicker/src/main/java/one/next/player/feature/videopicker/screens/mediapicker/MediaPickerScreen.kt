@@ -158,6 +158,7 @@ internal fun MediaPickerScreen(
     val selectionManager = rememberSelectionManager()
     val permissionState = rememberRuntimePermissionState(permission = storagePermission)
     val lazyGridState = rememberLazyGridState()
+    var restoredFolderPath by rememberSaveable { mutableStateOf<String?>(null) }
     val selectVideoFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { it?.let { onPlayVideo(it) } },
@@ -492,6 +493,46 @@ internal fun MediaPickerScreen(
                 }
             }
         }
+    }
+
+    LaunchedEffect(uiState.folderPath) {
+        restoredFolderPath = null
+    }
+
+    LaunchedEffect(
+        uiState.folderPath,
+        uiState.preferences.shouldRestoreLastPlayedMediaInFolders,
+        uiState.mediaDataState,
+    ) {
+        if (!uiState.preferences.shouldRestoreLastPlayedMediaInFolders) return@LaunchedEffect
+        val folderPath = uiState.folderPath ?: return@LaunchedEffect
+        if (restoredFolderPath == folderPath) return@LaunchedEffect
+        val rootFolder = (uiState.mediaDataState as? DataState.Success)?.value ?: return@LaunchedEffect
+        val lastPlayedMediaUri = uiState.preferences.localFolderLastPlayedMediaUris[folderPath] ?: return@LaunchedEffect
+        val targetIndex = rootFolder.mediaList.indexOfFirst { video -> video.uriString == lastPlayedMediaUri }
+        if (targetIndex < 0) return@LaunchedEffect
+
+        val scrollIndex = when (uiState.preferences.mediaViewMode) {
+            MediaViewMode.VIDEOS -> targetIndex
+            MediaViewMode.FOLDERS,
+            MediaViewMode.FOLDER_TREE,
+            -> {
+                val folderSectionSize = rootFolder.folderList.size
+                val folderHeaderOffset = if (rootFolder.folderList.isNotEmpty()) 1 else 0
+                val spacerOffset = if (
+                    uiState.preferences.mediaViewMode == MediaViewMode.FOLDER_TREE &&
+                    rootFolder.folderList.isNotEmpty()
+                ) {
+                    1
+                } else {
+                    0
+                }
+                val videoHeaderOffset = if (rootFolder.mediaList.isNotEmpty()) 1 else 0
+                folderHeaderOffset + folderSectionSize + spacerOffset + videoHeaderOffset + targetIndex
+            }
+        }
+        lazyGridState.scrollToItem(scrollIndex)
+        restoredFolderPath = folderPath
     }
 
     LaunchedEffect(selectionManager.isInSelectionMode) {
@@ -838,6 +879,7 @@ private fun MediaPickerScreenPreview(
     OnePlayerTheme {
         MediaPickerScreen(
             uiState = MediaPickerUiState(
+                folderPath = null,
                 folderName = null,
                 mediaDataState = DataState.Success(
                     value = Folder(
@@ -879,6 +921,7 @@ private fun MediaPickerNoVideosFoundPreview() {
         Surface {
             MediaPickerScreen(
                 uiState = MediaPickerUiState(
+                    folderPath = null,
                     folderName = null,
                     mediaDataState = DataState.Success(null),
                     preferences = ApplicationPreferences(),
@@ -895,6 +938,7 @@ private fun MediaPickerLoadingPreview() {
         Surface {
             MediaPickerScreen(
                 uiState = MediaPickerUiState(
+                    folderPath = null,
                     folderName = null,
                     mediaDataState = DataState.Loading,
                     preferences = ApplicationPreferences(),

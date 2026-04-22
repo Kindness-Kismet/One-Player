@@ -11,6 +11,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import one.next.player.core.common.Dispatcher
@@ -19,8 +20,11 @@ import one.next.player.core.data.models.RemotePlaybackInfo
 import one.next.player.core.data.remote.SmbClient
 import one.next.player.core.data.remote.WebDavClient
 import one.next.player.core.data.repository.MediaRepository
+import one.next.player.core.data.repository.PreferencesRepository
 import one.next.player.core.data.repository.RemoteServerRepository
+import one.next.player.core.data.repository.buildRemoteFolderPlaybackAnchorKey
 import one.next.player.core.data.repository.buildRemotePlaybackStateKey
+import one.next.player.core.model.ApplicationPreferences
 import one.next.player.core.model.RemoteFile
 import one.next.player.core.model.RemoteServer
 import one.next.player.core.model.ServerProtocol
@@ -30,26 +34,30 @@ class CloudBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: RemoteServerRepository,
     private val mediaRepository: MediaRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val webDavClient: WebDavClient,
     private val smbClient: SmbClient,
     @Dispatcher(NextDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val serverId: Long = savedStateHandle["serverId"] ?: 0L
-    private val initialPath: String = savedStateHandle["initialPath"] ?: "/"
+    private val initialPath: String = (savedStateHandle["initialPath"] as? String)?.let(Uri::decode) ?: "/"
 
     private val _uiState = MutableStateFlow(CloudBrowseUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            preferencesRepository.applicationPreferences.collect { preferences ->
+                _uiState.update { it.copy(preferences = preferences) }
+            }
+        }
         loadServer()
     }
 
     fun onEvent(event: CloudBrowseEvent) {
         when (event) {
-            is CloudBrowseEvent.NavigateToDirectory -> navigateTo(event.path)
-            CloudBrowseEvent.NavigateUp -> navigateUp()
-            CloudBrowseEvent.Retry -> loadCurrentDirectory()
+            CloudBrowseEvent.Retry -> loadCurrentDirectory(forceRefresh = true)
             CloudBrowseEvent.RefreshPlaybackStates -> loadPlaybackStates()
         }
     }
@@ -73,39 +81,21 @@ class CloudBrowseViewModel @Inject constructor(
         }
     }
 
-    private fun navigateTo(path: String) {
-        val serverPath = _uiState.value.server?.path ?: "/"
+    private fun loadCurrentDirectory(forceRefresh: Boolean = false) {
+        val currentState = _uiState.value
+        val server = currentState.server ?: return
+        val path = currentState.currentPath
+
+        if (currentState.isLoading) return
+        if (!forceRefresh && currentState.hasLoadedDirectory) return
+
         _uiState.update {
             it.copy(
-                currentPath = path,
-                isAtRoot = isAtServerRoot(path, serverPath),
-                playbackStates = emptyMap(),
+                isLoading = true,
+                isRefreshing = forceRefresh && currentState.hasLoadedDirectory,
+                isError = false,
             )
         }
-        loadCurrentDirectory()
-    }
-
-    private fun navigateUp() {
-        val current = _uiState.value.currentPath
-        val server = _uiState.value.server ?: return
-
-        if (isAtServerRoot(current, server.path)) return
-
-        val parent = current.removeSuffix("/").substringBeforeLast('/').ensureTrailingSlash()
-        _uiState.update {
-            it.copy(
-                currentPath = parent,
-                isAtRoot = isAtServerRoot(parent, server.path),
-            )
-        }
-        loadCurrentDirectory()
-    }
-
-    private fun loadCurrentDirectory() {
-        val server = _uiState.value.server ?: return
-        val path = _uiState.value.currentPath
-
-        _uiState.update { it.copy(isLoading = true, isError = false) }
 
         viewModelScope.launch(ioDispatcher) {
             when (server.protocol) {
@@ -118,19 +108,30 @@ class CloudBrowseViewModel @Inject constructor(
     private suspend fun loadWebDavDirectory(server: RemoteServer, path: String) {
         webDavClient.listDirectory(server, path)
             .onSuccess { files ->
+                val browsableFiles = files.filterBrowsableFiles()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        files = files.filterBrowsableFiles(),
+                        isRefreshing = false,
+                        files = browsableFiles,
                         isError = false,
+                        errorMessage = "",
+                        playbackStates = emptyMap(),
+                        restoreTargetFilePath = null,
+                        hasLoadedDirectory = true,
                     )
                 }
-                loadPlaybackStates()
+                loadPlaybackStates(
+                    server = server,
+                    directoryPath = path,
+                    files = browsableFiles,
+                )
             }
             .onFailure { error ->
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         isError = true,
                         errorMessage = error.message ?: "Unknown error",
                     )
@@ -144,8 +145,13 @@ class CloudBrowseViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         files = files.filterBrowsableFiles(),
                         isError = false,
+                        errorMessage = "",
+                        playbackStates = emptyMap(),
+                        restoreTargetFilePath = null,
+                        hasLoadedDirectory = true,
                     )
                 }
             }
@@ -153,6 +159,7 @@ class CloudBrowseViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         isError = true,
                         errorMessage = error.message ?: "Unknown error",
                     )
@@ -160,12 +167,24 @@ class CloudBrowseViewModel @Inject constructor(
             }
     }
 
-    private fun loadPlaybackStates() {
-        val server = _uiState.value.server ?: return
-        val videoFiles = _uiState.value.files.filter { !it.isDirectory }
-        if (videoFiles.isEmpty()) return
+    private fun loadPlaybackStates(
+        server: RemoteServer? = _uiState.value.server,
+        directoryPath: String = _uiState.value.currentPath,
+        files: List<RemoteFile> = _uiState.value.files,
+    ) {
+        val currentServer = server ?: return
+        val videoFiles = files.filter { !it.isDirectory }
+        if (videoFiles.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    playbackStates = emptyMap(),
+                    restoreTargetFilePath = null,
+                )
+            }
+            return
+        }
 
-        val protocol = when (server.protocol) {
+        val protocol = when (currentServer.protocol) {
             ServerProtocol.WEBDAV -> "webdav"
             ServerProtocol.SMB -> return
         }
@@ -173,7 +192,7 @@ class CloudBrowseViewModel @Inject constructor(
         val pathToKey = videoFiles.mapNotNull { file ->
             val key = buildRemotePlaybackStateKey(
                 remoteProtocol = protocol,
-                remoteServerId = server.id,
+                remoteServerId = currentServer.id,
                 remoteFilePath = file.path,
             ) ?: return@mapNotNull null
             file.path to key
@@ -186,7 +205,22 @@ class CloudBrowseViewModel @Inject constructor(
             val playbackStates = states.entries.associate { (key, info) ->
                 (keyToPath[key] ?: key) to info
             }
-            _uiState.update { it.copy(playbackStates = playbackStates) }
+            val restoreTargetFilePath = buildRemoteFolderPlaybackAnchorKey(
+                remoteProtocol = protocol,
+                remoteServerId = currentServer.id,
+                directoryPath = directoryPath,
+            )?.let { anchorKey ->
+                preferencesRepository.applicationPreferences.value.remoteFolderLastPlayedMediaPaths[anchorKey]
+            }
+            _uiState.update { currentState ->
+                if (currentState.currentPath != directoryPath) {
+                    return@update currentState
+                }
+                currentState.copy(
+                    playbackStates = playbackStates,
+                    restoreTargetFilePath = restoreTargetFilePath,
+                )
+            }
         }
     }
 
@@ -255,8 +289,6 @@ class CloudBrowseViewModel @Inject constructor(
         return extension.lowercase() in BROWSABLE_VIDEO_EXTENSIONS
     }
 
-    private fun String.ensureTrailingSlash(): String = if (endsWith("/")) this else "$this/"
-
     // PROPFIND href 可能是 URL 编码的，server.path 是用户输入的原始文本
     private fun isAtServerRoot(currentPath: String, serverPath: String): Boolean {
         val decodedCurrent = URLDecoder.decode(currentPath.removeSuffix("/"), "UTF-8")
@@ -288,15 +320,17 @@ data class CloudBrowseUiState(
     val currentPath: String = "/",
     val files: List<RemoteFile> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val hasLoadedDirectory: Boolean = false,
     val isError: Boolean = false,
     val isAtRoot: Boolean = true,
     val errorMessage: String = "",
     val playbackStates: Map<String, RemotePlaybackInfo> = emptyMap(),
+    val restoreTargetFilePath: String? = null,
+    val preferences: ApplicationPreferences = ApplicationPreferences(),
 )
 
 sealed interface CloudBrowseEvent {
-    data class NavigateToDirectory(val path: String) : CloudBrowseEvent
-    data object NavigateUp : CloudBrowseEvent
     data object Retry : CloudBrowseEvent
     data object RefreshPlaybackStates : CloudBrowseEvent
 }

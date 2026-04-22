@@ -410,13 +410,17 @@ class PlayerActivity : AppCompatActivity() {
             currentPath = playbackUri.path,
         )
         val apiPlaylist = playerApi.getPlaylist()
+        val folderPlaylist = if (apiPlaylist.isEmpty()) {
+            viewModel.getPlaylistFromUri(playbackUri)
+        } else {
+            emptyList()
+        }
         val playbackPlaylist = if (apiPlaylist.isNotEmpty()) {
             buildPlaybackPlaylistFromItems(
                 playlistItems = apiPlaylist,
                 playbackTarget = playbackTarget,
             )
         } else {
-            val folderPlaylist = viewModel.getPlaylistFromUri(playbackUri)
             buildPlaybackPlaylist(
                 playlistVideos = folderPlaylist,
                 playbackTarget = playbackTarget,
@@ -446,12 +450,22 @@ class PlayerActivity : AppCompatActivity() {
                     setMediaMetadata(
                         MediaMetadata.Builder().apply {
                             if (isCurrentItem) setTitle(playerApi.title)
+                            val itemPath = Uri.parse(uriString).path
+                            val localParentPath = folderPlaylist
+                                .find { video -> video.uriString == uriString || video.path == itemPath }
+                                ?.parentPath
+                                ?.takeIf { it.isNotBlank() }
+                            val remoteDirectoryPath = filePath
+                                ?.substringBeforeLast('/', missingDelimiterValue = "")
+                                ?.ifBlank { "/" }
                             setExtras(
                                 positionMs = if (isCurrentItem) playerApi.position?.toLong() else null,
                                 requestHeaders = requestHeaders,
                                 remoteServerId = remoteServerId,
                                 remoteFilePath = filePath,
                                 remoteProtocol = remoteProtocol,
+                                localParentPath = localParentPath,
+                                remoteDirectoryPath = remoteDirectoryPath,
                             )
                         }.build(),
                     )

@@ -205,6 +205,8 @@
     <string name="open_network_stream">打开网络串流</string>
     <string name="mark_last_played_media">标记上次播放的媒体</string>
     <string name="mark_last_played_media_desc">标记主页和每个文件夹中上次播放的媒体</string>
+    <string name="restore_last_played_media_in_folders">记住文件夹中的上次播放位置</string>
+    <string name="restore_last_played_media_in_folders_desc">重新进入本地或 WebDAV 文件夹时，自动定位到该文件夹里最后实际播放的媒体</string>
     <string name="recycle_bin">回收站</string>
     <string name="recycle_bin_desc">保留已删除项目，直到您永久移除它们。启用后会在主页顶部栏显示回收站入口</string>
     <string name="exit">退出</string>

@@ -3,8 +3,8 @@ android-compileSdk = "37"
 android-targetSdk = "37"
 android-minSdk = "30"
 android-jvm = "17"
-aboutlibraries = "14.0.0-b03"
-androidGradlePlugin = "9.2.0-alpha07"
+aboutlibraries = "14.1.0-b01"
+androidGradlePlugin = "9.3.0-alpha01"
 androidMaterial = "1.13.0"
 androidxActivity = "1.13.0"
 androidxAppCompat = "1.7.1"
@@ -31,7 +31,7 @@ ktlint = "14.2.0"
 libassAndroid = "0.4.0"
 nextlib = "1.10.0-0.12.1"
 okhttp = "5.3.2"
-reorderable = "3.0.0"
+reorderable = "3.1.0"
 room = "2.8.4"
 smbj = "0.14.0"
 universalChardet = "2.5.0"
@@ -61,11 +61,11 @@ androidx-lifecycle-runtimeCompose = { module = "androidx.lifecycle:lifecycle-run
 androidx-lifecycle-viewModel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "androidxMedia3" }
+androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "androidxMedia3" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "androidxMedia3" }
 androidx-media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "androidxMedia3" }
 androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "androidxMedia3" }
 androidx-media3-exoplayer-rtsp = { module = "androidx.media3:media3-exoplayer-rtsp", version.ref = "androidxMedia3" }
-androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "androidxMedia3" }
 androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "androidxMedia3" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "androidxMedia3" }
 androidx-media3-ui-compose = { module = "androidx.media3:media3-ui-compose", version.ref = "androidxMedia3" }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,8 +29,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +60,7 @@ import one.next.player.core.ui.extensions.withBottomFallback
 fun CloudBrowseRoute(
     viewModel: CloudBrowseViewModel = hiltViewModel(),
     onNavigateUp: () -> Unit,
+    onDirectoryClick: (serverId: Long, path: String) -> Unit,
     onPlayVideo: (uri: Uri, headers: Map<String, String>, initialSubtitleDirectoryUri: Uri?, playlist: List<Uri>) -> Unit,
 ) {
     val context = LocalContext.current
@@ -69,6 +76,10 @@ fun CloudBrowseRoute(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
         onEvent = viewModel::onEvent,
+        onDirectoryClick = { path ->
+            val serverId = uiState.server?.id ?: return@CloudBrowseScreen
+            onDirectoryClick(serverId, path)
+        },
         onFileClick = { file ->
             val url = viewModel.buildPlayUrl(file) ?: return@CloudBrowseScreen
             val headers = viewModel.buildAuthHeaders(file)
@@ -88,15 +99,36 @@ internal fun CloudBrowseScreen(
     uiState: CloudBrowseUiState,
     onNavigateUp: () -> Unit = {},
     onEvent: (CloudBrowseEvent) -> Unit = {},
+    onDirectoryClick: (String) -> Unit = {},
     onFileClick: (RemoteFile) -> Unit = {},
 ) {
     val serverName = uiState.server?.name?.takeIf { it.isNotBlank() }
         ?: uiState.server?.host
         ?: stringResource(R.string.browsing)
+    val lazyListState = rememberLazyListState()
+    var restoredDirectoryPath by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(uiState.currentPath) {
+        restoredDirectoryPath = null
+    }
+
+    LaunchedEffect(
+        uiState.currentPath,
+        uiState.restoreTargetFilePath,
+        uiState.files,
+    ) {
+        if (!uiState.preferences.shouldRestoreLastPlayedMediaInFolders) return@LaunchedEffect
+        if (restoredDirectoryPath == uiState.currentPath) return@LaunchedEffect
+        val restoreTargetFilePath = uiState.restoreTargetFilePath ?: return@LaunchedEffect
+        val targetIndex = uiState.files.indexOfFirst { file -> file.path == restoreTargetFilePath }
+        if (targetIndex < 0) return@LaunchedEffect
+        lazyListState.scrollToItem(targetIndex)
+        restoredDirectoryPath = uiState.currentPath
+    }
 
     // 出错时直接允许返回上级页面，不再反复重试 PROPFIND
     BackHandler(enabled = !uiState.isAtRoot && !uiState.isError) {
-        onEvent(CloudBrowseEvent.NavigateUp)
+        onNavigateUp()
     }
 
     Scaffold(
@@ -105,11 +137,7 @@ internal fun CloudBrowseScreen(
                 title = serverName,
                 navigationIcon = {
                     FilledTonalIconButton(onClick = {
-                        if (uiState.isAtRoot || uiState.isError) {
-                            onNavigateUp()
-                        } else {
-                            onEvent(CloudBrowseEvent.NavigateUp)
-                        }
+                        onNavigateUp()
                     }) {
                         Icon(
                             imageVector = NextIcons.ArrowBack,
@@ -133,69 +161,76 @@ internal fun CloudBrowseScreen(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             ) {
                 val contentPadding = innerPadding.copy(top = 0.dp, start = 0.dp).withBottomFallback()
-                when {
-                    uiState.isLoading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
+                PullToRefreshBox(
+                    modifier = Modifier.fillMaxSize(),
+                    isRefreshing = uiState.isRefreshing,
+                    onRefresh = { onEvent(CloudBrowseEvent.Retry) },
+                ) {
+                    when {
+                        uiState.isLoading && uiState.files.isEmpty() -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         }
-                    }
 
-                    uiState.isError -> {
-                        CloudBrowseMessageState(
-                            contentPadding = contentPadding,
-                            icon = NextIcons.Cloud,
-                            title = stringResource(R.string.connection_failed),
-                            message = uiState.errorMessage,
-                            actionText = stringResource(R.string.retry),
-                            onActionClick = { onEvent(CloudBrowseEvent.Retry) },
-                        )
-                    }
+                        uiState.isError -> {
+                            CloudBrowseMessageState(
+                                contentPadding = contentPadding,
+                                icon = NextIcons.Cloud,
+                                title = stringResource(R.string.connection_failed),
+                                message = uiState.errorMessage,
+                                actionText = stringResource(R.string.retry),
+                                onActionClick = { onEvent(CloudBrowseEvent.Retry) },
+                            )
+                        }
 
-                    uiState.files.isEmpty() -> {
-                        CloudBrowseMessageState(
-                            contentPadding = contentPadding,
-                            icon = NextIcons.Folder,
-                            title = stringResource(R.string.empty_directory),
-                        )
-                    }
+                        uiState.files.isEmpty() -> {
+                            CloudBrowseMessageState(
+                                contentPadding = contentPadding,
+                                icon = NextIcons.Folder,
+                                title = stringResource(R.string.empty_directory),
+                            )
+                        }
 
-                    else -> {
-                        val mostRecentFilePath = uiState.playbackStates.entries
-                            .maxByOrNull { it.value.lastPlayedTime ?: 0L }
-                            ?.takeIf { (it.value.lastPlayedTime ?: 0L) > 0L }
-                            ?.key
+                        else -> {
+                            val mostRecentFilePath = uiState.playbackStates.entries
+                                .maxByOrNull { it.value.lastPlayedTime ?: 0L }
+                                ?.takeIf { (it.value.lastPlayedTime ?: 0L) > 0L }
+                                ?.key
 
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            contentPadding = contentPadding,
-                            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
-                        ) {
-                            itemsIndexed(
-                                uiState.files,
-                                key = { _, file -> file.path },
-                            ) { index, file ->
-                                val playbackInfo = uiState.playbackStates[file.path]
-                                val isRecentlyPlayed = !file.isDirectory && file.path == mostRecentFilePath
-                                val hasBeenPlayed = playbackInfo != null && playbackInfo.playbackPosition > 0
-                                RemoteFileItem(
-                                    file = file,
-                                    isFirstItem = index == 0,
-                                    isLastItem = index == uiState.files.lastIndex,
-                                    isRecentlyPlayed = isRecentlyPlayed,
-                                    hasBeenPlayed = hasBeenPlayed,
-                                    onClick = {
-                                        if (file.isDirectory) {
-                                            onEvent(CloudBrowseEvent.NavigateToDirectory(file.path))
-                                        } else {
-                                            onFileClick(file)
-                                        }
-                                    },
-                                )
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                state = lazyListState,
+                                contentPadding = contentPadding,
+                                verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+                            ) {
+                                itemsIndexed(
+                                    uiState.files,
+                                    key = { _, file -> file.path },
+                                ) { index, file ->
+                                    val playbackInfo = uiState.playbackStates[file.path]
+                                    val isRecentlyPlayed = !file.isDirectory && file.path == mostRecentFilePath
+                                    val hasBeenPlayed = playbackInfo != null && playbackInfo.playbackPosition > 0
+                                    RemoteFileItem(
+                                        file = file,
+                                        isFirstItem = index == 0,
+                                        isLastItem = index == uiState.files.lastIndex,
+                                        isRecentlyPlayed = isRecentlyPlayed,
+                                        hasBeenPlayed = hasBeenPlayed,
+                                        onClick = {
+                                            if (file.isDirectory) {
+                                                onDirectoryClick(file.path)
+                                            } else {
+                                                onFileClick(file)
+                                            }
+                                        },
+                                    )
+                                }
                             }
                         }
                     }

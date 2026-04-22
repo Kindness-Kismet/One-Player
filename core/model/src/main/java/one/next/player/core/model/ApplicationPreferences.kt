@@ -13,9 +13,12 @@ data class ApplicationPreferences(
     val shouldPreventScreenshots: Boolean = false,
     val shouldHideInRecents: Boolean = false,
     val shouldMarkLastPlayedMedia: Boolean = true,
+    val shouldRestoreLastPlayedMediaInFolders: Boolean = false,
     val shouldIgnoreNoMediaFiles: Boolean = false,
     val isRecycleBinEnabled: Boolean = false,
     val excludeFolders: List<String> = emptyList(),
+    val localFolderLastPlayedMediaUris: Map<String, String> = emptyMap(),
+    val remoteFolderLastPlayedMediaPaths: Map<String, String> = emptyMap(),
     val mediaViewMode: MediaViewMode = MediaViewMode.FOLDERS,
     val mediaLayoutMode: MediaLayoutMode = MediaLayoutMode.LIST,
 

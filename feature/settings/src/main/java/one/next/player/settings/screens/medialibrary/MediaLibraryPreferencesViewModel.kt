@@ -35,6 +35,7 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
             is MediaLibraryPreferencesUiEvent.SetIgnoreNoMediaFiles -> setIgnoreNoMediaFiles(event.shouldIgnoreNoMediaFiles)
             MediaLibraryPreferencesUiEvent.ResetRestrictedFeatures -> resetRestrictedFeatures()
             MediaLibraryPreferencesUiEvent.ToggleMarkLastPlayedMedia -> toggleMarkLastPlayedMedia()
+            MediaLibraryPreferencesUiEvent.ToggleRestoreLastPlayedMediaInFolders -> toggleRestoreLastPlayedMediaInFolders()
             MediaLibraryPreferencesUiEvent.ToggleRecycleBinEnabled -> toggleRecycleBinEnabled()
         }
     }
@@ -55,6 +56,14 @@ class MediaLibraryPreferencesViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.updateApplicationPreferences {
                 it.copy(shouldMarkLastPlayedMedia = !it.shouldMarkLastPlayedMedia)
+            }
+        }
+    }
+
+    private fun toggleRestoreLastPlayedMediaInFolders() {
+        viewModelScope.launch {
+            preferencesRepository.updateApplicationPreferences {
+                it.copy(shouldRestoreLastPlayedMediaInFolders = !it.shouldRestoreLastPlayedMediaInFolders)
             }
         }
     }
@@ -94,5 +103,6 @@ sealed interface MediaLibraryPreferencesUiEvent {
     data class SetIgnoreNoMediaFiles(val shouldIgnoreNoMediaFiles: Boolean) : MediaLibraryPreferencesUiEvent
     data object ResetRestrictedFeatures : MediaLibraryPreferencesUiEvent
     data object ToggleMarkLastPlayedMedia : MediaLibraryPreferencesUiEvent
+    data object ToggleRestoreLastPlayedMediaInFolders : MediaLibraryPreferencesUiEvent
     data object ToggleRecycleBinEnabled : MediaLibraryPreferencesUiEvent
 }
